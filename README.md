@@ -14,6 +14,12 @@ Install [sqlite3](https://www.sqlite.org/index.html) in repo folder ``sqlite``;
 Install [sqlite-utils](https://pypi.org/project/sqlite-utils/) on your system;
 Install [Google Admin Manager](https://sites.google.com/view/gam--commands/home) on your system.
 
+Note: GAM OAuth Token has validity of 6 months from the last access. After 6 months of inactivity, you will get the error "gam ERROR: ('invalid_grant: Bad Request')" or ``{"error": "invalid_grant", "error_description": "Bad Request"}``. In this case, you need to re-authorize the Admin Access, running another time the command:
+
+```bash
+gam oauth create
+```
+
 ### Check sqlite3 installation
 
 ```bash
@@ -49,6 +55,21 @@ Linux Debian 11 Bullseye x86_64
 Version Check:
  Current: 6.58
  Latest: 6.58
+```
+
+```bash
+gam info user
+```
+
+```plaintext
+User: my_mail@mail
+First Name: First
+Last Name: Last
+Full Name: First Last
+Languages: it+
+Is a Super Admin: True
+Is Delegated Admin: False
+  ...
 ```
 
 ### Set the environment variables
@@ -94,10 +115,6 @@ FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
 Get the section from the students import:
 
 ```bash
-./sqlite/sqlite3 -header -csv studenti.db "SELECT DISTINCT cl, sez, '' as sezioni_gsuite from studenti_argo_2024_09_06 ORDER BY cl,sez; " > sezioni_2024_25.csv
-```
-
-```bash
 ./sqlite/sqlite3 -header -csv studenti.db "
 SELECT cl, letter, addr_argo, sez as sez_argo,
 CASE 
@@ -124,9 +141,18 @@ FROM (
 ORDER BY addr_argo, cl, letter" > sezioni_2024_25.csv;
 ```
 
-Move the section file to the dati_argo folder and set the script variables(environment.sh):
+In case of problems, try a minimal script:
 
 ```bash
+./sqlite/sqlite3 -header -csv studenti.db "SELECT DISTINCT cl, sez, '' as sezioni_gsuite from studenti_argo_2024_09_06 ORDER BY cl,sez; " > sezioni_2024_25.csv
+```
+
+Move the section file to the dati_argo folder and set the script variables:
+
+```bash
+# Tabella studenti versionata alla data indicata
+TABELLA_STUDENTI="studenti_argo_2024_09_06"
 TABELLA_SEZIONI="sezioni_2024_25" 
 FILE_CSV_SEZIONI="$BASE_DIR/dati_argo/$TABELLA_SEZIONI.csv"
+DOMAIN="isis.it"
 ```
