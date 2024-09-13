@@ -20,6 +20,9 @@ DOMAIN="isis.it"
 # Wordpress URL
 WORDPRESS_URL="https://www.$DOMAIN/"
 
+# Wordpress TOKEN
+WORDPRESS_ACCESS_TOKEN=""
+
 # Data corrente (formato yyyy-mm-dd)
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 
