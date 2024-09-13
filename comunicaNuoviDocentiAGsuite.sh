@@ -31,6 +31,9 @@ while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
   # Add the user to classroom
   $GAM_CMD update group "$GRUPPO_CLASSROOM" add member user "$email_gsuite"
 
+  # Add the user to WordPress as teacher
+  curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_gsuite" -d password="Volta2425" -d roles="docente"
+
   # Aggiungo il CF negli script
   echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_DOCENTI_ARGO SET email_gsuite = '$email_gsuite' WHERE \$TABELLA_DOCENTI_ARGO.cod_fisc = '$cod_fisc'\";" >> "$DOCENTI_SCRIPT" 
   
