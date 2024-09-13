@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck source=./_environment.sh
 source "_environment.sh"
 
 # Tabella docenti versionata alla data indicata
@@ -10,9 +11,6 @@ DOCENTI_SCRIPT="$EXPORT_DIR_DATE/docenti_associa_CF_email.sh"
 
 # CSV docenti
 EXPORT_DOCENTI_CSV="$EXPORT_DIR_DATE/docenti_2024_25.csv"
-
-# Dominio DOT isis.it
-DOMAIN="isis.it"
 
 # Aggiunge gli insegnanti a classroom
 GRUPPO_CLASSROOM="insegnanti_classe@$DOMAIN"

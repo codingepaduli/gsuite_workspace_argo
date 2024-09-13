@@ -14,6 +14,12 @@ SQLITE_UTILS_CMD="sqlite-utils"
 # Comando Google Admin Manager
 GAM_CMD="$HOME/bin/gam/gam"
 
+# Dominio DOT isis.it
+DOMAIN="isis.it"
+
+# Wordpress URL
+WORDPRESS_URL="https://www.$DOMAIN/"
+
 # Data corrente (formato yyyy-mm-dd)
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 

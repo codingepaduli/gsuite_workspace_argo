@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# shellcheck source=./_environment.sh
 source "_environment.sh"
 
 # Importa il file CSV "sezioni_YYYY_YY.csv"

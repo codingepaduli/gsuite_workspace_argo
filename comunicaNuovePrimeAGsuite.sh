@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source "_environment.sh"
+# shellcheck source=./_environment.sh
+source "./_environment.sh"
 
 # Tabella studenti versionata alla data indicata
 TABELLA_STUDENTI="studenti_argo_2024_09_06"
@@ -13,9 +14,6 @@ PRIME_SCRIPT="$EXPORT_DIR_DATE/studenti_associa_CF_email_prime.sh"
 
 # CSV studenti di prima
 EXPORT_PRIME_CSV="$EXPORT_DIR_DATE/studenti_prime_2024_25.csv"
-
-# Dominio
-DOMAIN="" # @isis.it
 
 mkdir -p "$EXPORT_DIR_DATE"
 

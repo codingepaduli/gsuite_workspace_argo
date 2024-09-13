@@ -81,6 +81,8 @@ BASE_DIR="repository_path/"           # Working folder
 SQLITE_CMD="$BASE_DIR/sqlite/sqlite3" # sqlite3 command
 SQLITE_UTILS_CMD="sqlite-utils"       # sqlite-utils command
 GAM_CMD="$HOME/bin/gam/gam"           # Google Admin Manager command
+DOMAIN="isis.it"                      # Dominio isis.it
+WORDPRESS_URL="https://www.$DOMAIN/"  # Dominio wordpress
 ```
 
 ### Create the database
@@ -100,8 +102,8 @@ Prepare Excel file:
 Prepare CSV file:
 
 - Transform the first row in lowercase;
-- Replace all `` ,`` occurrences with `,`;
-- Delete all empty rows matching `,,,,,,,,,`.
+- Replace all `` ,`` occurrences with ``,``;
+- Delete all empty rows matching ``,,,,,,,,,``.
 
 Set the script variables:
 
@@ -154,5 +156,4 @@ Move the section file to the dati_argo folder and set the script variables:
 TABELLA_STUDENTI="studenti_argo_2024_09_06"
 TABELLA_SEZIONI="sezioni_2024_25" 
 FILE_CSV_SEZIONI="$BASE_DIR/dati_argo/$TABELLA_SEZIONI.csv"
-DOMAIN="isis.it"
 ```
