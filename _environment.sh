@@ -23,6 +23,9 @@ WORDPRESS_URL="https://www.$DOMAIN/"
 # Wordpress TOKEN
 WORDPRESS_ACCESS_TOKEN=""
 
+# Password teachers for gsuite and domain
+PASSWORD_CLASSROOM=""
+
 # Data corrente (formato yyyy-mm-dd)
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 
