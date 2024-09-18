@@ -26,16 +26,19 @@ while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
   echo "Creo docente $email_gsuite firstname \"$nome\" lastname \"$cognome\" recoveryemail $email_personale recoveryphone $tel"
 
   # Create user
-  $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password Volta2425 changepassword on org Docenti recoveryemail $email_personale
+  $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "$PASSWORD_CLASSROOM" changepassword on org Docenti recoveryemail $email_personale
 
   # Add the user to classroom
   $GAM_CMD update group "$GRUPPO_CLASSROOM" add member user "$email_gsuite"
 
   # Add the user to WordPress as teacher
-  curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_gsuite" -d password="Volta2425" -d roles="docente"
+  ## -w "%{http_code}"  Show the HTTP status code
+  ## -o /dev/null       Redirect output to /dev/null
+  ## -f                 show only see the error message
+  curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="docente"
 
   # Aggiungo il CF negli script
-  echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_DOCENTI_ARGO SET email_gsuite = '$email_gsuite' WHERE \$TABELLA_DOCENTI_ARGO.cod_fisc = '$cod_fisc'\";" >> "$DOCENTI_SCRIPT" 
+  echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_DOCENTI_ARGO SET email_gsuite = '$email_gsuite' WHERE \$TABELLA_DOCENTI_ARGO.cod_fisc = '$cod_fisc'\";" >> "$DOCENTI_SCRIPT"
   
 done < <($SQLITE_CMD -csv studenti.db "select 'd.' || replace(replace(LOWER(nome), '''', ''), ' ', '_') || '.' || replace(replace(LOWER(cognome), '''',''), ' ', '_') || '@$DOMAIN' as email_gsuite, cognome, nome, cod_fisc, email_personale, tel FROM $TABELLA_DOCENTI_ARGO WHERE $TABELLA_DOCENTI_ARGO.email_gsuite is NULL ORDER BY cognome" | sed "s/\"//g")
 
