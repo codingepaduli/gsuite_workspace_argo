@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# To avoid changes to this file (already tracked in git)
+#   git update-index --assume-unchanged _environment.sh
+#
+# To commit changes to this file (already tracked in git)
+#   git update-index --no-assume-unchanged _environment.sh
+
 # Environment variables
 
 # Cartella di lavoro
