@@ -1,3 +1,6 @@
+# To commit changes of file already tracked
+# git update-index --assume-unchanged _environment.sh
+# git update-index --no-assume-unchanged _environment.sh
 /sqlite
 /export
 /dati_argo
