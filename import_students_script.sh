@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# shellcheck source-path=SCRIPTDIR
+
 # shellcheck source=./_environment.sh
 source "_environment.sh"
 
@@ -33,7 +35,7 @@ $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
 $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200), nome VARCHAR(200), cod_fisc VARCHAR(200), cl NUMERIC, sez VARCHAR(200), e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan VARCHAR(200), ritira VARCHAR(200), datar VARCHAR(200), email_argo VARCHAR(200));"
 
 # Importa CSV dati
-$SQLITE_UTILS_CMD insert studenti.db $TABELLA_STUDENTI $FILE_CSV_STUDENTI --csv --empty-null
+$SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI" "$FILE_CSV_STUDENTI" --csv --empty-null
 
 # test estrazione dati con
 $SQLITE_CMD -header -table studenti.db "SELECT cl, sez, cognome, nome FROM $TABELLA_STUDENTI ORDER BY cl, sez;"
