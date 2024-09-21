@@ -36,5 +36,11 @@ $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_DOCENTI_ARGO' (cog
 # Importa CSV dati
 $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_DOCENTI_ARGO" "$FILE_DOCENTI_ARGO_CSV" --csv --empty-null
 
+$SQLITE_CMD studenti.db "UPDATE $TABELLA_DOCENTI_ARGO 
+SET codice_fiscale = TRIM(LOWER(codice_fiscale)),
+    email_personale = TRIM(LOWER(email_personale)),
+    cognome = TRIM(UPPER(cognome)),
+    nome = TRIM(UPPER(nome)) ;"
+
 # test estrazione dati con
 $SQLITE_CMD -header -table studenti.db "SELECT cognome, nome FROM $TABELLA_DOCENTI_ARGO ORDER BY cognome;"
