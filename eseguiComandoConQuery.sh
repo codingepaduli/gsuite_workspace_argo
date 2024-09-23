@@ -71,6 +71,50 @@ echo "Tutti i parametri: $*"
 # $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$nome_gruppo';"
 
 case $command in
+    "createUsers")
+        while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
+            $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "$PASSWORD_CLASSROOM" changepassword on org Docenti recoveryemail "$email_personale"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "suspendUsers")
+        while IFS="," read -r email_gsuite; do
+            $GAM_CMD update user "$email_gsuite" suspended on
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "deleteUsers")
+        while IFS="," read -r email_gsuite; do
+            $GAM_CMD delete user "$email_gsuite"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "createUsersOnWordPress")
+        while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
+            # Add the user to WordPress as teacher
+            ## -w "%{http_code}"  Show the HTTP status code
+            ## -o /dev/null       Redirect output to /dev/null
+            ## -f                 show only see the error message
+            curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="docente"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "showUsersOnWordPress")
+        while IFS="," read -r email_gsuite; do
+            # Add the user to WordPress as teacher
+            ## -w "%{http_code}"  Show the HTTP status code
+            ## -o /dev/null       Redirect output to /dev/null
+            ## -f                 show only see the error message
+            ## Add params to the url for pagination &per_page=100&page=1
+            curl -X GET "${WORDPRESS_URL}wp-json/wp/v2/users?search=${email_gsuite}&_fields=id,email,nickname,registered_date,roles,slug,status&per_page=100&page=1" -u "$WORDPRESS_ACCESS_TOKEN"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "deleteUsersOnWordPress")
+        while IFS="," read -r email_gsuite; do
+            email_gsuite="1964"
+            # Add the user to WordPress as teacher
+            ## -w "%{http_code}"  Show the HTTP status code
+            ## -o /dev/null       Redirect output to /dev/null
+            ## -f                 show only see the error message
+            curl -X DELETE "${WORDPRESS_URL}wp-json/wp/v2/users/$email_gsuite?reassign=35&force=true" -u "$WORDPRESS_ACCESS_TOKEN"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
     "createGroup")
         $GAM_CMD create group "$nome_gruppo@$DOMAIN" name "$nome_gruppo" description "$GROUP_DESCRIPTION"
         ;;
