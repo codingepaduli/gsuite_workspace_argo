@@ -16,13 +16,14 @@ def read_csv_file(file_path):
             previousRowArray =  [""] * fieldCount;
             
             csv_reader = csv.reader(file)
+            csv_writer = csv.writer(sys.stdout)
             for row in csv_reader:
                 
                 for index in range(len(row)):
                     field = row[index] if row[index] != "" else previousRowArray[index]
                     previousRowArray[index] = field
 
-                print(f"{previousRowArray}")
+                csv_writer.writerow(previousRowArray)
                     
                 
     except FileNotFoundError:
