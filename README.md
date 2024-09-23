@@ -77,7 +77,7 @@ Is Delegated Admin: False
 Set the environment variables in file [_environment.sh](environment.sh):
 
 ```bash
-BASE_DIR="repository_path/"           # Working folder
+BASE_DIR="repository_path"           # Working folder
 SQLITE_CMD="$BASE_DIR/sqlite/sqlite3" # sqlite3 command
 SQLITE_UTILS_CMD="sqlite-utils"       # sqlite-utils command
 GAM_CMD="$HOME/bin/gam/gam"           # Google Admin Manager command

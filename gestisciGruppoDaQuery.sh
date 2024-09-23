@@ -5,16 +5,16 @@ source "./_environment.sh"
 
 RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
 
-# Tabella docenti versionata alla data indicata
+# Tabella studenti versionata alla data indicata
 TABELLA_STUDENTI="studenti_argo_2024_09_20"
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
 
-# Tabella sezioni per anno
+# Tabella docenti per anno
 TABELLA_DOCENTI="docenti_2024_25"
 
-# Tabella sezioni per anno
+# Tabella CdC versionata alla data indicata
 TABELLA_CDC="Cdc_2024_09_20"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
@@ -23,6 +23,8 @@ SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'e
 
 SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
 # SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('idd', 'et', 'tlt') "
+
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # Mappa (array associativo)
 declare -A gruppi
@@ -84,6 +86,7 @@ main() {
                 done
                 ;;
             2)
+                mkdir -p "$EXPORT_DIR_DATE"
                 echo "Backup gruppi..."
                 for nome_gruppo in "${!gruppi[@]}"; do
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
@@ -111,15 +114,16 @@ main() {
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo gruppo $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             7)
                 while IFS="," read -r sezione_gsuite; do
                     echo "Cancello gruppo $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             8)
+                mkdir -p "$EXPORT_DIR_DATE"
                 declare -A gruppi_classe
 
                 while IFS="," read -r sezione_gsuite; do
@@ -130,7 +134,7 @@ main() {
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                     AND sa.email_argo IS NOT NULL
                                   ORDER BY sa.email_argo"
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
@@ -148,7 +152,7 @@ main() {
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                     AND sa.email_argo IS NOT NULL
                                   ORDER BY sa.email_argo"
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
@@ -159,13 +163,13 @@ main() {
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo gruppo CDC_$sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command createGroup --group "CDC_$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             11)
                 while IFS="," read -r sezione_gsuite; do
                     echo "Cancello gruppo CDC_$sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "CDC_$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             12)
                 declare -A gruppi_cdc
@@ -180,7 +184,7 @@ main() {
                         ON (d.cognome || ' ' || d.nome) = cdc.docente 
                       WHERE d.email_gsuite is NOT NULL AND d.email_gsuite != '' AND sz.sezione_gsuite = '$sezione_gsuite'
                       ORDER BY docente;"
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_cdc[@]}"; do
                     echo creo gruppo "CDC_$nome_gruppo" "${gruppi_cdc[$nome_gruppo]}"
@@ -188,6 +192,7 @@ main() {
                 done
                 ;;
             13)
+                mkdir -p "$EXPORT_DIR_DATE"
                 declare -A gruppi_cdc
 
                 while IFS="," read -r sezione_gsuite; do
@@ -200,7 +205,7 @@ main() {
                         ON (d.cognome || ' ' || d.nome) = cdc.docente 
                       WHERE d.email_gsuite is NOT NULL AND d.email_gsuite != '' AND sz.sezione_gsuite = '$sezione_gsuite'
                       ORDER BY docente;"
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_cdc[@]}"; do
                     echo salvo CSV gruppo "CDC_$nome_gruppo" "${gruppi_cdc[$nome_gruppo]}"
