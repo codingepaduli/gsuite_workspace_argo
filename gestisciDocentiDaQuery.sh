@@ -10,7 +10,7 @@ RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
 TABELLA_DOCENTI_GLOBALE="docenti_2024_25"
 
 # Tabella di lavoro docenti versionata alla data indicata
-TABELLA_DOCENTI="docenti_argo_2024_09_23"
+TABELLA_DOCENTI="docenti_argo_2024_09_24"
 
 # Aggiunge gli insegnanti a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
@@ -91,6 +91,7 @@ main() {
                     WHERE email_gsuite is NULL;"
                 ;;
             4)
+                mkdir -p "$EXPORT_DIR_DATE"
                 echo "esporto i nuovi docenti in CSV ..."
                 
                 # esporto i nuovi docenti in CSV
@@ -138,6 +139,7 @@ main() {
                 WHERE aggiunto_il='$CURRENT_DATE';"
                 ;;
             10)
+                mkdir -p "$EXPORT_DIR_DATE"
                 echo "Crea script .sh ..."
                 
                 echo "#!/bin/bash" > "$EXPORT_DIR_DATE/docenti_CF.sh"
