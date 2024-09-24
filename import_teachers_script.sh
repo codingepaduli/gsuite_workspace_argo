@@ -23,7 +23,7 @@ source "_environment.sh"
 # - Cancella tutte le righe vuote cercando la stringa ',,,,,,'
 
 # Tabella docenti versionata alla data indicata
-TABELLA_DOCENTI_ARGO="docenti_argo_2024_09_08"
+TABELLA_DOCENTI_ARGO="docenti_argo_2024_09_23"
 
 # File CSV 
 FILE_DOCENTI_ARGO_CSV="$BASE_DIR/dati_argo/docenti_argo/$TABELLA_DOCENTI_ARGO.csv"
@@ -36,11 +36,12 @@ $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_DOCENTI_ARGO' (cog
 # Importa CSV dati
 $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_DOCENTI_ARGO" "$FILE_DOCENTI_ARGO_CSV" --csv --empty-null
 
+# Normalizza dati
 $SQLITE_CMD studenti.db "UPDATE $TABELLA_DOCENTI_ARGO 
 SET codice_fiscale = TRIM(LOWER(codice_fiscale)),
     email_personale = TRIM(LOWER(email_personale)),
     cognome = TRIM(UPPER(cognome)),
     nome = TRIM(UPPER(nome)) ;"
 
-# test estrazione dati con
+# test estrazione dati
 $SQLITE_CMD -header -table studenti.db "SELECT cognome, nome FROM $TABELLA_DOCENTI_ARGO ORDER BY cognome;"

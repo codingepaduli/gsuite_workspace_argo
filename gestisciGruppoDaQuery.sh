@@ -76,7 +76,7 @@ show_menu() {
 main() {
     while true; do
         show_menu
-        read -p "Scegli un'opzione (1-13): " choice
+        read -p "Scegli un'opzione (1-14): " choice
         
         case $choice in
             1)
@@ -106,7 +106,7 @@ main() {
                 ;;
             5)
                 for nome_gruppo in "${!gruppi[@]}"; do
-                    echo "Cancello membri al gruppo $nome_gruppo ...!"
+                    echo "Cancello membri dal gruppo $nome_gruppo ...!"
                     $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
                 done
                 ;;
