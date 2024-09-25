@@ -92,7 +92,7 @@ case $command in
             ## -w "%{http_code}"  Show the HTTP status code
             ## -o /dev/null       Redirect output to /dev/null
             ## -f                 show only see the error message
-            curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="docente"
+            curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users --no-progress-meter -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="docente" | python3 jsonReaderUtil.py
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "showUsersOnWordPress")
@@ -102,7 +102,7 @@ case $command in
             ## -o /dev/null       Redirect output to /dev/null
             ## -f                 show only see the error message
             ## Add params to the url for pagination &per_page=100&page=1
-            curl -X GET "${WORDPRESS_URL}wp-json/wp/v2/users?search=${email_gsuite}&_fields=id,email,nickname,registered_date,roles,slug,status&per_page=100&page=1" -u "$WORDPRESS_ACCESS_TOKEN"
+            curl -X GET --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users?search=${email_gsuite}&_fields=id,email,nickname,registered_date,roles,slug,status&per_page=100&page=1" -u "$WORDPRESS_ACCESS_TOKEN" | python3 jsonReaderUtil.py
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "deleteUsersOnWordPress")

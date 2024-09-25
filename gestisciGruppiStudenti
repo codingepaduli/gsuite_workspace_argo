@@ -56,12 +56,12 @@ add_to_map "sostegno" "select d.email_gsuite from docenti_2024_25 d WHERE d.emai
 show_menu() {
     echo "Gestione gruppi su GSuite"
     echo "-------------"
-    echo "1. Crea gruppi docenti su GSuite"
-    echo "2. Backup gruppi docenti GSuite su CSV"
-    echo "3. Cancella gruppi docenti su GSuite"
-    echo "4. Aggiungi membri docenti da query"
-    echo "5. Cancella membri docenti da query"
-    echo "6. Crea gruppi studenti"
+    echo "1. "
+    echo "2. "
+    echo "3. "
+    echo "4. "
+    echo "5. "
+    echo "6. "
     echo "7. Cancella gruppi studenti"
     echo "8. Backup gruppi studenti su CSV"
     echo "9. Aggiungi membri a gruppi studenti"
@@ -79,37 +79,6 @@ main() {
         read -p "Scegli un'opzione (1-14): " choice
         
         case $choice in
-            1)
-                echo "creo i gruppi..."
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            2)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Backup gruppi..."
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
-                done
-                ;;
-            3)
-                echo "Cancello i gruppi..."
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            4)
-                echo "Aggiungo membri ai gruppi ..."
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            5)
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    echo "Cancello membri dal gruppo $nome_gruppo ...!"
-                    $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
             6)
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo gruppo $sezione_gsuite ...!"
