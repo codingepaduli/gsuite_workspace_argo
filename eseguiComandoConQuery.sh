@@ -76,6 +76,11 @@ case $command in
             $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "$PASSWORD_CLASSROOM" changepassword on org Docenti recoveryemail "$email_personale"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
+    "createStudents")
+        while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
+            $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "Volta2425" changepassword on org Studenti/Diurno recoveryemail "$email_personale"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
     "suspendUsers")
         while IFS="," read -r email_gsuite; do
             $GAM_CMD update user "$email_gsuite" suspended on
