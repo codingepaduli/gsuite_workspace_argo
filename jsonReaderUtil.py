@@ -1,8 +1,14 @@
 import json
 import sys
 import csv
+import argparse
 
 def main():
+    parser = argparse.ArgumentParser(description='Your script description')
+    # Boolean flag
+    parser.add_argument('-p', '--header', action='store_true', help='Print CSV header')
+    args = parser.parse_args()
+
     try:
         # Legge tutto l'input da stdin
         json_data = sys.stdin.read()
@@ -15,17 +21,24 @@ def main():
 
         if type(dati) is dict:
             # Scrive l'intestazione (chiavi del primo elemento)
-            csv_writer.writerow(dati.keys())
+            if args.header:
+                csv_writer.writerow(dati.keys())
+
             # Scrive i dati
             csv_writer.writerow(dati.values())
 
         if type(dati) is list:
-            # Scrive l'intestazione (chiavi del primo elemento)
-            csv_writer.writerow(dati[0].keys())
+            if len(dati) == 0:
+                csv_writer.writerow([])
 
-            # Scrive i dati
-            for item in dati:
-                csv_writer.writerow(item.values())
+            if len(dati) > 0:
+                # Scrive l'intestazione (chiavi del primo elemento)
+                if args.header:
+                    csv_writer.writerow(dati[0].keys())
+
+                # Scrive i dati
+                for item in dati:
+                    csv_writer.writerow(item.values())
 
     except json.JSONDecodeError:
         print("Errore: L'input non è un JSON valido.", file=sys.stderr)
