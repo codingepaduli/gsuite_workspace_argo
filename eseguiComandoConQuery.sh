@@ -112,12 +112,23 @@ case $command in
         ;;
     "deleteUsersOnWordPress")
         while IFS="," read -r email_gsuite; do
-            email_gsuite="1964"
-            # Add the user to WordPress as teacher
-            ## -w "%{http_code}"  Show the HTTP status code
-            ## -o /dev/null       Redirect output to /dev/null
-            ## -f                 show only see the error message
-            curl -X DELETE "${WORDPRESS_URL}wp-json/wp/v2/users/$email_gsuite?reassign=35&force=true" -u "$WORDPRESS_ACCESS_TOKEN"
+            # _fields=id,email,nickname,registered_date,roles,slug,status
+            curl -X GET --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users?search=${email_gsuite}&_fields=id,email&per_page=100&page=1" -u "$WORDPRESS_ACCESS_TOKEN" | python3 jsonReaderUtil.py > temp_delete.csv
+
+            IFS=$'\r\n' read -r WID < "temp_delete.csv"
+
+            if [ -n "$WID" ]; then
+                if [ "$WID" -ne 0 ]; then
+                    echo "cancello $WID"
+
+                    # Delete the user from id
+                    ## -w "%{http_code}"  Show the HTTP status code
+                    ## -o /dev/null       Redirect output to /dev/null
+                    ## -f                 show only see the error message
+                    curl -X DELETE --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users/$WID?reassign=35&force=true" -u "$WORDPRESS_ACCESS_TOKEN"
+                fi
+            fi
+            
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "createGroup")
