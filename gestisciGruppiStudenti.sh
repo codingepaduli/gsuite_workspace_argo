@@ -6,7 +6,7 @@ source "./_environment.sh"
 RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_09_20"
+TABELLA_STUDENTI="studenti_argo_2024_09_30"
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
@@ -16,6 +16,9 @@ TABELLA_DOCENTI="docenti_2024_25"
 
 # Tabella CdC versionata alla data indicata
 TABELLA_CDC="Cdc_2024_09_20"
+
+# Tabella in cui importo i CSV
+TABELLA_CSV="tabella_CSV"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt') " 
@@ -49,19 +52,29 @@ remove_from_map() {
 }
 
 # add_to_map "docenti" "select d.email_gsuite from docenti_2024_25 d WHERE d.email_gsuite IS NOT NULL"
-add_to_map "test_coo" "select d.email_gsuite from docenti_2024_25 d WHERE d.email_gsuite IS NOT NULL AND d.coordinatore IS NOT NULL"
-add_to_map "sostegno" "select d.email_gsuite from docenti_2024_25 d WHERE d.email_gsuite IS NOT NULL AND d.sostegno IS NOT NULL "
+add_to_map "5b_inf_2022_23"  " NO "
+add_to_map "5a_en"   " NO "
+add_to_map "5a_et"   " NO "
+add_to_map "5a_inf"  " NO "
+add_to_map "5a_mec"  " NO "
+add_to_map "5a_od"   " NO "
+add_to_map "5b_inf"  " NO "
+add_to_map "5b_mec"  " NO "
+add_to_map "5b_od"   " NO "
+add_to_map "5c_tlc"  " NO "
+add_to_map "5d_tlc"  " NO "
+add_to_map "5f_idd"  " NO "
 
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi su GSuite"
     echo "-------------"
-    echo "1. "
-    echo "2. "
-    echo "3. "
-    echo "4. "
-    echo "5. "
-    echo "6. "
+    echo "1. Backup gruppi specifici su CSV"
+    echo "2. Crea la tabella in cui inportare gli account appartenenti ai gruppi specifici"
+    echo "3. Inporta in tabella i gruppi specifici da file CSV"
+    echo "4. Sospendi utenti dei gruppi specifici"
+    echo "5. Cancella gruppi specifici"
+    echo "6. Crea gruppi studenti"
     echo "7. Cancella gruppi studenti"
     echo "8. Backup gruppi studenti su CSV"
     echo "9. Aggiungi membri a gruppi studenti"
@@ -79,6 +92,44 @@ main() {
         read -p "Scegli un'opzione (1-14): " choice
         
         case $choice in
+            1)
+                echo "Backup gruppi specifici su CSV"
+                mkdir -p "$EXPORT_DIR_DATE"
+
+                for nome_gruppo in "${!gruppi[@]}"; do
+                    echo "Salvo gruppo specifico $nome_gruppo su CSV...!"
+                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+                done
+                ;;
+            2)
+                echo "Cancello, ricreo e normalizzo la tabella contenente gli account appartenenti ai gruppi specifici $TABELLA_CSV importandoli dai rispettivi file CSV ..."
+                
+                # Cancello la tabella
+                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_CSV';"
+
+                # Creo la tabella
+                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_CSV' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
+                ;;
+            3)
+                echo "Importa account appartenenti ai gruppi specifici nella tabella CSV"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                    # Importa CSV dati
+                    $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_CSV" "$EXPORT_DIR_DATE/$nome_gruppo.csv" --csv --empty-null
+                done
+                ;;
+            4)
+                echo "Sospendi account appartenenti ai gruppi specifici..."
+
+                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
+                ;;
+            5)
+                echo "Cancella gruppi specifici..."
+
+                for nome_gruppo in "${!gruppi[@]}"; do
+                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
+                done
+                ;;
             6)
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo gruppo $sezione_gsuite ...!"
