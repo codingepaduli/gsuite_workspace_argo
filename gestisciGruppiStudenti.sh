@@ -3,19 +3,8 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 
-RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
-
-# Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_09_30"
-
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
-
-# Tabella docenti per anno
-TABELLA_DOCENTI="docenti_2024_25"
-
-# Tabella CdC versionata alla data indicata
-TABELLA_CDC="Cdc_2024_09_20"
 
 # Tabella in cui importo i CSV
 TABELLA_CSV="tabella_CSV"
@@ -74,11 +63,7 @@ show_menu() {
     echo "3. Inporta in tabella i gruppi specifici da file CSV"
     echo "4. Sospendi utenti dei gruppi specifici"
     echo "5. Cancella gruppi specifici"
-    echo "6. Crea gruppi studenti"
-    echo "7. Cancella gruppi studenti"
-    echo "8. Backup gruppi studenti su CSV"
-    echo "9. Aggiungi membri a gruppi studenti"
-    echo "10. Cancella utenti salvati nei gruppi specifici..."
+    echo "6. Cancella utenti salvati nei gruppi specifici..."
 
     echo "20. Esci"
 }
@@ -126,55 +111,6 @@ main() {
                 done
                 ;;
             6)
-                while IFS="," read -r sezione_gsuite; do
-                    echo "Creo gruppo $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
-            7)
-                while IFS="," read -r sezione_gsuite; do
-                    echo "Cancello gruppo $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " NO "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
-            8)
-                mkdir -p "$EXPORT_DIR_DATE"
-                declare -A gruppi_classe
-
-                while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="SELECT sa.email_argo
-                                  FROM $TABELLA_STUDENTI sa 
-                                    INNER JOIN $TABELLA_SEZIONI sz 
-                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND sa.email_argo IS NOT NULL
-                                  ORDER BY sa.email_argo"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-
-                for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
-                done
-                ;;
-            9)
-                declare -A gruppi_classe
-
-                while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="SELECT sa.email_argo
-                                  FROM $TABELLA_STUDENTI sa 
-                                    INNER JOIN $TABELLA_SEZIONI sz 
-                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND sa.email_argo IS NOT NULL
-                                  ORDER BY sa.email_argo"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-
-                for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
-                done
-                ;;
-            10)
                 echo "Cancella utenti salvati nei gruppi specifici..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
