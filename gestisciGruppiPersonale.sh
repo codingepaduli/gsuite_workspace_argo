@@ -3,14 +3,11 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 
-# Script per creazione utenti
-RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
-
 # Tabella gruppi
 TABELLA_GRUPPI="gruppi_2024_25"
 
 # Tabella di lavoro personale versionata alla data indicata
-TABELLA_PERSONALE="personale_argo_2024_09_25"
+TABELLA_PERSONALE="personale_argo_2024_10_17"
 
 # Gruppo insegnanti abilitati a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
@@ -47,7 +44,8 @@ main() {
         case $choice in
             1)
                 echo "Aggiungi membri al $GRUPPO_DOCENTI ..."
-Aggiungi membri al $GRUPPO_COORDINATORI                # $RUN_CMD_WITH_QUERY --command deleteGroup --group "$GRUPPO_DOCENTI" --query " NO "
+                
+                # $RUN_CMD_WITH_QUERY --command deleteGroup --group "$GRUPPO_DOCENTI" --query " NO "
 
                 # $RUN_CMD_WITH_QUERY --command createGroup --group "$GRUPPO_DOCENTI" --query " NO "
 
@@ -112,7 +110,7 @@ Aggiungi membri al $GRUPPO_COORDINATORI                # $RUN_CMD_WITH_QUERY --c
                 ;;
             13)
                 echo "Aggiungi membri al $GRUPPO_COORDINATORI ..."
-                
+
                 $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_COORDINATORI" --query "SELECT email_gsuite FROM $TABELLA_GRUPPI WHERE nome_gruppo = '$GRUPPO_COORDINATORI';"
                 ;;
             14)

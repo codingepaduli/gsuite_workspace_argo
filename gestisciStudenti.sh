@@ -3,11 +3,8 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 
-# Script per creazione utenti
-RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
-
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_09_25"
+TABELLA_STUDENTI="studenti_argo_2024_10_14"
 
 # File CSV 
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
@@ -121,12 +118,12 @@ main() {
                 done < <($SQLITE_CMD -csv studenti.db "select email_gsuite,  cod_fisc, cognome, nome, cl, sez FROM $TABELLA_STUDENTI ORDER BY cod_fisc" | sed "s/\"//g")
                 ;;
             8)
-                echo "Sospendi (disabilita) personale ..."
+                echo "Sospendi account studenti ..."
 
                 $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
             9)
-                echo "Cancella studenti ..."
+                echo "Cancella account studenti ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
