@@ -60,10 +60,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 : '
-echo "Comando: $command"
-echo "Gruppo: $nome_gruppo"
-echo "Query: $query"
-echo "Tutti i parametri: $*"
+echo "Debug info:"
+echo "  Comando: $command"
+echo "  Gruppo: $nome_gruppo"
+echo "  Query: $query"
+echo "  Tutti i parametri: $*"
 '
 
 # mkdir -p "$EXPORT_DIR_DATE"
@@ -78,7 +79,7 @@ case $command in
         ;;
     "createStudents")
         while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
-            $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "Volta2425" changepassword on org Studenti/Diurno recoveryemail "$email_personale"
+            $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "Volta2425" changepassword on org "$nome_gruppo" recoveryemail "$email_personale"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "suspendUsers")
