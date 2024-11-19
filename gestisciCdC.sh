@@ -13,7 +13,7 @@ FILE_CDC_ARGO_CSV="$BASE_DIR/dati_argo/Cdc/$TABELLA_CDC_ARGO.csv"
 TABELLA_SEZIONI="sezioni_2024_25"
 
 # Tabella personale
-TABELLA_PERSONALE="personale_argo_2024_09_25"
+TABELLA_PERSONALE="personale_argo_2024_10_17"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt') " 
@@ -36,7 +36,7 @@ show_menu() {
     echo "6. Cancello i gruppi CdC"
     echo "7. "
     echo "8. Aggiungi membri ai gruppi Cdc"
-    echo "9. "
+    echo "9. Esporta un unico elenco docenti con classi associate in file CSV"
     echo "20. Esci"
 }
 
@@ -121,6 +121,26 @@ main() {
                     echo creo gruppo "$CDC" "${gruppi_cdc[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$CDC" --query "${gruppi_cdc[$nome_gruppo]}"
                 done
+                ;;
+            9)
+                echo "Esporta un unico elenco docenti con classi associate in file CSV"
+
+                # test estrazione dati con
+                $SQLITE_CMD -header -csv studenti.db "
+                SELECT DISTINCT d.email_gsuite, d.codice_fiscale, cdc.docente, 
+                  cdc.classi, sz.sezione_gsuite 
+                FROM $TABELLA_CDC_ARGO cdc
+                INNER JOIN $TABELLA_SEZIONI sz
+                ON cdc.classi = (sz.cl || sz.sez_argo)
+                INNER JOIN $TABELLA_PERSONALE d
+                ON (d.cognome || ' ' || d.nome) = cdc.docente 
+                WHERE d.email_gsuite is not null
+                  AND d.email_gsuite != '' 
+                  AND d.tipo_personale = 'docente' 
+                  -- AND sz.sezione_gsuite = '3A_inf'
+                  -- AND cdc.materie != UPPER('Educazione civica')
+                ORDER BY docente;
+                " > "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
                 ;;
             20)
                 echo "Arrivederci!"
