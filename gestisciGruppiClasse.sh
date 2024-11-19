@@ -4,17 +4,17 @@
 source "./_environment.sh"
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_10_14"
+TABELLA_STUDENTI="studenti_argo_2024_10_22_sirio"
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt') " 
+# SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') " 
 # SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
 
-SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
-# SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('idd', 'et', 'tlt') "
+#SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
+SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
 
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
@@ -26,8 +26,7 @@ show_menu() {
     echo "2. Cancella le classi da GSUITE"
     echo "3. Backup delle classi su CSV"
     echo "4. Aggiungi studenti alle classi"
-    echo "5. Aggiungi nuovi utenti alle classi ?"
-
+    echo "5. Visualizza numero studenti per classe"
     echo "20. Esci"
 }
 
@@ -75,7 +74,7 @@ main() {
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
                 done
                 ;;
-            5)
+            4)
                 echo "Aggiungo studenti alle classi"
 
                 declare -A gruppi_classe
@@ -94,6 +93,17 @@ main() {
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
                 done
+                ;;
+            5)
+                echo "Visualizza numero studenti per classe"
+
+                $SQLITE_CMD -header -csv studenti.db "
+                SELECT s.cl, s.sez_argo, COUNT(*) as numero_alunni 
+                FROM $TABELLA_STUDENTI sa 
+                INNER JOIN $TABELLA_SEZIONI s 
+                ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                GROUP BY s.sez_argo, s.cl 
+                ORDER BY s.cl, s.sez_argo;"
                 ;;
             10)
                 echo "Da implementare ?..."
