@@ -26,7 +26,8 @@ show_menu() {
     echo "3. Backup gruppo classroom $GRUPPO_CLASSROOM su CSV..."
     echo "4. Backup gruppo $GRUPPO_SOSTEGNO su CSV..."
     echo "5. Backup gruppo $GRUPPO_COORDINATORI su CSV..."
-    echo "6. Salva $GRUPPO_COORDINATORI con classi associate su CSV"
+    echo "6. Crea gruppo $GRUPPO_COORDINATORI su GSuite..."
+    echo "7. Salva $GRUPPO_COORDINATORI con classi associate su CSV"
     echo "11. Normalizza tabella"
     echo "12. Visualizza $GRUPPO_COORDINATORI"
     echo "13. Aggiungi membri al $GRUPPO_COORDINATORI ..."
@@ -80,6 +81,11 @@ main() {
                 $RUN_CMD_WITH_QUERY --command printGroup --group "$GRUPPO_COORDINATORI" --query " NO " > "${EXPORT_DIR_DATE}/${GRUPPO_COORDINATORI}_${CURRENT_DATE}.csv"
                 ;;
             6)
+                echo "Crea gruppo $GRUPPO_COORDINATORI ..."
+                
+                $RUN_CMD_WITH_QUERY --command createGroup --group "$GRUPPO_COORDINATORI" --query " NO "
+                ;;
+            7)
                 mkdir -p "$EXPORT_DIR_DATE"
 
                 echo "Salva $GRUPPO_COORDINATORI con classi associate in CSV..."
@@ -111,7 +117,7 @@ main() {
             13)
                 echo "Aggiungi membri al $GRUPPO_COORDINATORI ..."
 
-                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_COORDINATORI" --query "SELECT email_gsuite FROM $TABELLA_GRUPPI WHERE nome_gruppo = '$GRUPPO_COORDINATORI';"
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_COORDINATORI" --query "SELECT DISTINCT email_gsuite FROM $TABELLA_GRUPPI WHERE nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY aggiunto_il;"
                 ;;
             14)
                 echo "Aggiungi membri al $GRUPPO_SOSTEGNO ..."
