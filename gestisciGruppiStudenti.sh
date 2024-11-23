@@ -41,18 +41,20 @@ remove_from_map() {
 }
 
 # add_to_map "docenti" "select d.email_gsuite from docenti_2024_25 d WHERE d.email_gsuite IS NOT NULL"
-add_to_map "5b_inf_2022_23"  " NO "
-add_to_map "5a_en"   " NO "
-add_to_map "5a_et"   " NO "
-add_to_map "5a_inf"  " NO "
-add_to_map "5a_mec"  " NO "
-add_to_map "5a_od"   " NO "
-add_to_map "5b_inf"  " NO "
-add_to_map "5b_mec"  " NO "
-add_to_map "5b_od"   " NO "
-add_to_map "5c_tlc"  " NO "
-add_to_map "5d_tlc"  " NO "
-add_to_map "5f_idd"  " NO "
+# add_to_map "5b_inf_2022_23"  " NO "
+# add_to_map "5a_en"   " NO "
+# add_to_map "5a_et"   " NO "
+# add_to_map "5a_inf"  " NO "
+# add_to_map "5a_mec"  " NO "
+# add_to_map "5a_od"   " NO "
+# add_to_map "5b_inf"  " NO "
+# add_to_map "5b_mec"  " NO "
+# add_to_map "5b_od"   " NO "
+# add_to_map "5c_tlc"  " NO "
+# add_to_map "5d_tlc"  " NO "
+# add_to_map "5f_idd"  " NO "
+
+add_to_map "tutti" " NO "
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -61,9 +63,10 @@ show_menu() {
     echo "1. Backup gruppi specifici su CSV"
     echo "2. Creo la tabella $TABELLA_CSV dei gruppi specifici"
     echo "3. Inporta in tabella i gruppi specifici da file CSV"
-    echo "4. Sospendi utenti dei gruppi specifici"
-    echo "5. Cancella gruppi specifici"
-    echo "6. Cancella utenti salvati nei gruppi specifici..."
+    echo "4. Salva tabella gruppi specifici su file CSV"
+    echo "5. Sospendi utenti dei gruppi specifici"
+    echo "6. Cancella gruppi specifici"
+    echo "7. Cancella utenti salvati nei gruppi specifici..."
 
     echo "20. Esci"
 }
@@ -99,18 +102,25 @@ main() {
                 done
                 ;;
             4)
+                echo "Salva tabella gruppi specifici su file CSV..."
+
+                mkdir -p "$EXPORT_DIR_DATE"
+
+                $SQLITE_CMD studenti.db "select * from $TABELLA_CSV c ORDER BY c.name;" > "$EXPORT_DIR_DATE/gruppo.csv"
+                ;;
+            5)
                 echo "Sospendi account appartenenti ai gruppi specifici..."
 
                 $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
                 ;;
-            5)
+            6)
                 echo "Cancella gruppi specifici da GSuite..."
 
                 for nome_gruppo in "${!gruppi[@]}"; do
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
                 done
                 ;;
-            6)
+            7)
                 echo "Cancella utenti salvati nei gruppi specifici..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
