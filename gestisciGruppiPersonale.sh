@@ -2,20 +2,40 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Tabella gruppi
-TABELLA_GRUPPI="gruppi_2024_25"
-
-# Tabella di lavoro personale versionata alla data indicata
-TABELLA_PERSONALE="personale_argo_2024_10_17"
+source "./_environment_working_tables.sh"
 
 # Gruppo insegnanti abilitati a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
+
+# Mappa (array associativo)
+declare -A gruppi
+
+# Funzione per aggiungere elementi alla mappa
+add_to_map() {
+    local key=$1
+    local value=$2
+    gruppi[$key]=$value
+}
+
+# Funzione per ottenere un valore dalla mappa
+get_from_map() {
+    local key=$1
+    echo "${gruppi[$key]}"
+}
+
+# Funzione per rimuovere un elemento dalla mappa
+remove_from_map() {
+    local key=$1
+    unset "gruppi[$key]"
+}
 
 # Gruppo insegnanti
 GRUPPO_DOCENTI="docenti_volta"
 GRUPPO_SOSTEGNO="sostegno"
 GRUPPO_COORDINATORI="coordinatori"
+
+add_to_map "fs_area1" "select g.email_gsuite from $TABELLA_GRUPPI g WHERE g.nome_gruppo = 'fs_area1'; "
+add_to_map "docenti_volta" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il IS NOT NULL AND aggiunto_il != '' AND tipo_personale='docente'; "
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -32,6 +52,9 @@ show_menu() {
     echo "12. Visualizza $GRUPPO_COORDINATORI"
     echo "13. Aggiungi membri al $GRUPPO_COORDINATORI ..."
     echo "14. Aggiungi membri al $GRUPPO_SOSTEGNO ..."
+    echo "15. Crea gruppi su GSuite..."
+    echo "16. Inserisci membri nei gruppi  ..."
+    echo "17. Rimuovi membri dai gruppi  ..."
 
     echo "20. Esci"
 }
@@ -123,6 +146,35 @@ main() {
                 echo "Aggiungi membri al $GRUPPO_SOSTEGNO ..."
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_SOSTEGNO" --query "SELECT email_gsuite FROM $TABELLA_GRUPPI WHERE nome_gruppo = '$GRUPPO_SOSTEGNO';"
+                ;;
+            15)
+                echo "Crea gruppi su GSuite  ..."
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Creo gruppo $nome_gruppo su GSuite...!"
+
+                  $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
+                done
+                ;;
+            16)
+                echo "Inserisci membri nei gruppi  ..."
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Inserisco membri nel gruppo $nome_gruppo ...!"
+                  echo "query ${gruppi[$nome_gruppo]} ...!"
+
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                done
+                ;;
+            17)
+                echo "Rimuovi membri dai gruppi  ..."
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Rimuovo membri dal gruppo $nome_gruppo ...!"
+                  echo "query ${gruppi[$nome_gruppo]} ...!"
+
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                done
                 ;;
             20)
                 echo "Arrivederci!"
