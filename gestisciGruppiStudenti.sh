@@ -106,7 +106,7 @@ main() {
 
                 mkdir -p "$EXPORT_DIR_DATE"
 
-                $SQLITE_CMD studenti.db "select * from $TABELLA_CSV c ORDER BY c.name;" > "$EXPORT_DIR_DATE/gruppo.csv"
+                $SQLITE_CMD studenti.db -header -csv "select * from $TABELLA_CSV c ORDER BY c.name;" > "$EXPORT_DIR_DATE/gruppo.csv"
                 ;;
             5)
                 echo "Sospendi account appartenenti ai gruppi specifici..."
