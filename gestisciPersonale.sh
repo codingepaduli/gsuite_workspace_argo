@@ -2,15 +2,10 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Script per creazione utenti
-RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
+source "./_environment_working_tables.sh"
 
 # Tabella personale globale
 TABELLA_PERSONALE_GLOBALE="personale_2024_25"
-
-# Tabella di lavoro personale versionata alla data indicata
-TABELLA_PERSONALE="personale_argo_2024_09_25"
 
 # Aggiunge gli insegnanti a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
@@ -55,7 +50,7 @@ main() {
                 $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_PERSONALE';"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_PERSONALE' (tipo_personale VARCHAR(200), cognome VARCHAR(200), nome VARCHAR(200), data_nascita VARCHAR(200), codice_fiscale VARCHAR(200), telefono VARCHAR(200), altro_telefono VARCHAR(200), cellulare VARCHAR(200), email_personale VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il VARCHAR(200));"
+                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_PERSONALE' (tipo_personale VARCHAR(200), cognome VARCHAR(200), nome VARCHAR(200), data_nascita VARCHAR(200), codice_fiscale VARCHAR(200), telefono VARCHAR(200), altro_telefono VARCHAR(200), cellulare VARCHAR(200), email_personale VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il VARCHAR(200), note VARCHAR(200));"
 
                 # Importa CSV dati
                 $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_PERSONALE" "$FILE_PERSONALE_CSV" --csv --empty-null
@@ -155,14 +150,15 @@ main() {
                 
                 echo "#!/bin/bash" > "$EXPORT_DIR_DATE/personale_CF.sh"
                 echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/personale_CF.sh"
+                echo 'source "./_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/personale_CF.sh"
                 echo "TABELLA_PERSONALE=\"$TABELLA_PERSONALE\"" >> "$EXPORT_DIR_DATE/personale_CF.sh"
 
-                while IFS="," read -r email_gsuite codice_fiscale cognome nome; do
+                while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto note; do
 
                     # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome;" >> "$EXPORT_DIR_DATE/personale_CF.sh"
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite', aggiunto_il = '$aggiunto', note = '$note' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select email_gsuite,  codice_fiscale, cognome, nome FROM $TABELLA_PERSONALE WHERE aggiunto_il='$CURRENT_DATE' ORDER BY cognome" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "select tipo_personale, email_gsuite, codice_fiscale, cognome, nome, aggiunto_il, note FROM $TABELLA_PERSONALE ORDER BY codice_fiscale" | sed "s/\"//g")
                 ;;
             13)
                 echo "Sospendi (disabilita) personale ..."
