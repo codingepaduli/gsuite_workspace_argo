@@ -4,17 +4,18 @@
 source "./_environment.sh"
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_10_22_sirio"
+TABELLA_STUDENTI="studenti_argo_2024_11_18"
+TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-# SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') " 
+SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') " 
 # SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
 
 #SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
+#SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
 
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
@@ -95,15 +96,24 @@ main() {
                 done
                 ;;
             5)
-                echo "Visualizza numero studenti per classe"
+                echo "Esportato numero studenti per classe in file CSV"
+
+                mkdir -p "$EXPORT_DIR_DATE"
 
                 $SQLITE_CMD -header -csv studenti.db "
-                SELECT s.cl, s.sez_argo, COUNT(*) as numero_alunni 
+                SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, COUNT(*) as numero_alunni 
                 FROM $TABELLA_STUDENTI sa 
                 INNER JOIN $TABELLA_SEZIONI s 
                 ON sa.sez = s.sez_argo AND sa.cl =s.cl 
-                GROUP BY s.sez_argo, s.cl 
-                ORDER BY s.cl, s.sez_argo;"
+                GROUP BY s.sez_argo, s.cl
+                UNION
+                SELECT ss.cl AS cl, ss.sez_argo AS sez_argo, ss.sezione_gsuite AS sez_gsuite, COUNT(*) as numero_alunni 
+                FROM $TABELLA_STUDENTI_SERALE sas
+                INNER JOIN $TABELLA_SEZIONI ss 
+                ON sas.sez = ss.sez_argo AND sas.cl =ss.cl 
+                GROUP BY ss.sez_argo, ss.cl
+
+                ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
                 ;;
             10)
                 echo "Da implementare ?..."
