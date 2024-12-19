@@ -75,7 +75,7 @@ main() {
             3)
                 echo "Visualizza personale neo-assunto ..."
                 
-                $SQLITE_CMD studenti.db -header -table "SELECT tipo_personale, cognome, nome, email_personale, email_gsuite FROM $TABELLA_PERSONALE WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE';"
+                $SQLITE_CMD studenti.db -header -table "SELECT tipo_personale, cognome, nome, email_personale, email_gsuite FROM $TABELLA_PERSONALE WHERE email_gsuite is NULL OR email_gsuite = '' OR aggiunto_il = '$CURRENT_DATE';"
                 ;;
             4)
                 echo "Creo la mail ai nuovi docenti ..."
@@ -85,7 +85,8 @@ main() {
                             REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
                             REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_gsuite is NULL 
+                    WHERE (email_gsuite is NULL 
+                        OR email_gsuite = '')
                         AND tipo_personale = 'docente';"
                 ;;
             5)
@@ -96,14 +97,15 @@ main() {
                             REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
                             REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_gsuite is NULL  
+                    WHERE (email_gsuite is NULL 
+                        OR email_gsuite = '')
                         AND tipo_personale = 'ata';"
                 ;;
             6)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto il nuovo personale in file CSV ..."
                 
-                $SQLITE_CMD studenti.db -header -csv "SELECT email_gsuite, '$PASSWORD_CLASSROOM', tipo_personale, aggiunto_il, cognome, nome, codice_fiscale, cellulare, email_personale FROM $TABELLA_PERSONALE WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE' ORDER BY cognome" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
+                $SQLITE_CMD studenti.db -header -csv "SELECT email_gsuite, '$PASSWORD_CLASSROOM', tipo_personale, aggiunto_il, cognome, nome, codice_fiscale, cellulare, email_personale FROM $TABELLA_PERSONALE WHERE (email_gsuite is NULL OR email_gsuite = '') OR aggiunto_il = '$CURRENT_DATE' ORDER BY cognome" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
                 ;;
             7)
                 echo "Sposto il nuovo personale nella tabella globale ..."
@@ -146,17 +148,17 @@ main() {
                 ;;
             12)
                 mkdir -p "$EXPORT_DIR_DATE"
-                echo "Crea script personale_CF.sh ..."
+                echo "Crea script personale_CF_$CURRENT_DATE.sh ..."
                 
-                echo "#!/bin/bash" > "$EXPORT_DIR_DATE/personale_CF.sh"
-                echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/personale_CF.sh"
-                echo 'source "./_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/personale_CF.sh"
-                echo "TABELLA_PERSONALE=\"$TABELLA_PERSONALE\"" >> "$EXPORT_DIR_DATE/personale_CF.sh"
+                echo "#!/bin/bash" > "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                echo 'source "./_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                echo "TABELLA_PERSONALE=\"$TABELLA_PERSONALE\"" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
 
                 while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto note; do
 
                     # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite', aggiunto_il = '$aggiunto', note = '$note' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF.sh"
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite', aggiunto_il = '$aggiunto', note = '$note' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
 
                 done < <($SQLITE_CMD -csv studenti.db "select tipo_personale, email_gsuite, codice_fiscale, cognome, nome, aggiunto_il, note FROM $TABELLA_PERSONALE ORDER BY codice_fiscale" | sed "s/\"//g")
                 ;;
