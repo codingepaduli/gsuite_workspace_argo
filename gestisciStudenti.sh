@@ -2,9 +2,7 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_10_31"
+source "./_environment_working_tables.sh"
 
 # File CSV 
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
