@@ -11,6 +11,7 @@
 
 # Tabella studenti versionata alla data indicata
 TABELLA_STUDENTI="studenti_argo_2024_11_18"
+TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"

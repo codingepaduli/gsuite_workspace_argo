@@ -2,19 +2,10 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_11_18"
-TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
-
-# Tabella sezioni per anno
-TABELLA_SEZIONI="sezioni_2024_25"
-
-# SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') " 
-# SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
+source "./_environment_working_tables.sh"
 
 #SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
+#SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
 #SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
 
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
