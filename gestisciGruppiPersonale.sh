@@ -34,8 +34,20 @@ GRUPPO_DOCENTI="docenti_volta"
 GRUPPO_SOSTEGNO="sostegno"
 GRUPPO_COORDINATORI="coordinatori"
 
-add_to_map "fs_area1" "select g.email_gsuite from $TABELLA_GRUPPI g WHERE g.nome_gruppo = 'fs_area1'; "
-add_to_map "docenti_volta" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il IS NOT NULL AND aggiunto_il != '' AND tipo_personale='docente'; "
+# add_to_map "docenti_volta" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il IS NOT NULL AND aggiunto_il != '' AND tipo_personale='docente'; "
+
+add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
+
+# add_to_map "docenti_volta" "
+# SELECT csv.email
+# FROM tabella_CSV csv 
+# WHERE SUBSTR(csv.email, 1, 2) = 'd.'
+# AND csv.email NOT IN (
+#     SELECT pa.email_gsuite
+#     FROM personale_argo_2024_11_28 pa
+#     WHERE pa.tipo_personale = 'docente' 
+# ); "
+
 
 # Funzione per mostrare il menu
 show_menu() {
