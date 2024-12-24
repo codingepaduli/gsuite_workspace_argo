@@ -6,7 +6,7 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
 # File CSV 
-FILE_CSV="$BASE_DIR/dati_argo/tabellaCSV/tabellaCSV_20241223.csv"
+FILE_CSV="$BASE_DIR/dati_argo/tabellaCSV/tabellaCSV_20241224_studenti.csv"
 
 SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
 # SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
@@ -15,9 +15,8 @@ SQL_FILTRO_ANNI=" AND sz.cl IN (1) "
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # add_to_map "5b_inf_2022_23"  " NO "
-# add_to_map "5a_en"   " NO "
-# add_to_map "5a_et"   " NO "
-add_to_map "5a_inf"  " NO "
+add_to_map "5a_et"   " NO "
+# add_to_map "5a_inf"  " NO "
 # add_to_map "5a_mec"  " NO "
 # add_to_map "5a_od"   " NO "
 # add_to_map "5b_inf"  " NO "
@@ -26,6 +25,27 @@ add_to_map "5a_inf"  " NO "
 # add_to_map "5c_tlc"  " NO "
 # add_to_map "5d_tlc"  " NO "
 # add_to_map "5f_idd"  " NO "
+
+# Query studenti su GSuite non presenti su Argo
+PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
+FROM $TABELLA_CSV c 
+WHERE c.email NOT IN (
+    SELECT LOWER(s.email_gsuite) 
+    FROM $TABELLA_STUDENTI s
+) AND c.email NOT IN (
+    SELECT LOWER(ss.email_gsuite) 
+    FROM $TABELLA_STUDENTI_SERALE ss
+) ORDER BY c.email;"
+
+# Query (tutte le info) studenti su GSuite non presenti su Argo
+FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
+SELECT c.id, c.name, c.email, c.type, c.status
+$PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
+
+# Query email studenti su GSuite non presenti su Argo
+QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
+SELECT c.email
+$PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
 
 # Importa il file CSV dei docenti (da workspace) e seleziona 
 # # quelli che non esistono in tabella personale_argo
@@ -53,13 +73,15 @@ show_menu() {
     echo "-------------"
     echo "1. Creo la tabella $TABELLA_CSV"
     echo "2. Inporta in tabella i gruppi GSuite"
-    echo "3. Importa singolo file CSV nella tabella CSV"
-    echo "11. Importa account nella tabella CSV da singolo file"
-    echo "4. Salva tabella gruppi specifici su file CSV"
-    echo "5. Sospendi utenti dei gruppi specifici"
-    echo "6. Cancella gruppi specifici"
-    echo "7. Cancella utenti salvati nei gruppi specifici..."
-
+    echo "3. Importa tutti gli studenti da singolo file CSV nella tabella CSV"
+    echo "4. Visualizza studenti nei gruppi GSuite che non sono in Argo"
+    echo "5. Rimuovi dai gruppi GSuite gli studenti che non sono in Argo"
+    echo "6. Svuota gruppi GSuite"
+    echo "7, Cancella gruppi GSuite"
+    echo "8. Visualizza studenti su GSuite non presenti su Argo"
+    echo "9. Esporta studenti su GSuite non presenti su Argo"
+    echo "10. Sospendi studenti su GSuite non presenti su Argo"
+    echo "11. Cancella account studenti su GSuite non presenti su Argo"
     echo "20. Esci"
 }
 
@@ -83,32 +105,63 @@ main() {
                     echo "Salvo gruppo GSuite $nome_gruppo in tabella"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_CSV" - --csv --empty-null
                 done
+
+                 # Normalizza dati
+                $SQLITE_CMD studenti.db "UPDATE $TABELLA_CSV 
+                SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)"
                 ;;
             3)
-                echo "Importa singolo file CSV nella tabella CSV"
+                echo "Importa tutti gli studenti da singolo file CSV nella tabella CSV"
                 
                 $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_CSV" "$FILE_CSV" --csv --empty-null
                 ;;
+            4)
+                echo "Visualizza studenti nei gruppi GSuite che non sono in elenco Argo"
+                
+                $SQLITE_CMD studenti.db --csv --header "SELECT c.\"group\", c.id, c.name, c.email FROM $TABELLA_CSV c WHERE c.email NOT IN (SELECT s.email_gsuite FROM $TABELLA_STUDENTI s)"
+                ;;
             5)
-                echo "Sospendi account presenti nella tabella CSV"
-
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "$nome_gruppo"
-                  echo "${gruppi[$nome_gruppo]}"
-                  # $RUN_CMD_WITH_QUERY --command suspendUsers --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]};"
+                echo "Rimuovi dai gruppi GSuite gli studenti che non sono in elenco Argo"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do                
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email FROM $TABELLA_CSV c WHERE c.\"group\" = '$nome_gruppo' AND c.email NOT IN (SELECT s.email_gsuite FROM $TABELLA_STUDENTI s);"
                 done
                 ;;
             6)
-                echo "Cancella account presenti nella tabella CSV"
+                echo "Svuota gruppi GSuite"
+
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email FROM $TABELLA_CSV c WHERE c.\"group\" = '$nome_gruppo';"
+                done
+                ;;
+            7)
+                echo "Cancella gruppi GSuite"
 
                 for nome_gruppo in "${!gruppi[@]}"; do
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
                 done
                 ;;
-            7)
-                echo "Cancella account presenti nella tabella CSV"
+            8)
+                echo "Visualizza studenti su GSuite non in elenco studenti"
 
-                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
+                $SQLITE_CMD studenti.db --csv --header "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
+                ;;
+            9)
+                mkdir -p "$EXPORT_DIR_DATE"
+
+                echo "Esporta studenti su GSuite non presenti su Argo"
+
+                $SQLITE_CMD studenti.db --csv --header "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO" > "${EXPORT_DIR_DATE}/studentiSuGSuiteNonInArgo_${CURRENT_DATE}.csv"
+                ;;
+            10)
+                echo "Sospendi studenti su GSuite non presenti su Argo"
+
+                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
+                ;;
+            11)
+                echo "Cancella account studenti su GSuite non presenti su Argo"
+
+                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
                 ;;
             20)
                 echo "Arrivederci!"
