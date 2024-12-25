@@ -10,7 +10,7 @@
 # to update each script every time
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_11_18"
+TABELLA_STUDENTI="studenti_argo_2024_12_19"
 TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
 
 # Tabella sezioni per anno
@@ -27,3 +27,6 @@ TABELLA_PERSONALE="personale_argo_2024_12_17"
 
 # Tabella in cui importo i CSV
 TABELLA_CSV="tabella_CSV"
+
+# Tabella in cui importo gli account GSuite relativi agli studenti
+TABELLA_STUDENTI_GSUITE="studenti_gsuite"
