@@ -30,3 +30,6 @@ TABELLA_CSV="tabella_CSV"
 
 # Tabella in cui importo gli account GSuite relativi agli studenti
 TABELLA_STUDENTI_GSUITE="studenti_gsuite"
+
+# Tabella in cui importo gli account GSuite relativi ai docenti
+TABELLA_DOCENTI_GSUITE="docenti_gsuite"
