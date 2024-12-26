@@ -25,9 +25,6 @@ SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'e
 # Tabella personale versionata alla data indicata
 TABELLA_PERSONALE="personale_argo_2024_12_17"
 
-# Tabella in cui importo i CSV
-TABELLA_CSV="tabella_CSV"
-
 # Tabella in cui importo gli account GSuite relativi agli studenti
 TABELLA_STUDENTI_GSUITE="studenti_gsuite"
 
