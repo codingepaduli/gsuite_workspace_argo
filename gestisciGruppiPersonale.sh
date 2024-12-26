@@ -3,31 +3,7 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
-
-# Gruppo insegnanti abilitati a classroom
-GRUPPO_CLASSROOM="insegnanti_classe"
-
-# Mappa (array associativo)
-declare -A gruppi
-
-# Funzione per aggiungere elementi alla mappa
-add_to_map() {
-    local key=$1
-    local value=$2
-    gruppi[$key]=$value
-}
-
-# Funzione per ottenere un valore dalla mappa
-get_from_map() {
-    local key=$1
-    echo "${gruppi[$key]}"
-}
-
-# Funzione per rimuovere un elemento dalla mappa
-remove_from_map() {
-    local key=$1
-    unset "gruppi[$key]"
-}
+source "./_maps.sh"
 
 # Gruppo insegnanti
 GRUPPO_DOCENTI="docenti_volta"
@@ -39,17 +15,6 @@ add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WH
 add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
 
 add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
-
-# add_to_map "docenti_volta" "
-# SELECT csv.email
-# FROM tabella_CSV csv 
-# WHERE SUBSTR(csv.email, 1, 2) = 'd.'
-# AND csv.email NOT IN (
-#     SELECT pa.email_gsuite
-#     FROM personale_argo_2024_11_28 pa
-#     WHERE pa.tipo_personale = 'docente' 
-# ); "
-
 
 # Funzione per mostrare il menu
 show_menu() {

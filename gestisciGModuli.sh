@@ -3,35 +3,11 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
-
-# Tabella in cui importo le risposte di Google Moduli da CSV
-TABELLA_GMODULI="GModuli"
+source "./_maps.sh"
 
 # File CSV_GMODULI
 NOME_FILE_CSV_GMODULI="1_AsseMatematico_quinta (Risposte)"
 FILE_CSV_GMODULI="$BASE_DIR/dati_argo/gmoduli/$NOME_FILE_CSV_GMODULI.csv"
-
-# Mappa (array associativo)
-declare -A gruppi
-
-# Funzione per aggiungere elementi alla mappa
-add_to_map() {
-    local key=$1
-    local value=$2
-    gruppi[$key]=$value
-}
-
-# Funzione per ottenere un valore dalla mappa
-get_from_map() {
-    local key=$1
-    echo "${gruppi[$key]}"
-}
-
-# Funzione per rimuovere un elemento dalla mappa
-remove_from_map() {
-    local key=$1
-    unset "gruppi[$key]"
-}
 
 ## comuni
 add_to_map "inf"   " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('in', 'idd')"

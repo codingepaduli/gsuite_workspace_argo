@@ -20,13 +20,20 @@ TABELLA_SEZIONI="sezioni_2024_25"
 TABELLA_GRUPPI="gruppi_2024_25"
 
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') " 
+SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') "
+SQL_FILTRO_SEZIONI=" AND sz.sez_gsuite IN ('B_od') "
 
 # Tabella personale versionata alla data indicata
 TABELLA_PERSONALE="personale_argo_2024_12_17"
+
+# Tabella CdC versionata alla data indicata
+TABELLA_CDC_ARGO="Cdc_2024_10_04"
 
 # Tabella in cui importo gli account GSuite relativi agli studenti
 TABELLA_STUDENTI_GSUITE="studenti_gsuite"
 
 # Tabella in cui importo gli account GSuite relativi ai docenti
 TABELLA_DOCENTI_GSUITE="docenti_gsuite"
+
+# Tabella in cui importo le risposte di Google Moduli da CSV
+TABELLA_GMODULI="GModuli"

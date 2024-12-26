@@ -2,12 +2,7 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_10_14"
-
-# Tabella sezioni per anno
-TABELLA_SEZIONI="sezioni_2024_25"
+source "./_environment_working_tables.sh"
 
 # Funzione per mostrare il menu
 show_menu() {

@@ -2,25 +2,13 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
-
-# Tabella docenti versionata alla data indicata
-TABELLA_CDC_ARGO="Cdc_2024_10_04"
+source "./_environment_working_tables.sh"
 
 # File CSV da importare
 FILE_CDC_ARGO_CSV="$BASE_DIR/dati_argo/Cdc/$TABELLA_CDC_ARGO.csv"
 
-# Tabella sezioni per anno
-TABELLA_SEZIONI="sezioni_2024_25"
-
-# Tabella personale
-TABELLA_PERSONALE="personale_argo_2024_10_17"
-
-# SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt') " 
+# SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
 # SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
-
-SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
-# SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('idd', 'et', 'tlt') "
 
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
