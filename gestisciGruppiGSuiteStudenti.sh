@@ -6,7 +6,7 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
 # File CSV 
-FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}_20241224.csv"
+FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}.csv"
 
 # add_to_map "5b_inf_2022_23"  " NO "
 add_to_map "5a_et"   " NO "
@@ -23,10 +23,10 @@ add_to_map "5a_et"   " NO "
 # Query studenti su GSuite non presenti su Argo
 PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
 FROM ${TABELLA_STUDENTI_GSUITE} c 
-WHERE c.email NOT IN (
+WHERE LOWER(c.email) NOT IN (
     SELECT LOWER(s.email_gsuite) 
     FROM $TABELLA_STUDENTI s
-) AND c.email NOT IN (
+) AND LOWER(c.email) NOT IN (
     SELECT LOWER(ss.email_gsuite) 
     FROM $TABELLA_STUDENTI_SERALE ss
 )
@@ -34,8 +34,8 @@ WHERE c.email NOT IN (
 
 # AND c.type = 'Suspended'
 # AND c.status = 'Never logged in'
-# AND cast(substr(c.status, 1, min(4, length(c.status))) AS INTEGER) < 2024
-# AND SUBSTR(c.email, 1, 2) = 's.'
+# AND CAST(SUBSTR(c.status, 1, MIN(4, LENGTH(c.status))) AS INTEGER) < 2024
+# AND LOWER(SUBSTR(c.email, 1, MIN(2, LENGTH(c.email)))) IN ('s.')
 
 # Query (tutte le info) studenti su GSuite non presenti su Argo
 FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
@@ -48,6 +48,26 @@ QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
 SELECT c.email
 $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
 ORDER BY c.email;"
+
+QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
+  SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, sa.cognome AS cognome, sa.nome AS nome, sa.email_gsuite as email_gsuite
+  FROM $TABELLA_STUDENTI sa 
+  INNER JOIN $TABELLA_SEZIONI s 
+  ON sa.sez = s.sez_argo AND sa.cl =s.cl
+  WHERE LOWER(sa.email_gsuite) NOT IN (
+      SELECT LOWER(c.email)
+      FROM ${TABELLA_STUDENTI_GSUITE} c
+  )
+  UNION
+  SELECT ss.cl AS cl, ss.sez_argo AS sez_argo, ss.sezione_gsuite AS sez_gsuite, sas.cognome AS cognome, sas.nome AS nome, sas.email_gsuite as email_gsuite
+  FROM $TABELLA_STUDENTI_SERALE sas
+  INNER JOIN $TABELLA_SEZIONI ss 
+  ON sas.sez = ss.sez_argo AND sas.cl =ss.cl
+  WHERE LOWER(sas.email_gsuite) NOT IN (
+      SELECT LOWER(c.email)
+      FROM ${TABELLA_STUDENTI_GSUITE} c
+  )
+"
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -64,6 +84,7 @@ show_menu() {
     echo "9. Esporta studenti su GSuite non presenti su Argo"
     echo "10. Sospendi studenti su GSuite non presenti su Argo"
     echo "11. Cancella account studenti su GSuite non presenti su Argo"
+    echo "13. Visualizza studenti su Argo con mail non presente su GSuite"
     echo "20. Esci"
 }
 
@@ -150,6 +171,12 @@ main() {
                 echo "Cancella account studenti su GSuite non presenti su Argo"
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
+                ;;
+            13)
+                echo "13. Visualizza studenti su Argo con mail non presente su GSuite"
+
+                $SQLITE_CMD -header -csv studenti.db "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
+                "
                 ;;
             20)
                 echo "Arrivederci!"
