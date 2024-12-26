@@ -10,6 +10,21 @@ FILE_CSV="$BASE_DIR/dati_argo/docenti_gsuite/${TABELLA_DOCENTI_GSUITE}_20241223.
 
 add_to_map "coordinatori"   " NO "
 
+# Gruppo insegnanti abilitati a classroom
+GRUPPO_CLASSROOM="insegnanti_classe"
+
+# add_to_map "$GRUPPO_CLASSROOM"   " NO "
+
+# add_to_map "docenti_volta" "
+# SELECT csv.email
+# FROM tabella_CSV csv 
+# WHERE SUBSTR(csv.email, 1, 2) = 'd.'
+# AND csv.email NOT IN (
+#     SELECT pa.email_gsuite
+#     FROM personale_argo_2024_11_28 pa
+#     WHERE pa.tipo_personale = 'docente' 
+# ); "
+
 # Query docenti su GSuite non presenti su Argo
 PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
 FROM ${TABELLA_DOCENTI_GSUITE} c 
