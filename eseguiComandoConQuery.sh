@@ -151,6 +151,11 @@ case $command in
             $GAM_CMD update group "$nome_gruppo@$DOMAIN" remove member user "$email"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
+    "moveUsersToOU")
+        while IFS="," read -r email; do
+            $GAM_CMD update org "$nome_gruppo" add user "$email"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
     *)
         echo "Nothings"
         sleep 1

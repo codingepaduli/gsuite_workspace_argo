@@ -8,17 +8,21 @@ source "./_maps.sh"
 # File CSV 
 FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}.csv"
 
+# Importa le classi
+
+SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
+#SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
+#SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
+
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
+
+# Popolo le classi
+while IFS="," read -r sezione_gsuite; do
+    add_to_map "$sezione_gsuite"   " NO "
+    true;
+done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                
 # add_to_map "5b_inf_2022_23"  " NO "
-add_to_map "5a_et"   " NO "
-# add_to_map "5a_inf"  " NO "
-# add_to_map "5a_mec"  " NO "
-# add_to_map "5a_od"   " NO "
-# add_to_map "5b_inf"  " NO "
-# add_to_map "5b_mec"  " NO "
-# add_to_map "5b_od"   " NO "
-# add_to_map "5c_tlc"  " NO "
-# add_to_map "5d_tlc"  " NO "
-# add_to_map "5f_idd"  " NO "
 
 # Query studenti su GSuite non presenti su Argo
 PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
@@ -49,6 +53,7 @@ SELECT c.email
 $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
 ORDER BY c.email;"
 
+# Query studenti su Argo non presenti su GSuite 
 QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
   SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, sa.cognome AS cognome, sa.nome AS nome, sa.email_gsuite as email_gsuite
   FROM $TABELLA_STUDENTI sa 
@@ -69,6 +74,48 @@ QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
   )
 "
 
+PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA="
+FROM $TABELLA_STUDENTI sa 
+INNER JOIN $TABELLA_SEZIONI s 
+  ON sa.sez = s.sez_argo AND sa.cl =s.cl
+INNER JOIN $TABELLA_STUDENTI_GSUITE sg
+  ON sa.email_gsuite = sg.email
+WHERE LOWER(SUBSTR(sg.email, 1, MIN(2, LENGTH(sg.email)))) IN ('s.')
+  AND sg.\"group\" NOT IN ('/Studenti/Diurno')
+ORDER BY sa.email_gsuite
+"
+
+QUERY_STUDENTI_DIURNO_OU_ERRATA="
+SELECT sa.email_gsuite
+$PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA
+"
+
+FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA="
+SELECT sg.\"group\", sa.email_gsuite
+$PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA
+"
+
+PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA="
+FROM $TABELLA_STUDENTI_SERALE sa 
+INNER JOIN $TABELLA_SEZIONI s 
+  ON sa.sez = s.sez_argo AND sa.cl =s.cl
+INNER JOIN $TABELLA_STUDENTI_GSUITE sg
+  ON sa.email_gsuite = sg.email
+WHERE LOWER(SUBSTR(sg.email, 1, MIN(2, LENGTH(sg.email)))) IN ('s.')
+  AND sg.\"group\" NOT IN ('/Studenti/Serale')
+ORDER BY sa.email_gsuite
+"
+
+QUERY_STUDENTI_SERALE_OU_ERRATA="
+SELECT sa.email_gsuite
+$PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA
+"
+
+FULL_QUERY_STUDENTI_SERALE_OU_ERRATA="
+SELECT sg.\"group\", sa.email_gsuite
+$PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA
+"
+
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi di GSuite su tabella ${TABELLA_STUDENTI_GSUITE}"
@@ -85,6 +132,10 @@ show_menu() {
     echo "10. Sospendi studenti su GSuite non presenti su Argo"
     echo "11. Cancella account studenti su GSuite non presenti su Argo"
     echo "13. Visualizza studenti su Argo con mail non presente su GSuite"
+    echo "14. Visualizza studenti diurno con OU errata"
+    echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
+    echo "16. Visualizza studenti serale con OU errata"
+
     echo "20. Esci"
 }
 
@@ -177,6 +228,21 @@ main() {
 
                 $SQLITE_CMD -header -csv studenti.db "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
                 "
+                ;;
+            14)
+                echo "14. Visualizza studenti diurno con OU errata"
+
+                $SQLITE_CMD -csv -header studenti.db "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
+                ;;
+            15)
+                echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
+
+                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Diurno" --query "$QUERY_STUDENTI_DIURNO_OU_ERRATA"
+                ;;
+            16)
+                echo "16. Visualizza studenti serale con OU errata"
+
+                $SQLITE_CMD -header -csv studenti.db "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             20)
                 echo "Arrivederci!"
