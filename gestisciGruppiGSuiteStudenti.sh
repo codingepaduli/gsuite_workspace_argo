@@ -135,6 +135,7 @@ show_menu() {
     echo "14. Visualizza studenti diurno con OU errata"
     echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
     echo "16. Visualizza studenti serale con OU errata"
+    echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
 
     echo "20. Esci"
 }
@@ -224,25 +225,30 @@ main() {
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
                 ;;
             13)
-                echo "13. Visualizza studenti su Argo con mail non presente su GSuite"
+                echo "Visualizza studenti su Argo con mail non presente su GSuite"
 
                 $SQLITE_CMD -header -csv studenti.db "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
                 "
                 ;;
             14)
-                echo "14. Visualizza studenti diurno con OU errata"
+                echo "Visualizza studenti diurno con OU errata"
 
                 $SQLITE_CMD -csv -header studenti.db "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
                 ;;
             15)
-                echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
+                echo "Sposta studenti diurno con OU errata su OU 'Diurno'"
 
                 $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Diurno" --query "$QUERY_STUDENTI_DIURNO_OU_ERRATA"
                 ;;
             16)
-                echo "16. Visualizza studenti serale con OU errata"
+                echo "Visualizza studenti serale con OU errata"
 
                 $SQLITE_CMD -header -csv studenti.db "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
+                ;;
+            17)
+                echo "Sposta studenti serale con OU errata su OU 'Serale'"
+
+                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "$QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             20)
                 echo "Arrivederci!"
