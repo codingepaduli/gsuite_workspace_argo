@@ -161,9 +161,10 @@ main() {
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_STUDENTI_GSUITE}" - --csv --empty-null
                 done
 
-                 # Normalizza dati
+                # Normalizza dati (rimuove @$DOMAIN)"
                 $SQLITE_CMD studenti.db "UPDATE ${TABELLA_STUDENTI_GSUITE} 
-                SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)"
+                SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)
+                WHERE \"group\" LIKE '%@%';"
                 ;;
             3)
                 echo "Importa tutti gli studenti da singolo file CSV nella tabella"
