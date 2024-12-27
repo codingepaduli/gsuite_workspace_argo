@@ -127,11 +127,12 @@ main() {
                 $SQLITE_CMD studenti.db -header -csv "DELETE FROM $TABELLA_PERSONALE_GLOBALE WHERE aggiunto_il='$CURRENT_DATE' AND codice_fiscale IN (SELECT codice_fiscale FROM $TABELLA_PERSONALE WHERE codice_fiscale IS NOT NULL and codice_fiscale != '');"
                 ;;
             9)
-                echo "Creo il nuovo personale su GSuite ..."
+                echo "Creo i nuovi docenti su GSuite ..."
 
-                $RUN_CMD_WITH_QUERY --command createUsers --group "NO" --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                $RUN_CMD_WITH_QUERY --command createUsers --group "Docenti" --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
                 FROM $TABELLA_PERSONALE
-                WHERE aggiunto_il='$CURRENT_DATE';"
+                WHERE aggiunto_il='$CURRENT_DATE'
+                AND tipo_personale='docente';"
                 ;;
             10)
                 echo "Aggiungo i nuovi docenti su Classroom ..."
@@ -181,6 +182,14 @@ main() {
                 echo "Cancella personale da wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
+                ;;
+            17)
+                echo "Creo i nuovi ATA su GSuite ..."
+
+                $RUN_CMD_WITH_QUERY --command createUsers --group "ATA" --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                FROM $TABELLA_PERSONALE
+                WHERE aggiunto_il='$CURRENT_DATE'
+                AND tipo_personale='docente';"
                 ;;
             20)
                 echo "Arrivederci!"
