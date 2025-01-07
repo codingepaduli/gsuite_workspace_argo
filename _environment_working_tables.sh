@@ -10,7 +10,7 @@
 # to update each script every time
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2024_12_19"
+TABELLA_STUDENTI="studenti_argo_2025_01_07"
 TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
 
 # Tabella sezioni per anno
@@ -21,7 +21,7 @@ TABELLA_GRUPPI="gruppi_2024_25"
 
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') "
-SQL_FILTRO_SEZIONI=" AND sz.sez_gsuite IN ('B_od') "
+# SQL_FILTRO_SEZIONI=" AND sz.sez_gsuite IN ('B_od') "
 
 # Tabella personale versionata alla data indicata
 TABELLA_PERSONALE="personale_argo_2024_12_17"
@@ -30,7 +30,7 @@ TABELLA_PERSONALE="personale_argo_2024_12_17"
 TABELLA_CDC_ARGO="Cdc_2024_10_04"
 
 # Tabella in cui importo gli account GSuite relativi agli studenti
-TABELLA_STUDENTI_GSUITE="studenti_gsuite"
+TABELLA_STUDENTI_GSUITE="studenti_gsuite_202412XX" # "utenti_gsuite_20241226"
 
 # Tabella in cui importo gli account GSuite relativi ai docenti
 TABELLA_DOCENTI_GSUITE="docenti_gsuite"
