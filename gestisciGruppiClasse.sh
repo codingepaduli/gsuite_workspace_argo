@@ -16,9 +16,10 @@ show_menu() {
     echo "-------------"
     echo "1. Crea le classi su GSUITE (solo classi, senza studenti)"
     echo "2. Cancella le classi da GSUITE"
-    echo "3. Backup delle classi su CSV"
+    echo "3. Esporta, un file CSV per ogni classe"
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
+    echo "6. Esporta, un unico file CSV con tutte le classi"
     echo "20. Esci"
 }
 
@@ -46,7 +47,7 @@ main() {
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             3)
-                echo "3. Backup delle classi su CSV"
+                echo "3. Esporta, un file CSV per ogni classe"
 
                 mkdir -p "$EXPORT_DIR_DATE"
                 declare -A gruppi_classe
@@ -105,6 +106,24 @@ main() {
                 GROUP BY ss.sez_argo, ss.cl
 
                 ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
+                ;;
+            6)
+                mkdir -p "$EXPORT_DIR_DATE"
+                echo "Esporta, un unico file CSV con tutte le classi ..."
+                
+                $SQLITE_CMD studenti.db -header -csv "
+                SELECT s.sezione_gsuite AS classe, s.cl AS anno, s.letter AS sezione, s.addr_gsuite AS indirizzo,
+                sa.cognome, sa.nome, LOWER(sa.email_gsuite) AS email
+                FROM $TABELLA_STUDENTI sa 
+                INNER JOIN $TABELLA_SEZIONI s 
+                ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                UNION
+                SELECT ss.sezione_gsuite AS classe, ss.cl AS anno, ss.letter AS sezione, ss.addr_gsuite AS indirizzo,
+                sas.cognome, sas.nome, LOWER(sas.email_gsuite) AS email
+                FROM $TABELLA_STUDENTI_SERALE sas
+                INNER JOIN $TABELLA_SEZIONI ss 
+                ON sas.sez = ss.sez_argo AND sas.cl =ss.cl 
+                " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
             10)
                 echo "Da implementare ?..."
