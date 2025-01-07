@@ -4,9 +4,6 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 
-# Tabella personale globale
-TABELLA_PERSONALE_GLOBALE="personale_2024_25"
-
 # Aggiunge gli insegnanti a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
 
@@ -18,13 +15,10 @@ show_menu() {
     echo "Gestione tabelle Personale"
     echo "-------------"
     echo "1. Importa in tabella personale da CSV"
-    echo "2. Aggiorna email, data e flags da tabella globale"
     echo "3. Visualizza personale neo-assunto"
     echo "4. Creo la mail ai nuovi docenti"
     echo "5. Creo la mail al nuovo personale ATA"
     echo "6. Esporto il nuovo personale in file CSV"
-    echo "7. Sposto il nuovo personale nella tabella globale"
-    echo "8. ?? Rimuovi i personale da tabella globale"
     echo "9. Crea il nuovo personale su GSuite"
     echo "10. Aggiungo i nuovi docenti su Classroom"
     echo "11. Crea i nuovi docenti su WordPress"
@@ -63,15 +57,6 @@ main() {
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)) ;"
                 ;;
-            2)
-                echo "Aggiorno la tabella personale da dati precedenti ..."
-                
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_PERSONALE
-                  SET email_gsuite = email,
-                      aggiunto_il = aggiunto
-                  FROM (SELECT UPPER(d.codice_fiscale) AS cod_fis, LOWER(d.email_gsuite) AS email, d.aggiunto_il AS aggiunto FROM $TABELLA_PERSONALE_GLOBALE d) AS d_old
-                  WHERE d_old.cod_fis = UPPER(codice_fiscale);"
-                ;;
             3)
                 echo "Visualizza personale neo-assunto ..."
                 
@@ -106,25 +91,6 @@ main() {
                 echo "Esporto il nuovo personale in file CSV ..."
                 
                 $SQLITE_CMD studenti.db -header -csv "SELECT email_gsuite, '$PASSWORD_CLASSROOM', tipo_personale, aggiunto_il, cognome, nome, codice_fiscale, cellulare, email_personale FROM $TABELLA_PERSONALE WHERE (email_gsuite is NULL OR email_gsuite = '') OR aggiunto_il = '$CURRENT_DATE' ORDER BY cognome" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
-                ;;
-            7)
-                echo "Sposto il nuovo personale nella tabella globale ..."
-                
-                $SQLITE_CMD studenti.db "INSERT INTO $TABELLA_PERSONALE_GLOBALE (tipo_personale, cognome, nome, data_nascita, codice_fiscale, telefono, altro_telefono, cellulare, email_personale, email_gsuite, aggiunto_il)
-                    SELECT tipo_personale, cognome, nome, data_nascita, codice_fiscale, telefono, altro_telefono, cellulare, email_personale, email_gsuite, aggiunto_il
-                    FROM $TABELLA_PERSONALE
-                    WHERE aggiunto_il='$CURRENT_DATE' AND 
-                    codice_fiscale NOT IN (SELECT codice_fiscale FROM $TABELLA_PERSONALE_GLOBALE);"
-                ;;
-            8)
-                echo "rimuovo i personale dalla tabella globale ..."
-                echo "meglio farlo a mano va..."
-                echo "..."
-                echo "..."
-                
-                continue
-                # rimuovo i personale dalla tabella globale
-                $SQLITE_CMD studenti.db -header -csv "DELETE FROM $TABELLA_PERSONALE_GLOBALE WHERE aggiunto_il='$CURRENT_DATE' AND codice_fiscale IN (SELECT codice_fiscale FROM $TABELLA_PERSONALE WHERE codice_fiscale IS NOT NULL and codice_fiscale != '');"
                 ;;
             9)
                 echo "Creo i nuovi docenti su GSuite ..."
