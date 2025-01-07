@@ -6,11 +6,25 @@ See the [ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.h
 
 These script create a sqlite database and manage import and export with GAM.
 
-Data are imported from Argo:
-
-![portaleArgo.png](/dati_argo/portaleArgo.png)
-
 ## Prerequisite
+
+### How to export data from Argo
+
+Data are exported from Argo:
+
+![portaleArgo.png](/dati_argo/portaleArgo.png).
+
+#### Export Student's data
+
+Student's data are custom export:
+
+![argoStudenti-EsportaPersonalizzata.png](/dati_argo/argoStudenti-EsportaPersonalizzata.png).
+
+![argoStudenti-EsportaPersonalizzata-apri.png](/dati_argo/argoStudenti-EsportaPersonalizzata-apri.png).
+
+![argoStudenti-EsportazioneDati-apriElenco.png](/dati_argo/argoStudenti-EsportazioneDati-apriElenco.png).
+
+![argoStudenti-EsportazioneDati-avvia.png](/dati_argo/argoStudenti-EsportazioneDati-avvia.png).
 
 ### Software to install
 
