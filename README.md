@@ -1,10 +1,14 @@
 # gsuite_workspace_argo
 
-A collection of script to help import argo data into gsuite.
+A collection of script to help import, export and manage Argo and GSuite data.
 
-See the [ARCHITECTURE.md](https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html) file for more information about how the repository folders are structured.
+See the [ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html) file for more information about how the repository folders are structured.
 
 These script create a sqlite database and manage import and export with GAM.
+
+Data are imported from Argo:
+
+![portaleArgo.png](/dati_argo/portaleArgo.png)
 
 ## Prerequisite
 
@@ -85,18 +89,37 @@ DOMAIN="isis.it"                      # Dominio isis.it
 WORDPRESS_URL="https://www.$DOMAIN/"  # Dominio wordpress
 ```
 
+Set the current working variables in file [_environment_working_tables.sh](_environment_working_tables.sh).
+
 ### Create the database
 
 ```bash
 sqlite3 studenti.db
 ```
 
-## Import students script
+## Manage students
+
+The script used to manage the student is [gestisciStudenti.sh](gestisciStudenti.sh). It is used to import student's data from Argo, export student's data to GSuite and manage student's account.
+
+You need to import the student's data from the CSV file and to prepare it. See how to obtain it from Argo.
+
+Copy the student's data CSV file (exported from Argo) in the folder ``$BASE_DIR/dati_argo/studenti_argo/``.
+
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh): 
+
+```bash
+TABELLA_STUDENTI="studenti_argo_2024_09_06"``
+```
+
+The path from where the data are imported (check it in the script) is: 
+
+```bash
+FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
+```
 
 Prepare Excel file:
 
 - Check first row fields to match the CREATE TABLE command in the script;
-- Add the column "email_argo";
 - Save the Excel as CSV.
 
 Prepare CSV file:
@@ -105,12 +128,9 @@ Prepare CSV file:
 - Replace all `` ,`` occurrences with ``,``;
 - Delete all empty rows matching ``,,,,,,,,,``.
 
-Set the script variables:
+Execute the script:
 
-```bash
-TABELLA_STUDENTI="studenti_argo_2024_09_06"
-FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
-```
+``./gestisciStudenti.sh``
 
 ## Import section and classes script
 
