@@ -6,7 +6,7 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
 # File CSV 
-FILE_CSV="$BASE_DIR/dati_argo/docenti_gsuite/${TABELLA_DOCENTI_GSUITE}_20241223.csv"
+FILE_CSV="$BASE_DIR/dati_argo/docenti_gsuite/${TABELLA_DOCENTI_GSUITE}.csv"
 
 add_to_map "coordinatori"   " NO "
 
@@ -104,14 +104,14 @@ main() {
                 echo "Visualizza docenti nei gruppi GSuite che non sono in elenco Argo"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
-                  $SQLITE_CMD studenti.db --csv --header "SELECT c.\"group\", c.id, c.name, c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO WHERE c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
+                  $SQLITE_CMD studenti.db --csv --header "SELECT c.\"group\", c.id, c.name, c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO AND c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
                 done
                 ;;
             5)
                 echo "Rimuovi dai gruppi GSuite i docenti che non sono in elenco Argo"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do                
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO WHERE c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO AND c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
                 done
                 ;;
             6)
