@@ -10,7 +10,7 @@ GRUPPO_DOCENTI="docenti_volta"
 GRUPPO_SOSTEGNO="sostegno"
 GRUPPO_COORDINATORI="coordinatori"
 
-add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND aggiunto_il IS NOT NULL AND aggiunto_il != '' AND tipo_personale='docente'; "
+add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
 
 add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
 
