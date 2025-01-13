@@ -10,11 +10,55 @@ GRUPPO_DOCENTI="docenti_volta"
 GRUPPO_SOSTEGNO="sostegno"
 GRUPPO_COORDINATORI="coordinatori"
 
-add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
+# add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
 
-add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
+# add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
 
-add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
+# add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
+
+###################
+# Gestione BIENNI #
+###################
+
+SQL_FILTRO_ANNI_PRIMO_BIENNIO=" AND sz.cl IN (1,2)"
+SQL_FILTRO_ANNI_SECONDO_BIENNIO=" AND sz.cl IN (3,4)"
+
+SQL_FILTRO_SEZIONI_ELETTRONICA=" AND sz.addr_argo IN ( 'en', 'et' )"
+SQL_FILTRO_SEZIONI_INFORMATICA=" AND sz.addr_argo IN ( 'in', 'idd', 'tlt' )"
+SQL_FILTRO_SEZIONI_MECCANICA=" AND sz.addr_argo IN ( 'm' )"
+SQL_FILTRO_SEZIONI_ODONTOTECNICA=" AND sz.addr_argo IN ( 'od' )"
+SQL_FILTRO_SEZIONI_AEREONAUTICA=" AND sz.addr_argo IN ( 'tr' )"
+
+QUERY_DOCENTI_CDC="
+SELECT DISTINCT d.email_gsuite
+FROM $TABELLA_CDC_ARGO cdc
+  INNER JOIN $TABELLA_SEZIONI sz
+  ON cdc.classi = (sz.cl || sz.sez_argo)
+  INNER JOIN $TABELLA_PERSONALE d
+  ON (d.cognome || ' ' || d.nome) = cdc.docente 
+WHERE d.email_gsuite is NOT NULL AND d.email_gsuite != '' 
+AND d.tipo_personale = 'docente'
+"
+
+QUERY_DOCENTI_PRIMO_BIENNIO="$QUERY_DOCENTI_CDC $SQL_FILTRO_ANNI_PRIMO_BIENNIO"
+
+QUERY_DOCENTI_SECONDO_BIENNIO="$QUERY_DOCENTI_CDC $SQL_FILTRO_ANNI_SECONDO_BIENNIO"
+
+add_to_map "primo_biennio_elettronica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_ELETTRONICA ORDER BY docente"
+add_to_map "primo_biennio_informatica"  " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_INFORMATICA ORDER BY docente;"
+add_to_map "primo_biennio_meccanica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_MECCANICA ORDER BY docente; "
+add_to_map "primo_biennio_odontotecnica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_ODONTOTECNICA ORDER BY docente; "
+add_to_map "primo_biennio_aereonautica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_AEREONAUTICA ORDER BY docente; "
+
+add_to_map "secondo_biennio_elettronica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_ELETTRONICA ORDER BY docente"
+add_to_map "secondo_biennio_informatica"  " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_INFORMATICA ORDER BY docente;"
+add_to_map "secondo_biennio_meccanica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_MECCANICA ORDER BY docente; "
+add_to_map "secondo_biennio_odontotecnica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_ODONTOTECNICA ORDER BY docente; "
+add_to_map "secondo_biennio_aereonautica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_AEREONAUTICA ORDER BY docente; "
+
+########################
+# Fine Gestione BIENNI #
+########################
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -94,6 +138,7 @@ main() {
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Inserisco membri nel gruppo $nome_gruppo ...!"
                   echo "query ${gruppi[$nome_gruppo]} ...!"
+                  $SQLITE_CMD studenti.db "${gruppi[$nome_gruppo]}"
 
                   $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
                 done
