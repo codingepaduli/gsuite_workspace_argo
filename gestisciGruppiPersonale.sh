@@ -7,14 +7,76 @@ source "./_maps.sh"
 
 # Gruppo insegnanti
 GRUPPO_DOCENTI="docenti_volta"
-GRUPPO_SOSTEGNO="sostegno"
-GRUPPO_COORDINATORI="coordinatori"
 
 # add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
 
-# add_to_map "$GRUPPO_COORDINATORI" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY g.email_gsuite;"
+#####################
+# Gestione Sostegno #
+#####################
 
-# add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
+GRUPPO_SOSTEGNO="sostegno"
+
+add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
+
+##########################
+# Fine Gestione Sostegno #
+##########################
+
+#########################
+# Gestione Coordinatori #
+#########################
+
+GRUPPO_COORDINATORI="coordinatori"
+GRUPPO_COORDINATORI_PRIME="coordinatori_prime"
+GRUPPO_COORDINATORI_SECONDE="coordinatori_seconde"
+GRUPPO_COORDINATORI_TERZE="coordinatori_terze"
+GRUPPO_COORDINATORI_QUARTE="coordinatori_quarte"
+GRUPPO_COORDINATORI_QUINTE="coordinatori_quinte"
+
+add_to_map "$GRUPPO_COORDINATORI" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+ORDER BY g.email_gsuite;"
+
+add_to_map "$GRUPPO_COORDINATORI_PRIME" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+AND SUBSTR(g.aggiunto_il, 1, 1) = '1' 
+ORDER BY g.email_gsuite;"
+
+add_to_map "$GRUPPO_COORDINATORI_SECONDE" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+AND SUBSTR(g.aggiunto_il, 1, 1) = '2'
+ORDER BY g.email_gsuite;"
+
+add_to_map "$GRUPPO_COORDINATORI_TERZE" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+AND SUBSTR(g.aggiunto_il, 1, 1) = '3'
+ORDER BY g.email_gsuite;"
+
+add_to_map "$GRUPPO_COORDINATORI_QUARTE" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+AND SUBSTR(g.aggiunto_il, 1, 1) = '4'
+ORDER BY g.email_gsuite;"
+
+add_to_map "$GRUPPO_COORDINATORI_QUINTE" "
+SELECT LOWER(g.email_gsuite) as email_gsuite 
+FROM $TABELLA_GRUPPI g 
+WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
+AND SUBSTR(g.aggiunto_il, 1, 1) = '5'
+ORDER BY g.email_gsuite;"
+
+##############################
+# Fine Gestione Coordinatori #
+##############################
 
 ###################
 # Gestione BIENNI #
