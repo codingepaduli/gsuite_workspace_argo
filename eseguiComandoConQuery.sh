@@ -112,24 +112,16 @@ case $command in
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "deleteUsersOnWordPress")
-        while IFS="," read -r email_gsuite; do
-            # _fields=id,email,nickname,registered_date,roles,slug,status
-            curl -X GET --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users?search=${email_gsuite}&_fields=id,email&per_page=100&page=1" -u "$WORDPRESS_ACCESS_TOKEN" | python3 jsonReaderUtil.py > temp_delete.csv
-
-            IFS=$'\r\n' read -r WID < "temp_delete.csv"
-
-            if [ -n "$WID" ]; then
-                if [ "$WID" -ne 0 ]; then
-                    echo "cancello $WID"
-
-                    # Delete the user from id
-                    ## -w "%{http_code}"  Show the HTTP status code
-                    ## -o /dev/null       Redirect output to /dev/null
-                    ## -f                 show only see the error message
-                    curl -X DELETE --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users/$WID?reassign=35&force=true" -u "$WORDPRESS_ACCESS_TOKEN"
-                fi
-            fi
+        while IFS="," read -r id slug name; do
             
+          echo "cancello $id $slug $name"
+
+          # Delete the user from id
+          ## -w "%{http_code}"  Show the HTTP status code
+          ## -o /dev/null       Redirect output to /dev/null
+          ## -f                 show only see the error message
+          ## ?reassign=ID     ID dell'utente sul quale spostare i contenuti
+          #curl -X DELETE --no-progress-meter "${WORDPRESS_URL}wp-json/wp/v2/users/$id?reassign=${WORDPRESS_USER_ID_FOR_DELETING}&force=true" -u "$WORDPRESS_ACCESS_TOKEN"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "createGroup")
