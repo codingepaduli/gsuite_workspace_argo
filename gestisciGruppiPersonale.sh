@@ -42,7 +42,7 @@ while IFS="," read -r dipartimento; do
   add_to_map "dipartimento_$dipartimento" "
   SELECT LOWER(pa.email_gsuite) as email_gsuite
   FROM $TABELLA_PERSONALE pa 
-  WHERE pa.dipartimento = '$dipartimento'
+  WHERE UPPER(pa.dipartimento) = UPPER('$dipartimento')
   ORDER BY pa.email_gsuite ;"
 
 done < <($SQLITE_CMD -csv studenti.db "$QUERY_DIPARTIMENTI" | sed 's/"//g' )
@@ -190,7 +190,7 @@ main() {
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Creo gruppo $nome_gruppo su GSuite...!"
-                  # $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
+                  $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
                 done
                 ;;
             3)
