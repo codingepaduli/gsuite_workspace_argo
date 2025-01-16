@@ -16,11 +16,40 @@ GRUPPO_DOCENTI="docenti_volta"
 
 GRUPPO_SOSTEGNO="sostegno"
 
-add_to_map "$GRUPPO_SOSTEGNO" "SELECT LOWER(g.email_gsuite) as email_gsuite FROM $TABELLA_GRUPPI g WHERE g.nome_gruppo = '$GRUPPO_SOSTEGNO' ORDER BY g.email_gsuite;"
+add_to_map "$GRUPPO_SOSTEGNO" "
+SELECT LOWER(pa.email_gsuite) as email_gsuite
+FROM $TABELLA_PERSONALE pa 
+WHERE pa.dipartimento = 'SOSTEGNO'
+ORDER BY pa.email_gsuite ;"
 
 ##########################
 # Fine Gestione Sostegno #
 ##########################
+
+#########################
+# Gestione Dipartimenti #
+#########################
+
+QUERY_DIPARTIMENTI="
+SELECT DISTINCT LOWER(pa.dipartimento)
+FROM $TABELLA_PERSONALE pa 
+WHERE pa.dipartimento IS NOT NULL AND TRIM(pa.dipartimento) != ''
+ORDER BY pa.dipartimento ;"
+
+while IFS="," read -r dipartimento; do
+  echo "dipartimento $dipartimento"
+
+  add_to_map "dipartimento_$dipartimento" "
+  SELECT LOWER(pa.email_gsuite) as email_gsuite
+  FROM $TABELLA_PERSONALE pa 
+  WHERE pa.dipartimento = '$dipartimento'
+  ORDER BY pa.email_gsuite ;"
+
+done < <($SQLITE_CMD -csv studenti.db "$QUERY_DIPARTIMENTI" | sed 's/"//g' )
+
+##############################
+# Fine Gestione Dipartimenti #
+##############################
 
 #########################
 # Gestione Coordinatori #
@@ -161,7 +190,7 @@ main() {
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Creo gruppo $nome_gruppo su GSuite...!"
-                  $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
+                  # $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
                 done
                 ;;
             3)
