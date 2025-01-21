@@ -8,22 +8,22 @@ source "./_maps.sh"
 # File CSV 
 FILE_CSV="$BASE_DIR/dati_argo/docenti_gsuite/${TABELLA_DOCENTI_GSUITE}.csv"
 
-add_to_map "coordinatori"   " NO "
+# Gruppo insegnanti
+GRUPPO_DOCENTI="docenti_volta"
+GRUPPO_SOSTEGNO="sostegno"
+GRUPPO_COORDINATORI="coordinatori"
+
+# add_to_map "coordinatori"   " SELECT c.email FROM ${TABELLA_DOCENTI_GSUITE} c WHERE c.\"group\" = '$nome_gruppo' ORDER BY c.email; "
 
 # Gruppo insegnanti abilitati a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
 
 # add_to_map "$GRUPPO_CLASSROOM"   " NO "
 
-# add_to_map "docenti_volta" "
+# add_to_map "$GRUPPO_DOCENTI" "
 # SELECT csv.email
-# FROM tabella_CSV csv 
-# WHERE SUBSTR(csv.email, 1, 2) = 'd.'
-# AND csv.email NOT IN (
-#     SELECT pa.email_gsuite
-#     FROM personale_argo_2024_11_28 pa
-#     WHERE pa.tipo_personale = 'docente' 
-# ); "
+# FROM ${TABELLA_DOCENTI_GSUITE} csv 
+# WHERE SUBSTR(csv.email, 1, 2) = 'd.'; "
 
 # Query docenti su GSuite non presenti su Argo
 PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
@@ -118,7 +118,9 @@ main() {
                 echo "Svuota gruppi GSuite"
 
                 for nome_gruppo in "${!gruppi[@]}"; do
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email FROM ${TABELLA_DOCENTI_GSUITE} c WHERE c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
+                  echo "Svuoto gruppo GSuite $nome_gruppo"
+
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
                 done
                 ;;
             7)
