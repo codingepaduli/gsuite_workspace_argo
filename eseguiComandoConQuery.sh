@@ -98,7 +98,7 @@ case $command in
             ## -w "%{http_code}"  Show the HTTP status code
             ## -o /dev/null       Redirect output to /dev/null
             ## -f                 show only see the error message
-            curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users --no-progress-meter -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="docente" | python3 jsonReaderUtil.py
+            curl -X POST "$WORDPRESS_URL"wp-json/wp/v2/users --no-progress-meter -u "$WORDPRESS_ACCESS_TOKEN" -d username="$email_gsuite" -d first_name="$nome" -d last_name="$cognome" -d email="$email_personale" -d password="$PASSWORD_CLASSROOM" -d roles="$nome_gruppo" | python3 jsonReaderUtil.py
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "showUsersOnWordPress")

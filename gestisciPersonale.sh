@@ -114,12 +114,17 @@ main() {
                 FROM $TABELLA_PERSONALE WHERE aggiunto_il='$CURRENT_DATE' AND tipo_personale='docente';"
                 ;;
             11)
-                echo "Creo i nuovi docenti su $DOMAIN ..."
+                echo "Creo il nuovo personale su $DOMAIN ..."
                 
-                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group " NO " --query "
+                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_TEACHER" --query "
                 SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
                 FROM $TABELLA_PERSONALE
                 WHERE aggiunto_il='$CURRENT_DATE' AND tipo_personale='docente';"
+
+                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_ATA" --query "
+                SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                FROM $TABELLA_PERSONALE
+                WHERE aggiunto_il='$CURRENT_DATE' AND tipo_personale='ata';"
                 ;;
             12)
                 mkdir -p "$EXPORT_DIR_DATE"
