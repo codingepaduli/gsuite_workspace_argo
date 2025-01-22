@@ -21,7 +21,7 @@ show_menu() {
     echo "6. Esporto il nuovo personale in file CSV"
     echo "9. Crea il nuovo personale su GSuite"
     echo "10. Aggiungo i nuovi docenti su Classroom"
-    echo "11. Crea i nuovi docenti su WordPress"
+    echo "11. Creo il nuovo personale su WordPress"
     echo "12. Crea script personale_CF.sh"
     echo "13. Sospendi (disabilita) personale"
     echo "14. Elimina personale"
