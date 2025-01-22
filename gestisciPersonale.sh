@@ -93,12 +93,19 @@ main() {
                 $SQLITE_CMD studenti.db -header -csv "SELECT email_gsuite, '$PASSWORD_CLASSROOM', tipo_personale, aggiunto_il, cognome, nome, codice_fiscale, cellulare, email_personale FROM $TABELLA_PERSONALE WHERE (email_gsuite is NULL OR email_gsuite = '') OR aggiunto_il = '$CURRENT_DATE' ORDER BY cognome" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
                 ;;
             9)
-                echo "Creo i nuovi docenti su GSuite ..."
+                echo "Crea il nuovo personale su GSuite ..."
 
-                $RUN_CMD_WITH_QUERY --command createUsers --group "Docenti" --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query " 
+                SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
                 FROM $TABELLA_PERSONALE
                 WHERE aggiunto_il='$CURRENT_DATE'
                 AND tipo_personale='docente';"
+
+                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "
+                SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                FROM $TABELLA_PERSONALE
+                WHERE aggiunto_il='$CURRENT_DATE'
+                AND tipo_personale='ata';"
                 ;;
             10)
                 echo "Aggiungo i nuovi docenti su Classroom ..."
@@ -109,7 +116,8 @@ main() {
             11)
                 echo "Creo i nuovi docenti su $DOMAIN ..."
                 
-                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group " NO " --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
+                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group " NO " --query "
+                SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
                 FROM $TABELLA_PERSONALE
                 WHERE aggiunto_il='$CURRENT_DATE' AND tipo_personale='docente';"
                 ;;
@@ -147,14 +155,6 @@ main() {
                 echo "Cancella personale da wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
-                ;;
-            17)
-                echo "Creo i nuovi ATA su GSuite ..."
-
-                $RUN_CMD_WITH_QUERY --command createUsers --group "ATA" --query "SELECT email_gsuite, cognome, nome, codice_fiscale, email_personale, cellulare 
-                FROM $TABELLA_PERSONALE
-                WHERE aggiunto_il='$CURRENT_DATE'
-                AND tipo_personale='docente';"
                 ;;
             20)
                 echo "Arrivederci!"
