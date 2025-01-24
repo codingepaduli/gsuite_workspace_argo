@@ -94,6 +94,7 @@ case $command in
         ;;
     "createUsersOnWordPress")
         while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel; do
+            echo "aggiungo su Classroom $email_gsuite $cognome $nome"
             # Add the user to WordPress as teacher
             ## -w "%{http_code}"  Show the HTTP status code
             ## -o /dev/null       Redirect output to /dev/null
