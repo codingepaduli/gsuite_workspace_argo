@@ -73,17 +73,25 @@ main() {
                 declare -A gruppi_classe
 
                 while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="SELECT sa.email_gsuite
+                    gruppi_classe[$sezione_gsuite]="
+                                SELECT sa.email_gsuite
                                   FROM $TABELLA_STUDENTI sa 
                                     INNER JOIN $TABELLA_SEZIONI sz 
                                     ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                     AND sa.email_gsuite IS NOT NULL
-                                  ORDER BY sa.email_gsuite"
+                                UNION
+                                  SELECT sa.email_gsuite
+                                  FROM $TABELLA_STUDENTI_SERALE sa 
+                                    INNER JOIN $TABELLA_SEZIONI sz 
+                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
+                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                                    AND sa.email_gsuite IS NOT NULL
+                                ORDER BY sa.email_gsuite"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
+                    # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
                 done
                 ;;
