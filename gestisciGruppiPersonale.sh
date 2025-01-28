@@ -5,10 +5,17 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-# Gruppo insegnanti
+##########################
+# Gestione tutti docenti #
+##########################
+
 GRUPPO_DOCENTI="docenti_volta"
 
-# add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
+add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
+
+###############################
+# Fine Gestione tutti docenti #
+###############################
 
 #####################
 # Gestione Sostegno #
