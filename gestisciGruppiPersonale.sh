@@ -43,6 +43,7 @@ while IFS="," read -r dipartimento; do
   SELECT LOWER(pa.email_gsuite) as email_gsuite
   FROM $TABELLA_PERSONALE pa 
   WHERE UPPER(pa.dipartimento) = UPPER('$dipartimento')
+  AND pa.tipo_personale = 'docente'
   ORDER BY pa.email_gsuite ;"
 
 done < <($SQLITE_CMD -csv studenti.db "$QUERY_DIPARTIMENTI" | sed 's/"//g' )
@@ -50,6 +51,23 @@ done < <($SQLITE_CMD -csv studenti.db "$QUERY_DIPARTIMENTI" | sed 's/"//g' )
 ##############################
 # Fine Gestione Dipartimenti #
 ##############################
+
+###############################
+# Gestione personale ata #
+###############################
+
+GRUPPO_PERSONALE_ATA="personale_ata"
+
+add_to_map "$GRUPPO_PERSONALE_ATA" "
+SELECT LOWER(pa.email_gsuite) as email_gsuite
+FROM $TABELLA_PERSONALE pa 
+WHERE UPPER(pa.dipartimento) = UPPER('PERSONALE_ATA')
+AND pa.tipo_personale = 'ata'
+ORDER BY pa.email_gsuite ;"
+
+###############################
+# Fine Gestione personale ata #
+###############################
 
 #########################
 # Gestione Coordinatori #
