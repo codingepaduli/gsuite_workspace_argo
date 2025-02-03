@@ -106,7 +106,7 @@ main() {
                 
                 echo "#!/bin/bash" > "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
                 echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
-                echo "TABELLA_STUDENTI=\"$TABELLA_STUDENTI\"" >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
+                echo 'source "_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
 
                 while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
 
