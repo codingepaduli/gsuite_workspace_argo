@@ -6,6 +6,8 @@ source "./_environment_working_tables.sh"
 
 # File CSV 
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
+FILE_CSV_STUDENTI_SERALE="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI_SERALE.csv"
+
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -20,9 +22,9 @@ show_menu() {
     echo "7. Crea script studenti_CF.sh"
     echo "8. Sospendi studenti"
     echo "9. Cancella studenti"
-    echo "10. Creo la mail ai nuovi studenti del serale"
-    echo "11. Creo i nuovi studenti del serale su GSuite ..."
-    echo "12. "
+    echo "10. "
+    echo "11. "
+    echo "12. Importa in tabella studenti del SERALE da CSV"
     echo "13. "
     echo "14. "
     echo "15. "
@@ -64,11 +66,15 @@ main() {
             3)
                 echo "Visualizza nuovi studenti ..."
                 
-                $SQLITE_CMD studenti.db -header -table "SELECT cl, sez, cognome, nome, cod_fisc, aggiunto_il, email_gsuite FROM $TABELLA_STUDENTI WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
+                $SQLITE_CMD studenti.db -header -table "SELECT cl, sez, cognome, nome, cod_fisc, aggiunto_il, email_gsuite 
+                FROM $TABELLA_STUDENTI 
+                WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE' 
+                ORDER BY cl, sez, cognome, nome;"
                 ;;
             4)
                 echo "Creo la mail ai nuovi studenti ..."
                 
+                # creo le mail del diurno
                 $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI
                     SET email_gsuite = 
                     CASE
@@ -86,7 +92,19 @@ main() {
                         || '@$DOMAIN'
                     END,
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_gsuite is NULL
+                    WHERE sez NOT LIKE '%_sirio' AND
+                    email_gsuite is NULL 
+                    AND matricola IS NOT NULL;"
+
+                # creo le mail del serale
+                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI
+                    SET email_gsuite = 's.' 
+                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+                        || '.' || matricola || '@$DOMAIN',
+                      aggiunto_il = '$CURRENT_DATE'
+                    WHERE sez LIKE '%_sirio' AND 
+                    email_gsuite is NULL
                     AND matricola IS NOT NULL;"
                 ;;
             5)
@@ -97,8 +115,20 @@ main() {
                 ;;
             6)
                 echo "Creo i nuovi studenti su GSuite ..."
+                
+                # creo le mail del diurno
+                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
+                FROM $TABELLA_STUDENTI 
+                WHERE sez NOT LIKE '%_sirio' AND 
+                    aggiunto_il='$CURRENT_DATE' 
+                ORDER BY cl, sez, cognome, nome;"
 
-                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' FROM $TABELLA_STUDENTI WHERE aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
+                # creo le mail del serale
+                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
+                FROM $TABELLA_STUDENTI 
+                WHERE sez LIKE '%_sirio' AND
+                    aggiunto_il='$CURRENT_DATE'
+                ORDER BY cl, sez, cognome, nome;"
                 ;;
             7)
                 mkdir -p "$EXPORT_DIR_DATE"
@@ -125,23 +155,36 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
-            10)
-                echo "Creo la mail ai nuovi studenti del serale ..."
+            12)
+                echo "Cancello, ricreo e normalizzo la tabella studenti $TABELLA_STUDENTI_SERALE importando il file CSV ..."
                 
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI
-                    SET email_gsuite = 's.' 
-                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-                        || '.' || matricola || '@$DOMAIN',
-                      aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_gsuite is NULL
-                    AND matricola IS NOT NULL;"
-                ;;
-            11)
-                echo "Creo i nuovi studenti del serale su GSuite ..."
+                # Cancello la tabella
+                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_STUDENTI_SERALE';"
 
-                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' FROM $TABELLA_STUDENTI WHERE aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
-                ;;    
+                # Creo la tabella
+                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200), nome VARCHAR(200), cod_fisc VARCHAR(200), cl NUMERIC, sez VARCHAR(200), e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan VARCHAR(200), ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il VARCHAR(200));"
+
+                # Importa CSV dati
+                $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI_SERALE" "$FILE_CSV_STUDENTI_SERALE" --csv --empty-null
+
+                # Normalizza dati
+                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI_SERALE 
+                SET cod_fisc = TRIM(UPPER(cod_fisc)),
+                    email_gsuite = TRIM(LOWER(email_gsuite)),
+                    cognome = TRIM(UPPER(cognome)),
+                    nome = TRIM(UPPER(nome)),
+                    sez = TRIM(sez) || '_sirio';"
+                
+                # Copio i dati del serale nella tabella del diurno
+                # unificando i dati ed il processo di gestione
+                $SQLITE_CMD studenti.db "INSERT INTO $TABELLA_STUDENTI (cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il)
+                  SELECT cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il
+                  FROM $TABELLA_STUDENTI_SERALE AS ss
+                  WHERE ss.cod_fisc NOT IN (
+                    SELECT s.cod_fisc FROM $TABELLA_STUDENTI AS s
+                  );"
+
+                ;;
             20)
                 echo "Arrivederci!"
                 exit 0
