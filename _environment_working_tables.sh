@@ -43,3 +43,9 @@ TABELLA_GMODULI="GModuli"
 
 TABELLA_DIPARTIMENTI="argo_dipartimenti"
 
+# unità organizzative
+GSUITE_OU_DOCENTI="DOCENTI"
+GSUITE_OU_ATA="ATA"
+
+WORDPRESS_ROLE_TEACHER="docente"
+WORDPRESS_ROLE_ATA="personale_ata"
