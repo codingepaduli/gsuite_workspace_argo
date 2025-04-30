@@ -38,6 +38,20 @@ TABELLA_DOCENTI_GSUITE="docenti_gsuite"
 # Tabella in cui importo gli account Wordpress
 TABELLA_UTENTI_WORDPRESS="wordpress_20250108"
 
+# La ricerca di utenti su wordpress è paginata, 
+# ogni pagina contiene 100 account, quindi è 
+# necessario specificare il numero di pagine da 
+# sfogliare per ottenere più di 100 account
+WORDPRESS_NUM_PAGES_TO_SEARCH="20"
+
+# Wordpress permette di spostare la proprietà dei 
+# contenuti (post, media, commenti) pubblicati 
+# dall'account in corso di cancellazione su un
+# account esistente, in modo da non perderli
+# Questo è l'ID dell'utente sul quale spostare
+# i contenuti degli account cancellati
+WORDPRESS_USER_ID_FOR_DELETING="20"
+
 # Tabella in cui importo le risposte di Google Moduli da CSV
 TABELLA_GMODULI="GModuli"
 
