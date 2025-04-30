@@ -5,8 +5,19 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
+myArray=( 
+'2_AsseDeiLinguaggi_PRIME (Risposte)'
+'2_AsseDeiLinguaggi_SECONDE (Risposte)'
+'2_AsseScientificoTecnologico_PRIME_ITIS (Risposte)'
+'2_AsseScientificoTecnologico_PRIME_ODO (Risposte)'
+'2_Asse Scientifico Tecnologico_SECONDE_ITIS (Risposte)'
+'2_Asse Scientifico Tecnologico_SECONDE_ODO (Risposte)'
+'2_AsseStoricoSociale_PRIME (Risposte)'
+'2_AsseStoricoSociale_SECONDE_ITIS (Risposte)'
+) # 7 file
+
 # File CSV_GMODULI
-NOME_FILE_CSV_GMODULI="1_AsseMatematico_quinta (Risposte)"
+NOME_FILE_CSV_GMODULI="${myArray[7]}"
 FILE_CSV_GMODULI="$BASE_DIR/dati_argo/gmoduli/$NOME_FILE_CSV_GMODULI.csv"
 
 ## comuni
@@ -16,7 +27,7 @@ add_to_map "od"  " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('od'
 add_to_map "aer"  " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('tr')"
 
 ## BIENNIO
-# add_to_map "en"   " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('en')"
+add_to_map "en"   " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('en')"
 
 ## TRIENNIO
 add_to_map "et"   " select * FROM $TABELLA_GMODULI sa WHERE sa.addr_argo in ('et')"
@@ -43,12 +54,13 @@ main() {
         case $choice in
             1)
                 echo "Importa un file CSV di risposte di GModuli"
+                echo "$NOME_FILE_CSV_GMODULI"
 
                 # Cancello la tabella
                 $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_GMODULI';"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_GMODULI' (data  VARCHAR(200), email_gsuite VARCHAR(200), punteggio VARCHAR(200), D1 VARCHAR(200), D2 VARCHAR(200), D3 VARCHAR(200), D4 VARCHAR(200), D5 VARCHAR(200), D6 VARCHAR(200), D7 VARCHAR(200), D8 VARCHAR(200), D9 VARCHAR(200), D10 VARCHAR(200), D11 VARCHAR(200), D12 VARCHAR(200), D13 VARCHAR(200), D14 VARCHAR(200), D15 VARCHAR(200), D16 VARCHAR(200), D17 VARCHAR(200), D18 VARCHAR(200), D19 VARCHAR(200), D20 VARCHAR(200), D21 VARCHAR(200), D22 VARCHAR(200), D23 VARCHAR(200), D24 VARCHAR(200), D25 VARCHAR(200), D26 VARCHAR(200), D27 VARCHAR(200), D28 VARCHAR(200), D29 VARCHAR(200), D30 VARCHAR(200));"
+                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_GMODULI' (data  VARCHAR(200), email_gsuite VARCHAR(200), punteggio VARCHAR(200), nome VARCHAR(200), classe_indicata VARCHAR(200), D1 VARCHAR(200), D2 VARCHAR(200), D3 VARCHAR(200), D4 VARCHAR(200), D5 VARCHAR(200), D6 VARCHAR(200), D7 VARCHAR(200), D8 VARCHAR(200), D9 VARCHAR(200), D10 VARCHAR(200), D11 VARCHAR(200), D12 VARCHAR(200), D13 VARCHAR(200), D14 VARCHAR(200), D15 VARCHAR(200), D16 VARCHAR(200), D17 VARCHAR(200), D18 VARCHAR(200), D19 VARCHAR(200), D20 VARCHAR(200), D21 VARCHAR(200), D22 VARCHAR(200), D23 VARCHAR(200), D24 VARCHAR(200), D25 VARCHAR(200), D26 VARCHAR(200), D27 VARCHAR(200), D28 VARCHAR(200), D29 VARCHAR(200), D30 VARCHAR(200));"
 
                 # Aggiungo le due colonne per classe e sezione
                 $SQLITE_CMD studenti.db "ALTER TABLE $TABELLA_GMODULI ADD COLUMN cl NUMERIC;"
