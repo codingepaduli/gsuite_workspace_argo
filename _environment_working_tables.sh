@@ -10,8 +10,8 @@
 # to update each script every time
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2025_01_07"
-TABELLA_STUDENTI_SERALE="studenti_argo_2024_10_22_sirio"
+TABELLA_STUDENTI="studenti_argo_2025_04_02"
+TABELLA_STUDENTI_SERALE="studenti_argo_2025_04_02_sirio" # temporanea
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
@@ -24,10 +24,10 @@ SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'e
 # SQL_FILTRO_SEZIONI=" AND sz.sez_gsuite IN ('B_od') "
 
 # Tabella personale versionata alla data indicata
-TABELLA_PERSONALE="personale_argo_2024_12_17"
+TABELLA_PERSONALE="personale_argo_2025_01_22"
 
 # Tabella CdC versionata alla data indicata
-TABELLA_CDC_ARGO="Cdc_2024_10_04"
+TABELLA_CDC_ARGO="Cdc_2025_01_13"
 
 # Tabella in cui importo gli account GSuite relativi agli studenti
 TABELLA_STUDENTI_GSUITE="studenti_gsuite_202412XX" # "utenti_gsuite_20241226"
@@ -35,5 +35,11 @@ TABELLA_STUDENTI_GSUITE="studenti_gsuite_202412XX" # "utenti_gsuite_20241226"
 # Tabella in cui importo gli account GSuite relativi ai docenti
 TABELLA_DOCENTI_GSUITE="docenti_gsuite"
 
+# Tabella in cui importo gli account Wordpress
+TABELLA_UTENTI_WORDPRESS="wordpress_20250108"
+
 # Tabella in cui importo le risposte di Google Moduli da CSV
 TABELLA_GMODULI="GModuli"
+
+TABELLA_DIPARTIMENTI="argo_dipartimenti"
+
