@@ -10,7 +10,7 @@ FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}.csv"
 
 # Importa le classi
 
-SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
+SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
 #SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
 #SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
 
@@ -154,18 +154,18 @@ main() {
                 echo "Creo la tabella ${TABELLA_STUDENTI_GSUITE} ..."
 
                 # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO " --query "CREATE TABLE IF NOT EXISTS '${TABELLA_STUDENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '${TABELLA_STUDENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
                 ;;
             2)
                 echo "Inporta in tabella i gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                     echo "Salvo gruppo GSuite $nome_gruppo in tabella"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_STUDENTI_GSUITE}" - --csv --empty-null
+                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO; " | $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_STUDENTI_GSUITE}" - --csv --empty-null
                 done
 
                 # Normalizza dati (rimuove @$DOMAIN)"
-                $SQLITE_CMD studenti.db "UPDATE ${TABELLA_STUDENTI_GSUITE} 
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE ${TABELLA_STUDENTI_GSUITE} 
                 SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)
                 WHERE \"group\" LIKE '%@%';"
                 ;;
@@ -178,7 +178,7 @@ main() {
                 echo "Visualizza studenti nei gruppi GSuite che non sono in elenco Argo"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
-                  $SQLITE_CMD studenti.db --csv --header "SELECT c.\"group\", c.id, c.name, c.email $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
+                  $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "SELECT c.\"group\", c.id, c.name, c.email $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
                   AND c.\"group\" = '$nome_gruppo'
                   ORDER BY c.email;"
                 done
@@ -209,14 +209,14 @@ main() {
             8)
                 echo "Visualizza studenti su GSuite non in elenco studenti"
 
-                $SQLITE_CMD studenti.db --csv --header "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
                 ;;
             9)
                 mkdir -p "$EXPORT_DIR_DATE"
 
                 echo "Esporta studenti su GSuite non presenti su Argo"
 
-                $SQLITE_CMD studenti.db --csv --header "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO" > "${EXPORT_DIR_DATE}/studentiSuGSuiteNonInArgo_${CURRENT_DATE}.csv"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO" > "${EXPORT_DIR_DATE}/studentiSuGSuiteNonInArgo_${CURRENT_DATE}.csv"
                 ;;
             10)
                 echo "Sospendi studenti su GSuite non presenti su Argo"
@@ -231,13 +231,13 @@ main() {
             13)
                 echo "Visualizza studenti su Argo con mail non presente su GSuite"
 
-                $SQLITE_CMD -header -csv studenti.db "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
                 "
                 ;;
             14)
                 echo "Visualizza studenti diurno con OU errata"
 
-                $SQLITE_CMD -csv -header studenti.db "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
                 ;;
             15)
                 echo "Sposta studenti diurno con OU errata su OU 'Diurno'"
@@ -247,7 +247,7 @@ main() {
             16)
                 echo "Visualizza studenti serale con OU errata"
 
-                $SQLITE_CMD -header -csv studenti.db "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             17)
                 echo "Sposta studenti serale con OU errata su OU 'Serale'"
