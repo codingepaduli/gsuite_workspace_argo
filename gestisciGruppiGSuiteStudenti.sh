@@ -137,6 +137,9 @@ show_menu() {
     echo "16. Visualizza studenti serale con OU errata"
     echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
 
+    echo "18. Sospendi tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
+    echo "19. ELIMINA tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
+    
     echo "20. Esci"
 }
 
@@ -151,7 +154,7 @@ main() {
                 echo "Creo la tabella ${TABELLA_STUDENTI_GSUITE} ..."
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '${TABELLA_STUDENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO " --query "CREATE TABLE IF NOT EXISTS '${TABELLA_STUDENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
                 ;;
             2)
                 echo "Inporta in tabella i gruppi GSuite"
@@ -250,6 +253,16 @@ main() {
                 echo "Sposta studenti serale con OU errata su OU 'Serale'"
 
                 $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "$QUERY_STUDENTI_SERALE_OU_ERRATA"
+                ;;
+            18)
+                echo "18. Sospendi tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
+
+                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "select c.email FROM ${TABELLA_STUDENTI_GSUITE} c ORDER BY c.\"group\";"
+                ;;
+            19)
+                echo "19. ELIMINA tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
+
+                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select c.email FROM ${TABELLA_STUDENTI_GSUITE} c ORDER BY c.\"group\""
                 ;;
             20)
                 echo "Arrivederci!"
