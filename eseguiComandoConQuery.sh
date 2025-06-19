@@ -6,6 +6,7 @@ source "./_environment.sh"
 command=""
 nome_gruppo=""
 query=""
+dry_run="$DRY_RUN"
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -60,12 +61,20 @@ while [[ $# -gt 0 ]]; do
 done
 
 : '
-echo "Debug info:"
-echo "  Comando: $command"
-echo "  Gruppo: $nome_gruppo"
-echo "  Query: $query"
-echo "  Tutti i parametri: $*"
+  echo "  Tutti i parametri: $*"
+  # h
 '
+
+if [ -n "$dry_run" ]; then
+  echo "Debug info:"
+  echo "  Comando: $command"
+  echo "  Gruppo: $nome_gruppo"
+  echo "  Query: $query"
+  echo "  running with --dry-run: $dry_run"
+  echo "running query: $query"
+  $SQLITE_CMD -csv studenti.db "BEGIN TRANSACTION; $query ROLLBACK; " | sed 's/"//g'
+  exit 1
+fi
 
 # mkdir -p "$EXPORT_DIR_DATE"
 # $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$nome_gruppo' ('group' VARCHAR(200), name  VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200), type VARCHAR(200), status VARCHAR(200));"
@@ -148,6 +157,9 @@ case $command in
         while IFS="," read -r email; do
             $GAM_CMD update org "$nome_gruppo" add user "$email"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "executeQuery")
+        $SQLITE_CMD studenti.db --csv --header "$query" | sed 's/"//g'
         ;;
     *)
         echo "Nothings"
