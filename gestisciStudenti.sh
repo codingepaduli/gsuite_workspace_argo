@@ -13,7 +13,8 @@ FILE_CSV_STUDENTI_SERALE="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI_SE
 show_menu() {
     echo "Gestione tabella Studenti"
     echo "-------------"
-    echo "1. Importa in tabella studenti da CSV"
+    echo "0. Cancello e ricreo la tabella studenti DIURNO"
+    echo "1. Importo e normalizzo i dati del DIURNO"
     echo "2. Visualizza dati in tabella"
     echo "3. Visualizza nuovi studenti"
     echo "4. Creo la mail ai nuovi studenti"
@@ -24,9 +25,9 @@ show_menu() {
     echo "9. Cancella studenti"
     echo "10. "
     echo "11. "
-    echo "12. Importa in tabella studenti del SERALE da CSV"
-    echo "13. "
-    echo "14. "
+    echo "12. Cancello e ricreo la tabella studenti SERALE"
+    echo "13. Importo e normalizzo i dati del SERALE"
+    echo "14. Copio i dati del SERALE nella tabella del DIURNO, unificando la gestione"
     echo "15. "
     echo "16. "
     echo "20. Esci"
@@ -39,24 +40,29 @@ main() {
         read -p "Scegli un'opzione (1-20): " choice
         
         case $choice in
-            1)
-                echo "Cancello, ricreo e normalizzo la tabella studenti $TABELLA_STUDENTI importando il file CSV ..."
+            0)
+                echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI ..."
                 
                 # Cancello la tabella
-                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200), nome VARCHAR(200), cod_fisc VARCHAR(200), cl NUMERIC, sez VARCHAR(200), e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan VARCHAR(200), ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il VARCHAR(200));"
-
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il TEXT);"
+                ;;
+            1)
+                echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
                 # Importa CSV dati
-                $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI" "$FILE_CSV_STUDENTI" --csv --empty-null
+                # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI" "$FILE_CSV_STUDENTI" --csv --empty-null
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
 
                 # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI 
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
                 SET cod_fisc = TRIM(UPPER(cod_fisc)),
                     email_gsuite = TRIM(LOWER(email_gsuite)),
                     cognome = TRIM(UPPER(cognome)),
-                    nome = TRIM(UPPER(nome));"
+                    nome = TRIM(UPPER(nome)),
+                    datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
                 ;;
             2)
                 echo "Visualizza dati in tabella ..."
@@ -75,7 +81,7 @@ main() {
                 echo "Creo la mail ai nuovi studenti ..."
                 
                 # creo le mail del diurno
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
                     SET email_gsuite = 
                     CASE
                         WHEN cl = 1 THEN 's.' 
@@ -83,6 +89,10 @@ main() {
                         || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
                         || '.' || matricola || '@$DOMAIN'
                         WHEN cl = 2 THEN 's.' 
+                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+                        || '.' || matricola || '@$DOMAIN'
+                        WHEN cl = 3 THEN 's.' 
                         || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
                         || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
                         || '@$DOMAIN'
@@ -97,7 +107,7 @@ main() {
                     AND matricola IS NOT NULL;"
 
                 # creo le mail del serale
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
                     SET email_gsuite = 's.' 
                         || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
                         || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
@@ -156,28 +166,36 @@ main() {
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
             12)
-                echo "Cancello, ricreo e normalizzo la tabella studenti $TABELLA_STUDENTI_SERALE importando il file CSV ..."
+                echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
                 
                 # Cancello la tabella
-                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_STUDENTI_SERALE';"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI_SERALE';"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200), nome VARCHAR(200), cod_fisc VARCHAR(200), cl NUMERIC, sez VARCHAR(200), e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan VARCHAR(200), ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il VARCHAR(200));"
-
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il TEXT);"
+                ;;
+            13)
+                echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI_SERALE ..."
                 # Importa CSV dati
-                $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI_SERALE" "$FILE_CSV_STUDENTI_SERALE" --csv --empty-null
+                # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI_SERALE" "$FILE_CSV_STUDENTI_SERALE" --csv --empty-null
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
                 # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_STUDENTI_SERALE 
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
                 SET cod_fisc = TRIM(UPPER(cod_fisc)),
                     email_gsuite = TRIM(LOWER(email_gsuite)),
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)),
-                    sez = TRIM(sez) || '_sirio';"
+                    sez = TRIM(sez) || '_sirio',
+                    datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
+                ;;
+            14)
+                echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
                 
                 # Copio i dati del serale nella tabella del diurno
                 # unificando i dati ed il processo di gestione
-                $SQLITE_CMD studenti.db "INSERT INTO $TABELLA_STUDENTI (cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il)
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI (cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il)
                   SELECT cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il
                   FROM $TABELLA_STUDENTI_SERALE AS ss
                   WHERE ss.cod_fisc NOT IN (
