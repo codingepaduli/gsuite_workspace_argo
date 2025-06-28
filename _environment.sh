@@ -35,11 +35,6 @@ WORDPRESS_ACCESS_TOKEN=""
 # Password teachers for gsuite and domain
 PASSWORD_CLASSROOM=""
 
-# Data corrente (formato yyyy-mm-dd)
-CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
-
-# Cartella di esportazione
-EXPORT_DIR="$BASE_DIR/export"
-
-# Sotto-cartella di esportazione con data
-EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
+# Dry-Run mode
+DRY_RUN="yes
+"

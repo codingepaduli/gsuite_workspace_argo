@@ -9,9 +9,21 @@
 # The name of the working tables are here to avoid
 # to update each script every time
 
+BASE_DIR="${MY_SVN_REPO_FOLDER}2/gsuite_workspace_argo"
+GAM_CMD="$HOME/Sviluppo/GAM/gam7/gam"
+
+# Data corrente (formato yyyy-mm-dd)
+CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
+
+# Cartella di esportazione
+EXPORT_DIR="$BASE_DIR/export"
+
+# Sotto-cartella di esportazione con data
+EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
+
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2025_04_02"
-TABELLA_STUDENTI_SERALE="studenti_argo_2025_04_02_sirio" # temporanea
+TABELLA_STUDENTI="studenti_argo_2025_06_22"
+TABELLA_STUDENTI_SERALE="studenti_argo_2025_06_22_sirio" # temporanea
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="sezioni_2024_25"
