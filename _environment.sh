@@ -40,8 +40,8 @@ DRY_RUN="yes"
 #########################################
 
 # Tabella studenti versionata alla data indicata
-TABELLA_STUDENTI="studenti_argo_2025_06_22"
-TABELLA_STUDENTI_SERALE="studenti_argo_2025_06_22_sirio" # temporanea
+TABELLA_STUDENTI="" # studenti_argo_2025_06_22
+TABELLA_STUDENTI_SERALE="" # temporanea studenti_argo_2025_06_22_sirio
 
 # Tabella sezioni per anno
 TABELLA_SEZIONI="" # sezioni_2024_25
