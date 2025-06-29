@@ -15,7 +15,10 @@ Welcome to **gSuite Workspace Argo**! This collection of script is designed to h
 
 ## Features
 
-- **Export data**: How to export data from Argo, step by step;
+- **Export data from Argo**: Export data from Argo;
+- **Import/Export data from gSuite**: Import/Export data from gsuite;
+- **Import/Export data from wordpress**: Import/Export data from Wordpress;
+- **Sync data on local sqlite database**: the sqlite database will be the source;
 - **Students Management**: Create, edit, and delete student's data with the script ``gestisciStudenti.sh``;
 - **Section Management**: Create, edit, and delete section's data with the script ``gestisciStudenti.sh``;
 - **Employees Management**: Create, edit, and delete employees's data with the script ``gestisciPersonale.sh``;
@@ -94,6 +97,16 @@ DOMAIN="isis.it"                                            # My google domain n
 TABELLA_STUDENTI="studenti_argo_2025_06_22"                 # student's table
 TABELLA_STUDENTI_SERALE="studenti_argo_2025_06_22_sirio"    # student's table for evening courses
 ```
+
+### Create the database
+
+You just need to create the database with:
+
+```bash
+sqlite3 studenti.db
+```
+
+Check the file ``studenti.db`` will be created, or execute a ``CREATE TABLE`` command in order the file will be created.
 
 ### Export student's data
 
