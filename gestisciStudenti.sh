@@ -3,6 +3,7 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
+source "./_maps.sh"
 
 # File CSV 
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
@@ -35,6 +36,14 @@ show_menu() {
 
 # Funzione principale
 main() {
+
+    checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE"
+
+    if [ $? -ne 0 ]; then
+        echo "Errore: Definisci le variabili nel file di configurazione." >&2
+        exit 1  # Termina lo script con codice di stato 1
+    fi
+
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " choice
