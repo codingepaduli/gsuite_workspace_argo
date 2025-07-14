@@ -3,10 +3,13 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
+source "./_maps.sh"
 
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione tabella sezioni"
+    echo "Gestione tabella sezioni $TABELLA_SEZIONI"
+    echo "-------------"
+    echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
     echo "1. Crea tabella sezioni a partire dai dati degli studenti"
     echo "2. Crea dati delle sezioni"
@@ -18,6 +21,14 @@ show_menu() {
 
 # Funzione principale
 main() {
+
+    checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"
+
+    if [ $? -ne 0 ]; then
+        echo "Errore: Definisci le variabili nel file di configurazione." >&2
+        exit 1  # Termina lo script con codice di stato 1
+    fi
+    
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " choice
@@ -27,17 +38,14 @@ main() {
                 echo "Crea tabella sezioni a partire dai dati degli studenti ..."
                 
                 # Cancello la tabella
-                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_SEZIONI';"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_SEZIONI';"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' ( cl NUMERIC, letter VARCHAR(200), addr_argo VARCHAR(200), sez_argo NUMERIC, addr_gsuite VARCHAR(200), sez_gsuite VARCHAR(200), sezione_gsuite VARCHAR(200));"
-
-                # Importa CSV dati
-                # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_SEZIONI" "$FILE_CSV_STUDENTI" --csv --empty-null
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' ( cl NUMERIC, letter VARCHAR(200), addr_argo VARCHAR(200), sez_argo NUMERIC, addr_gsuite VARCHAR(200), sez_gsuite VARCHAR(200), sezione_gsuite VARCHAR(200));"
                 ;;
             2)
                 echo "Crea dati delle sezioni ..."
-                $SQLITE_CMD studenti.db "INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
                 SELECT cl, sez_argo, letter, addr_argo, addr_gsuite, 
                   letter || '_' || addr_gsuite AS sez_gsuite,
                   cl || letter || '_' || addr_gsuite AS sezione_gsuite
