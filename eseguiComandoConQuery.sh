@@ -2,6 +2,7 @@
 
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
+source "./_environment_working_tables.sh"
 
 command=""
 nome_gruppo=""

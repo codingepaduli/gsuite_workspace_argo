@@ -14,6 +14,8 @@ FILE_CSV_STUDENTI_SERALE="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI_SE
 show_menu() {
     echo "Gestione tabella Studenti"
     echo "-------------"
+    echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
+    echo "-------------"
     echo "0. Cancello e ricreo la tabella studenti DIURNO"
     echo "1. Importo e normalizzo i dati del DIURNO"
     echo "2. Visualizza dati in tabella"
