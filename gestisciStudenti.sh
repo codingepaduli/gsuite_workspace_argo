@@ -169,12 +169,12 @@ main() {
             8)
                 echo "Sospendi account studenti ..."
 
-                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
+                $RUN_CMD_WITH_QUERY --command suspendUsers --group " /* NO */ " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
             9)
                 echo "Cancella account studenti ..."
 
-                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
+                $RUN_CMD_WITH_QUERY --command deleteUsers --group " /* NO */ " --query "select d.email_gsuite from $TABELLA_STUDENTI d WHERE d.email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE' ORDER BY cl, sez, cognome, nome;"
                 ;;
             12)
                 echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
