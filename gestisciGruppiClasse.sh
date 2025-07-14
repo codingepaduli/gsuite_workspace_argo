@@ -3,6 +3,7 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
+source "./_maps.sh"
 
 #SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
 #SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
@@ -13,6 +14,8 @@ SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi su GSuite"
+    echo "-------------"
+    echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
     echo "1. Crea le classi su GSUITE (solo classi, senza studenti)"
     echo "2. Cancella le classi da GSUITE"
@@ -25,6 +28,14 @@ show_menu() {
 
 # Funzione principale
 main() {
+
+    checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"
+
+    if [ $? -ne 0 ]; then
+        echo "Errore: Definisci le variabili nel file di configurazione." >&2
+        exit 1  # Termina lo script con codice di stato 1
+    fi
+
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " choice
@@ -35,7 +46,7 @@ main() {
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo classe $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " NO "
+                    $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " /* NO */ "
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             2)
@@ -43,7 +54,7 @@ main() {
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Cancello classe $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " NO "
+                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " /* NO */ "
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             3)
