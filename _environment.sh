@@ -5,6 +5,10 @@
 # You can override the environment variables in file _environment_custom.sh
 # so each environment has its variables
 
+#########################################
+# Path of command line executables      #
+#########################################
+
 # Cartella di lavoro
 BASE_DIR="$MY_SVN_REPO_FOLDER/gsuite_workspace_argo"
 
@@ -20,6 +24,10 @@ GAM_CMD="$HOME/bin/gam/gam"
 # Script to run
 RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
 
+#########################################
+#           Config data                 #
+#########################################
+
 # Dominio DOT isis.it
 DOMAIN="isis.it"
 
@@ -29,11 +37,27 @@ WORDPRESS_URL="https://www.$DOMAIN/"
 # Wordpress TOKEN
 WORDPRESS_ACCESS_TOKEN=""
 
-# Password teachers for gsuite and domain
+# Password for teachers and employees
 PASSWORD_CLASSROOM=""
 
 # Dry-Run mode
 DRY_RUN="yes"
+
+# Show Dry-Run mode YES/NO in menu
+dryRunFlag=$( [ -n "$DRY_RUN" ] && echo "YES" || echo "NO" )
+
+# Current date (format yyyy-mm-dd)
+CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
+
+#########################################
+#           Export folders              #
+#########################################
+
+# Cartella di esportazione
+EXPORT_DIR="$BASE_DIR/export"
+
+# Sotto-cartella di esportazione con data
+EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
 
 #########################################
 # Tables' name (for version management) #
