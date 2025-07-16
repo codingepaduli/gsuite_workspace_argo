@@ -74,6 +74,12 @@ main() {
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)),
                     datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
+                
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
+                SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
+                WHERE datar is NOT NULL 
+                    AND datar != '';"
                 ;;
             2)
                 echo "Visualizza dati in tabella ..."
@@ -212,6 +218,12 @@ main() {
                     nome = TRIM(UPPER(nome)),
                     sez = TRIM(sez) || '_sirio',
                     datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
+
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
+                SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
+                WHERE datar is NOT NULL 
+                    AND datar != '';"
                 ;;
             14)
                 echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
