@@ -70,7 +70,8 @@ main() {
                                     ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                     AND sa.email_gsuite IS NOT NULL
-                                  ORDER BY sa.email_gsuite"
+                                    AND sa.email_gsuite != ''
+                                  ORDER BY sa.email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
@@ -86,19 +87,13 @@ main() {
                 while IFS="," read -r sezione_gsuite; do
                     gruppi_classe[$sezione_gsuite]="
                                 SELECT sa.email_gsuite
-                                  FROM $TABELLA_STUDENTI sa 
-                                    INNER JOIN $TABELLA_SEZIONI sz 
-                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND sa.email_gsuite IS NOT NULL
-                                UNION
-                                  SELECT sa.email_gsuite
-                                  FROM $TABELLA_STUDENTI_SERALE sa 
-                                    INNER JOIN $TABELLA_SEZIONI sz 
-                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND sa.email_gsuite IS NOT NULL
-                                ORDER BY sa.email_gsuite"
+                                FROM $TABELLA_STUDENTI sa 
+                                  INNER JOIN $TABELLA_SEZIONI sz 
+                                  ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
+                                WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                                  AND sa.email_gsuite IS NOT NULL
+                                  AND sa.email_gsuite != ''
+                                ORDER BY sa.email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
@@ -114,16 +109,9 @@ main() {
                 $SQLITE_CMD -header -csv studenti.db "
                 SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, COUNT(*) as numero_alunni 
                 FROM $TABELLA_STUDENTI sa 
-                INNER JOIN $TABELLA_SEZIONI s 
-                ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                  INNER JOIN $TABELLA_SEZIONI s 
+                  ON sa.sez = s.sez_argo AND sa.cl =s.cl 
                 GROUP BY s.sez_argo, s.cl
-                UNION
-                SELECT ss.cl AS cl, ss.sez_argo AS sez_argo, ss.sezione_gsuite AS sez_gsuite, COUNT(*) as numero_alunni 
-                FROM $TABELLA_STUDENTI_SERALE sas
-                INNER JOIN $TABELLA_SEZIONI ss 
-                ON sas.sez = ss.sez_argo AND sas.cl =ss.cl 
-                GROUP BY ss.sez_argo, ss.cl
-
                 ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
                 ;;
             6)
@@ -134,14 +122,9 @@ main() {
                 SELECT s.sezione_gsuite AS classe, s.cl AS anno, s.letter AS sezione, s.addr_gsuite AS indirizzo,
                 sa.cognome, sa.nome, LOWER(sa.email_gsuite) AS email
                 FROM $TABELLA_STUDENTI sa 
-                INNER JOIN $TABELLA_SEZIONI s 
-                ON sa.sez = s.sez_argo AND sa.cl =s.cl 
-                UNION
-                SELECT ss.sezione_gsuite AS classe, ss.cl AS anno, ss.letter AS sezione, ss.addr_gsuite AS indirizzo,
-                sas.cognome, sas.nome, LOWER(sas.email_gsuite) AS email
-                FROM $TABELLA_STUDENTI_SERALE sas
-                INNER JOIN $TABELLA_SEZIONI ss 
-                ON sas.sez = ss.sez_argo AND sas.cl =ss.cl 
+                  INNER JOIN $TABELLA_SEZIONI s 
+                  ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                  ORDER BY s.sezione_gsuite, sa.cognome, sa.nome;
                 " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
             10)
