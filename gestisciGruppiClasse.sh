@@ -23,6 +23,7 @@ show_menu() {
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
     echo "6. Esporta, un unico file CSV con tutte le classi"
+    echo "7. Gestisci differenza tra tabella prima e dopo"
     echo "20. Esci"
 }
 
@@ -71,6 +72,7 @@ main() {
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                     AND sa.email_gsuite IS NOT NULL
                                     AND sa.email_gsuite != ''
+                                    AND (sa.datar IS NULL OR sa.datar = '')
                                   ORDER BY sa.email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
@@ -93,6 +95,7 @@ main() {
                                 WHERE sz.sezione_gsuite = '$sezione_gsuite'
                                   AND sa.email_gsuite IS NOT NULL
                                   AND sa.email_gsuite != ''
+                                  AND (sa.datar IS NULL OR sa.datar = '')
                                 ORDER BY sa.email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
@@ -111,6 +114,10 @@ main() {
                 FROM $TABELLA_STUDENTI sa 
                   INNER JOIN $TABELLA_SEZIONI s 
                   ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                  AND sa.email_gsuite IS NOT NULL
+                  AND sa.email_gsuite != ''
+                  AND (sa.datar IS NULL OR sa.datar = '')
                 GROUP BY s.sez_argo, s.cl
                 ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
                 ;;
@@ -124,11 +131,14 @@ main() {
                 FROM $TABELLA_STUDENTI sa 
                   INNER JOIN $TABELLA_SEZIONI s 
                   ON sa.sez = s.sez_argo AND sa.cl =s.cl 
+                WHERE sa.email_gsuite IS NOT NULL
+                  AND sa.email_gsuite != ''
+                  AND (sa.datar IS NULL OR sa.datar = '')
                   ORDER BY s.sezione_gsuite, sa.cognome, sa.nome;
                 " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
-            10)
-                echo "Da implementare ?..."
+            7)
+                echo "Gestisci differenza ..."
 
                 # $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "select d.email from $TABELLA_CSV d WHERE d.email IS NOT NULL ORDER BY d.name;"
                 ;;
