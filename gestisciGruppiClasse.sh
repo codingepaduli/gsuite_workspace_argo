@@ -23,7 +23,8 @@ show_menu() {
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
     echo "6. Esporta, un unico file CSV con tutte le classi"
-    echo "7. Gestisci differenza tra tabella prima e dopo"
+    echo "7. Toglie i ritirati dalle classi e effettua i cambi di classe"
+    echo "8. Aggiungi nuovi studenti (vedi periodo) alle classi"
     echo "20. Esci"
 }
 
@@ -114,8 +115,7 @@ main() {
                 FROM $TABELLA_STUDENTI sa 
                   INNER JOIN $TABELLA_SEZIONI s 
                   ON sa.sez = s.sez_argo AND sa.cl =s.cl 
-                WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                  AND sa.email_gsuite IS NOT NULL
+                WHERE sa.email_gsuite IS NOT NULL
                   AND sa.email_gsuite != ''
                   AND (sa.datar IS NULL OR sa.datar = '')
                 GROUP BY s.sez_argo, s.cl
@@ -138,10 +138,12 @@ main() {
                 " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
             7)
-                echo "Gestisci differenza tra tabella prima e dopo ..."
+                checkAllVarsNotEmpty "TABELLA_STUDENTI_DOPO"
+
+                echo "Toglie i ritirati dalle classi e effettua i cambi di classe, confrontando le tabelle $TABELLA_STUDENTI e $TABELLA_STUDENTI_DOPO ..."
 
                 local QUERY_DIFF="
-                  
+                  -- SELECT sp.email_gsuite, szp.sezione_gsuite 
                   --, sp.cl, sp.sez, sp.datar, sd.email_gsuite, sd.cl, sd.sez, szd.sezione_gsuite, sd.datar
                   FROM $TABELLA_STUDENTI sp
                     INNER JOIN $TABELLA_STUDENTI_DOPO sd 
@@ -175,6 +177,30 @@ main() {
 
                 done < <($SQLITE_CMD -csv studenti.db "
                   SELECT sp.email_gsuite, szd.sezione_gsuite $QUERY_DIFF
+                  " | sed "s/\"//g")
+                ;;
+            8)
+                checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+                
+                echo "8. Aggiungi nuovi studenti (aggiunti tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A) alle classi"
+
+                local QUERY_DIFF2="
+                  -- SELECT s.email_gsuite, sz.sezione_gsuite, s.aggiunto_il, s.datar
+                  FROM $TABELLA_STUDENTI s
+                    INNER JOIN $TABELLA_SEZIONI sz
+                    ON s.sez = sz.sez_argo AND s.cl = sz.cl
+                  WHERE s.email_gsuite IS NOT NULL 
+                    AND s.email_gsuite != ''  
+                    AND (s.datar IS NULL OR  s.datar = '')
+                    AND s.aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    ORDER BY sz.sezione_gsuite, s.email_gsuite;
+                "
+
+                while IFS="," read -r email_gsuite sezione_gsuite; do
+                    echo "inserisco $email_gsuite in classe $sezione_gsuite"
+                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$sezione_gsuite" --query "SELECT '$email_gsuite' as email_gsuite;"
+                done < <($SQLITE_CMD -csv studenti.db "
+                  SELECT s.email_gsuite, sz.sezione_gsuite $QUERY_DIFF2
                   " | sed "s/\"//g")
                 ;;
             20)
