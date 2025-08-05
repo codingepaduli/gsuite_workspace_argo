@@ -46,6 +46,9 @@ DRY_RUN="yes"
 # Show Dry-Run mode YES/NO in menu
 dryRunFlag=$( [ -n "$DRY_RUN" ] && echo "YES" || echo "NO" )
 
+# Log Level
+LOG_LEVEL="DEBUG"
+
 # Current date (format yyyy-mm-dd)
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 
@@ -67,6 +70,9 @@ EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
 TABELLA_STUDENTI="" # studenti_argo_2025_06_22
 TABELLA_STUDENTI_SERALE="" # temporanea studenti_argo_2025_06_22_sirio
 
+# Usata nella gestione classi per rilevare le differenze
+TABELLA_STUDENTI_PRECEDENTE="" # studenti_argo_2025_06_01
+
 # Tabella sezioni per anno
 TABELLA_SEZIONI="" # sezioni_2024_25
 
@@ -76,6 +82,10 @@ TABELLA_GRUPPI="" # gruppi_2024_25
 # All classes and addresses enabled
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') "
+
+# Per operazioni in un determinato periodo
+PERIODO_STUDENTI_DA='2025-07-15'
+PERIODO_STUDENTI_A='2025-07-15'
 
 # Tabella personale
 TABELLA_PERSONALE="" # personale_argo_2025_01_22
