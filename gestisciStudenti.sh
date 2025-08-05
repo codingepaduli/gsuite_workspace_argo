@@ -32,7 +32,7 @@ show_menu() {
     echo "13. Importo e normalizzo i dati del SERALE"
     echo "14. Copio i dati del SERALE nella tabella del DIURNO, unificando la gestione"
     echo "15. "
-    echo "16. "
+    echo "16. Controlla dati (codice fiscale ed email gSuite duplicate)"
     echo "20. Esci"
 }
 
@@ -238,6 +238,36 @@ main() {
                   );"
 
                 ;;
+            16)
+                echo "Controllo i dati"
+                
+                echo "codici fiscali duplicati:"
+                
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+                  SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
+                  FROM $TABELLA_STUDENTI
+                  WHERE cod_fisc IN (
+                      SELECT cod_fisc
+                      FROM $TABELLA_STUDENTI
+                      GROUP BY cod_fisc
+                      HAVING COUNT(*) > 1
+                  );"
+
+                echo "email GSuite duplicate:"
+                
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+                  SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
+                  FROM $TABELLA_STUDENTI
+                  WHERE email_gsuite IN (
+                      SELECT email_gsuite
+                      FROM $TABELLA_STUDENTI
+                      WHERE email_gsuite IS NOT NULL
+                        AND  email_gsuite != ''
+                      GROUP BY email_gsuite
+                      HAVING COUNT(*) > 1
+                  );"
+                ;;
+
             20)
                 echo "Arrivederci!"
                 exit 0
