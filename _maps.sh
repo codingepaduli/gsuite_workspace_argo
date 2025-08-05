@@ -71,10 +71,13 @@ function log::level_is_active {
   check_level=$1
 
   declare -A log_levels=(
-    [DEBUG]=1
-    [INFO]=2
-    [WARN]=3
-    [ERROR]=4
+    [TRACE]=1
+    [DEBUG]=2
+    [CONFIG]=3
+    [INFO]=4
+    [WARN]=5
+    [ERROR]=6
+    [OFF]=100
   )
 
   check_level="${log_levels["$check_level"]}"
@@ -88,16 +91,24 @@ function log::_write_log {
   log_level=$1
   shift
 
-  if log::level_is_active "$log_level"; then
-    timestamp=$(date +'%y.%m.%d %H:%M:%S')
-    file="${BASH_SOURCE[2]##*/}"
-    function_name="${FUNCNAME[2]}"
-    >&2 printf '%s [%s] [%s - %s]: %s\n'  "$log_level" "$timestamp" "$file" "$function_name" "${*}"
+  timestamp=$(date +'%y.%m.%d %H:%M:%S')
+  file="${BASH_SOURCE[2]##*/}"
+  function_name="${FUNCNAME[2]}"
+
+  if log::level_is_active "$log_level" && [[ " ${LOG_OUTPUT[*]} " =~ " console " ]]; then
+    printf '%s [%s] [%s - %s]: %s\n'  "$log_level" "$timestamp" "$file" "$function_name" "${*}" >&2
+    if [ "$log_level" == "ERROR" ]; then
+      log::printStackTrace >&2
+    fi
   fi
 
-  if [ "$log_level" == "ERROR" ]; then
-      log::printStackTrace
+  if log::level_is_active "$log_level" && [[ " ${LOG_OUTPUT[*]} " =~ " file " ]]; then
+    printf '%s [%s] [%s - %s]: %s\n'  "$log_level" "$timestamp" "$file" "$function_name" "${*}" >> "$LOG_FILE"
+    if [ "$log_level" == "ERROR" ]; then
+      log::printStackTrace >> "$LOG_FILE"
+    fi
   fi
+
 }
 
 log::printStackTrace() {
@@ -108,7 +119,7 @@ log::printStackTrace() {
         local source_file="${BASH_SOURCE[$stack_id]}"
         local function="${FUNCNAME[$stack_id]}"
         local line="${BASH_LINENO[$(( stack_id - 1 ))]}"
-        >&2 printf '\t%s:%s:%s\n' "$source_file" "$function" "$line"
+        printf '\t%s:%s:%s\n' "$source_file" "$function" "$line"
       fi
     done
 }
@@ -150,6 +161,6 @@ LOG_LEVEL="DEBUG"
 
 set -eEuo pipefail
 
-trap 'handle_error "$BASH_COMMAND"' ERR
+trap 'log::_write_log "ERROR" "$BASH_COMMAND"' ERR
 
 # trap -p show the trap enabled
