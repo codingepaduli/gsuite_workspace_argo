@@ -3,11 +3,11 @@
 ## Table of Contents
 
 1. [Introduction](#introduction)
-4. [Features](#features)
-2. [Installation](#installation)
-5. [Troubleshooting](#troubleshooting)
-6. [FAQs](#faqs)
-7. [Contact Support](#contact-support)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Troubleshooting](#troubleshooting)
+5. [FAQs](#faqs)
+6. [Contact Support](#contact-support)
 
 ## Introduction
 
@@ -168,7 +168,14 @@ Prepare CSV file:
 
 ### Students Management
 
-After exporting student's data, you can run the script ``./gestisciStudenti.sh`` to manage students and the script ``./gestisciSezioni`` to manage the sections.
+After exporting student's data from Argo, you can run the script:
+
+- ``./gestisciStudenti.sh`` to manage students;
+- ``./gestisciSezioni`` to manage students'class;
+- ``./gestisciGruppiGSuiteStudenti.sh`` to manage groups on GSuite;
+- ``./gestisciGruppiClasse.sh`` to manage students'class on GSuite.
+
+Some operations needs you set the variables required for the operation. Check you set them in case of error.
 
 ## Troubleshooting
 
