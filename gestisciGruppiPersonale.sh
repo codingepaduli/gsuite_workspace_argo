@@ -198,7 +198,7 @@ show_menu() {
 main() {
     while true; do
         show_menu
-        read -p "Scegli un'opzione (1-20): " choice
+        read -p "Scegli un'opzione (1-20): " -r choice
         
         case $choice in
             10)
