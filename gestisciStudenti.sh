@@ -9,7 +9,6 @@ source "./_maps.sh"
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
 FILE_CSV_STUDENTI_SERALE="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI_SERALE.csv"
 
-
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione tabella Studenti"
@@ -78,8 +77,7 @@ main() {
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
                 SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
-                WHERE datar is NOT NULL 
-                    AND datar != '';"
+                WHERE datar is NOT NULL AND datar != '';"
                 ;;
             2)
                 echo "Visualizza dati in tabella ..."
@@ -282,6 +280,21 @@ main() {
         read -p "Premi Invio per continuare..." _
     done
 }
+
+showConfig() {
+  log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+  log::_write_log "CONFIG" "-----------------------------------------"
+  log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+  log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
+  log::_write_log "CONFIG" "Tabella studenti serale: $TABELLA_STUDENTI_SERALE"
+  log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+  log::_write_log "CONFIG" "File CVS studenti diurno: $FILE_CSV_STUDENTI"
+  log::_write_log "CONFIG" "File CVS studenti serale: $FILE_CSV_STUDENTI_SERALE"
+  log::_write_log "CONFIG" "-----------------------------------------"
+}
+
+# Show config vars
+showConfig
 
 # Avvia la funzione principale
 main
