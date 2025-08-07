@@ -157,7 +157,7 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '${TABELLA_STUDENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
                 ;;
             2)
-                echo "Inporta in tabella i gruppi GSuite"
+                echo "Importa in tabella i gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                     echo "Salvo gruppo GSuite $nome_gruppo in tabella"
@@ -283,6 +283,22 @@ main() {
     done
 }
 
+showConfig() {
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
+    log::_write_log "CONFIG" "Tabella sezioni: $TABELLA_SEZIONI"
+    log::_write_log "CONFIG" "Tabella studenti gSuite: $TABELLA_STUDENTI_GSUITE"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
+}
+
+# Show config vars
+showConfig
+
 # Avvia la funzione principale
 main
-
