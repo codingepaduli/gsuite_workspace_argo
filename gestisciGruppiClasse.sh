@@ -214,6 +214,25 @@ main() {
     done
 }
 
+showConfig() {
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
+    log::_write_log "CONFIG" "Tabella studenti precedente per confronto: $TABELLA_STUDENTI_PRECEDENTE"
+    log::_write_log "CONFIG" "Tabella sezioni: $TABELLA_SEZIONI"
+    log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_STUDENTI_DA" 
+    log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_STUDENTI_A"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
+}
+
+# Show config vars
+showConfig
+
 # Avvia la funzione principale
 main
 
