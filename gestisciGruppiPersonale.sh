@@ -280,7 +280,7 @@ main() {
         esac
         
         # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." _
+        read -p "Premi Invio per continuare..." -r _
     done
 }
 
