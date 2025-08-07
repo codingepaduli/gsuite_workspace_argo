@@ -121,7 +121,7 @@ show_menu() {
     echo "Gestione gruppi di GSuite su tabella ${TABELLA_STUDENTI_GSUITE}"
     echo "-------------"
     echo "1. Creo la tabella ${TABELLA_STUDENTI_GSUITE}"
-    echo "2. Inporta in tabella i gruppi GSuite"
+    echo "2. Importa in tabella i gruppi GSuite"
     echo "3. Importa tutti gli studenti da singolo file CSV nella tabella"
     echo "4. Visualizza studenti nei gruppi GSuite che non sono in Argo"
     echo "5. Rimuovi dai gruppi GSuite gli studenti che non sono in Argo"
@@ -237,22 +237,26 @@ main() {
             14)
                 echo "Visualizza studenti diurno con OU errata"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
+                # FIXME students are only in table "TABELLA_STUDENTI" 
+                # $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
                 ;;
             15)
                 echo "Sposta studenti diurno con OU errata su OU 'Diurno'"
 
-                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Diurno" --query "$QUERY_STUDENTI_DIURNO_OU_ERRATA"
+                # FIXME students are only in table "TABELLA_STUDENTI" 
+                # $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Diurno" --query "$QUERY_STUDENTI_DIURNO_OU_ERRATA"
                 ;;
             16)
                 echo "Visualizza studenti serale con OU errata"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
+                # FIXME students are only in table "TABELLA_STUDENTI" 
+                # $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             17)
                 echo "Sposta studenti serale con OU errata su OU 'Serale'"
 
-                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "$QUERY_STUDENTI_SERALE_OU_ERRATA"
+                # FIXME students are only in table "TABELLA_STUDENTI" 
+                # $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "$QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             18)
                 echo "18. Sospendi tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
