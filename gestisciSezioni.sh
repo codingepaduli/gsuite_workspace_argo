@@ -87,7 +87,7 @@ main() {
         esac
         
         # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." dummy
+        read -p "Premi Invio per continuare..." _
     done
 }
 
