@@ -145,6 +145,12 @@ show_menu() {
 
 # Funzione principale
 main() {
+
+    if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_GSUITE" "TABELLA_SEZIONI"; then
+        echo "Errore: Definisci le variabili nel file di configurazione." >&2
+        exit 1  # Termina lo script con codice di stato 1
+    fi
+
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " -r choice

@@ -31,9 +31,7 @@ show_menu() {
 # Funzione principale
 main() {
 
-    checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"
-
-    if [ $? -ne 0 ]; then
+    if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"; then
         echo "Errore: Definisci le variabili nel file di configurazione." >&2
         exit 1  # Termina lo script con codice di stato 1
     fi
