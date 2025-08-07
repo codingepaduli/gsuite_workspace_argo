@@ -147,13 +147,10 @@ handle_error() {
 }
 export -f handle_error
 
-
 # e: Termina lo script se un comando restituisce un valore di uscita diverso da zero
 # E: per gestire gli errori all'interno delle funzioni con trap.
 # u: Termina lo script se si tenta di utilizzare una variabile non definita
 # o pipefail: Imposta il valore di uscita di una pipeline (una serie di comandi collegati) per essere diverso da zero se uno qualsiasi dei comandi nella pipeline fallisce. Senza questa opzione, il valore di uscita della pipeline è quello dell'ultimo comando.
-
-LOG_LEVEL="DEBUG"
 
 # log::_write_log "DEBUG" "TEST debug"
 # log::_write_log "WARN" "TEST warn"

@@ -46,8 +46,10 @@ DRY_RUN="yes"
 # Show Dry-Run mode YES/NO in menu
 dryRunFlag=$( [ -n "$DRY_RUN" ] && echo "YES" || echo "NO" )
 
-# Log Level
-LOG_LEVEL="DEBUG"
+# Log config
+LOG_OUTPUT=("file" "console")
+LOG_LEVEL="CONFIG"
+LOG_FILE="debug.log"
 
 # Current date (format yyyy-mm-dd)
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
