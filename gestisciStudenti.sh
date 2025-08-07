@@ -282,15 +282,18 @@ main() {
 }
 
 showConfig() {
-  log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
-  log::_write_log "CONFIG" "-----------------------------------------"
-  log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
-  log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
-  log::_write_log "CONFIG" "Tabella studenti serale: $TABELLA_STUDENTI_SERALE"
-  log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
-  log::_write_log "CONFIG" "File CVS studenti diurno: $FILE_CSV_STUDENTI"
-  log::_write_log "CONFIG" "File CVS studenti serale: $FILE_CSV_STUDENTI_SERALE"
-  log::_write_log "CONFIG" "-----------------------------------------"
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
+    log::_write_log "CONFIG" "Tabella studenti serale: $TABELLA_STUDENTI_SERALE"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "File CVS studenti diurno: $FILE_CSV_STUDENTI"
+    log::_write_log "CONFIG" "File CVS studenti serale: $FILE_CSV_STUDENTI_SERALE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
 }
 
 # Show config vars
