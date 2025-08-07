@@ -22,7 +22,7 @@ show_menu() {
 # Funzione principale
 main() {
 
-    checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"
+    checkAllVarsNotEmpty "TABELLA_STUDENTI" "TABELLA_SEZIONI"
 
     if [ $? -ne 0 ]; then
         echo "Errore: Definisci le variabili nel file di configurazione." >&2
@@ -90,6 +90,22 @@ main() {
         read -p "Premi Invio per continuare..." -r _
     done
 }
+
+showConfig() {
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
+    log::_write_log "CONFIG" "Tabella sezioni: $TABELLA_SEZIONI"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
+}
+
+# Show config vars
+showConfig
 
 # Avvia la funzione principale
 main
