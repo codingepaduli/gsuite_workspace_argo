@@ -112,7 +112,7 @@ Check the file ``studenti.db`` will be created, or execute a ``CREATE TABLE`` co
 
 Student's data are exported from Argo:
 
-![portaleArgo.png](/dati_argo/portaleArgo.png).
+![portaleArgo.png](/dati_argo/studenti_argo/portaleArgo.png).
 
 Fields to export are:
 
@@ -133,13 +133,13 @@ Fields to export are:
 
 Run a custom export:
 
-![argoStudenti-EsportaPersonalizzata.png](/dati_argo/argoStudenti-EsportaPersonalizzata.png).
+![argoStudenti-EsportaPersonalizzata.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata.png).
 
-![argoStudenti-EsportaPersonalizzata-apri.png](/dati_argo/argoStudenti-EsportaPersonalizzata-apri.png).
+![argoStudenti-EsportaPersonalizzata-apri.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata-apri.png).
 
-![argoStudenti-EsportazioneDati-apriElenco.png](/dati_argo/argoStudenti-EsportazioneDati-apriElenco.png).
+![argoStudenti-EsportazioneDati-apriElenco.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-apriElenco.png).
 
-![argoStudenti-EsportazioneDati-avvia.png](/dati_argo/argoStudenti-EsportazioneDati-avvia.png).
+![argoStudenti-EsportazioneDati-avvia.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-avvia.png).
 
 Copy the student's data CSV file (exported from Argo) in the folder ``$BASE_DIR/dati_argo/studenti_argo/``.
 

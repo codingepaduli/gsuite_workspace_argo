@@ -4,6 +4,7 @@
 /sqlite
 /export
 /dati_argo
+/dati_gsuite
 studenti.db
 studenti_CF*
 personale_CF*
