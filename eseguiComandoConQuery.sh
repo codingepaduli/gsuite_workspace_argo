@@ -61,10 +61,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-: '
-  echo "  Tutti i parametri: $*"
-  # h
-'
+# echo "  Tutti i parametri: -dry-run: $dry_run command $command group $nome_gruppo query $query"
 
 if [ -n "$dry_run" ]; then
   echo "Debug info:"
@@ -74,7 +71,7 @@ if [ -n "$dry_run" ]; then
   echo "  running with --dry-run: $dry_run"
   echo "running query: $query"
   $SQLITE_CMD -csv studenti.db "BEGIN TRANSACTION; $query ROLLBACK; " | sed 's/"//g'
-  exit 1
+  exit 0
 fi
 
 # mkdir -p "$EXPORT_DIR_DATE"
