@@ -19,12 +19,16 @@ show_menu() {
     echo "-------------"
     echo "1. Crea le classi su GSUITE (solo classi, senza studenti)"
     echo "2. Cancella le classi da GSUITE"
-    echo "3. Esporta, un file CSV per ogni classe"
+    echo "3. Esporta da DB locale, un file CSV per ogni classe"
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
-    echo "6. Esporta, un unico file CSV con tutte le classi"
+    echo "6. Esporta da DB locale, un unico file CSV con tutte le classi"
     echo "7. Toglie i ritirati dalle classi e effettua i cambi di classe"
     echo "8. Aggiungi nuovi studenti (vedi periodo) alle classi"
+
+    echo "11. Esporta da GSuite, un file CSV per ogni classe"
+    echo "12. Esporta da GSuite, un unico file CSV con tutte le classi"
+    
     echo "20. Esci"
 }
 
@@ -196,6 +200,26 @@ main() {
                 done < <($SQLITE_CMD -csv studenti.db "
                   SELECT s.email_gsuite, sz.sezione_gsuite $QUERY_DIFF2
                   " | sed "s/\"//g")
+                ;;
+            11)
+                echo "11. Esporta da GSuite, un file CSV per ogni classe"
+                mkdir -p "$EXPORT_DIR_DATE"
+
+                while IFS="," read -r sezione_gsuite; do
+                    echo "Salvo gruppo GSuite $sezione_gsuite"
+                    $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " > "$EXPORT_DIR_DATE/classe_$sezione_gsuite.csv"
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                ;;
+            12)
+                echo "12. Esporta da GSuite, un unico file CSV con tutte le classi"
+                mkdir -p "$EXPORT_DIR_DATE"
+                touch "$EXPORT_DIR_DATE/classi_tutte.csv"
+                echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
+
+                while IFS="," read -r sezione_gsuite; do
+                    echo "Salvo gruppo GSuite $sezione_gsuite"
+                    $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             20)
                 echo "Arrivederci!"
