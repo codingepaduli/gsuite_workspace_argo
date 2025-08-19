@@ -9,6 +9,8 @@
 # Path of command line executables      #
 #########################################
 
+MY_SVN_REPO_FOLDER="$HOME/Sviluppo/SVN2"
+
 # Cartella di lavoro
 BASE_DIR="$MY_SVN_REPO_FOLDER/gsuite_workspace_argo"
 
@@ -40,7 +42,7 @@ WORDPRESS_ACCESS_TOKEN=""
 # Password for teachers and employees
 PASSWORD_CLASSROOM=""
 
-# Dry-Run mode
+# Dry-Run mode # leave DRY_RUN empty for applying changes
 DRY_RUN="yes"
 
 # Show Dry-Run mode YES/NO in menu
@@ -51,7 +53,8 @@ LOG_OUTPUT=("file" "console")
 LOG_LEVEL="CONFIG"
 LOG_FILE="debug.log"
 
-# Current date (format yyyy-mm-dd)
+# Sovrascrive la data corrente (formato yyyy-mm-dd)
+# e il path della cartella di esportazione
 CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 
 #########################################
