@@ -22,10 +22,24 @@ done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 # Query studenti su GSuite non presenti su Argo
 PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
 FROM ${TABELLA_STUDENTI_GSUITE} c 
-WHERE LOWER(c.email) NOT IN (
-    SELECT LOWER(s.email_gsuite) 
-    FROM $TABELLA_STUDENTI s
-)
+    INNER JOIN $TABELLA_SEZIONI sz 
+    ON UPPER(sz.sezione_gsuite) = UPPER(c.\"group\")
+    WHERE
+        -- filtri sezioni
+        1=1 
+        $SQL_FILTRO_ANNI 
+        $SQL_FILTRO_SEZIONI
+        AND LOWER(c.email) NOT IN (
+            SELECT LOWER(sa.email_gsuite) 
+            FROM $TABELLA_STUDENTI sa
+                INNER JOIN $TABELLA_SEZIONI sz 
+                ON sa.sez = sz.sez_argo AND sa.cl =sz.cl
+            WHERE 
+                -- filtri sezioni
+                1=1 
+                $SQL_FILTRO_ANNI 
+                $SQL_FILTRO_SEZIONI
+        )
 "
 
 # AND c.type = 'Suspended'
@@ -175,6 +189,10 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE ${TABELLA_STUDENTI_GSUITE} 
                 SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)
                 WHERE \"group\" LIKE '%@%';"
+
+                # Normalizza dati (uppercase group)"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE ${TABELLA_STUDENTI_GSUITE} 
+                SET \"group\" = UPPER(\"group\");"
                 ;;
             3)
                 echo "Importa tutti gli studenti da singolo file CSV nella tabella"
@@ -214,7 +232,7 @@ main() {
                 done
                 ;;
             8)
-                echo "Visualizza studenti su GSuite non in elenco studenti"
+                echo "Visualizza studenti su GSuite non presenti su Argo"
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO"
                 ;;
