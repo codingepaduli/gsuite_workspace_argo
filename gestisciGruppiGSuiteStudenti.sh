@@ -8,12 +8,7 @@ source "./_maps.sh"
 # File CSV 
 FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}.csv"
 
-# Importa le classi
-
-SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
-#SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
-#SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
-
+# Seleziona le classi
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # Popolo le classi
@@ -30,9 +25,6 @@ FROM ${TABELLA_STUDENTI_GSUITE} c
 WHERE LOWER(c.email) NOT IN (
     SELECT LOWER(s.email_gsuite) 
     FROM $TABELLA_STUDENTI s
-) AND LOWER(c.email) NOT IN (
-    SELECT LOWER(ss.email_gsuite) 
-    FROM $TABELLA_STUDENTI_SERALE ss
 )
 "
 
@@ -55,22 +47,29 @@ ORDER BY c.email;"
 
 # Query studenti su Argo non presenti su GSuite 
 QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
-  SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, sa.cognome AS cognome, sa.nome AS nome, sa.email_gsuite as email_gsuite
+  SELECT sz.cl AS cl, sz.sez_argo AS sez_argo, sz.sezione_gsuite AS sez_gsuite, sa.cognome AS cognome, sa.nome AS nome, sa.email_gsuite as email_gsuite
   FROM $TABELLA_STUDENTI sa 
-  INNER JOIN $TABELLA_SEZIONI s 
-  ON sa.sez = s.sez_argo AND sa.cl =s.cl
-  WHERE LOWER(sa.email_gsuite) NOT IN (
+    INNER JOIN $TABELLA_SEZIONI sz 
+    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl
+  WHERE 
+    -- filtri sezioni
+    1=1 
+    $SQL_FILTRO_ANNI 
+    $SQL_FILTRO_SEZIONI
+    -- filtri studenti
+    AND sa.email_gsuite IS NOT NULL
+    AND sa.email_gsuite != ''
+    AND (sa.datar IS NULL OR sa.datar = '') 
+    AND LOWER(sa.email_gsuite) NOT IN (
       SELECT LOWER(c.email)
       FROM ${TABELLA_STUDENTI_GSUITE} c
-  )
-  UNION
-  SELECT ss.cl AS cl, ss.sez_argo AS sez_argo, ss.sezione_gsuite AS sez_gsuite, sas.cognome AS cognome, sas.nome AS nome, sas.email_gsuite as email_gsuite
-  FROM $TABELLA_STUDENTI_SERALE sas
-  INNER JOIN $TABELLA_SEZIONI ss 
-  ON sas.sez = ss.sez_argo AND sas.cl =ss.cl
-  WHERE LOWER(sas.email_gsuite) NOT IN (
-      SELECT LOWER(c.email)
-      FROM ${TABELLA_STUDENTI_GSUITE} c
+        INNER JOIN $TABELLA_SEZIONI sz 
+        ON UPPER(sz.sezione_gsuite) = UPPER(c.\"group\")
+      WHERE 
+        -- filtri sezioni
+        1=1 
+        $SQL_FILTRO_ANNI 
+        $SQL_FILTRO_SEZIONI
   )
 "
 
@@ -169,6 +168,8 @@ main() {
                     echo "Salvo gruppo GSuite $nome_gruppo in tabella"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO; " | $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_STUDENTI_GSUITE}" - --csv --empty-null
                 done
+
+                echo "Normalizzo dati"
 
                 # Normalizza dati (rimuove @$DOMAIN)"
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE ${TABELLA_STUDENTI_GSUITE} 
@@ -297,6 +298,7 @@ showConfig() {
     log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
     log::_write_log "CONFIG" "Tabella sezioni: $TABELLA_SEZIONI"
     log::_write_log "CONFIG" "Tabella studenti gSuite: $TABELLA_STUDENTI_GSUITE"
+    log::_write_log "CONFIG" "File CSV import: $FILE_CSV"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
