@@ -23,19 +23,19 @@ SQL_QUERY_ADDITIONAL_GROUPS+=") SELECT value FROM temp WHERE value IS NOT NULL "
 
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione gruppi su GSuite"
+    echo "Gestione gruppi classe attraverso la tabella studenti ARGO"
     echo "-------------"
     echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
-    echo "1. Crea le classi ed i gruppi aggiuntivi su GSUITE (solo classi e gruppi, senza studenti)"
-    echo "2. Cancella le classi ed i gruppi aggiuntivi da GSUITE"
-    echo "3. Esporta da DB locale, un file CSV per ogni classe"
+    echo "1. Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
+    echo "2. Cancella le classi ed i gruppi aggiuntivi da GSuite"
+    echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
-    echo "6. Esporta da DB locale, un unico file CSV con tutte le classi"
+    echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
     echo "7. Toglie i ritirati dalle classi e effettua i cambi di classe"
     echo "8. Aggiungi nuovi studenti (vedi periodo) alle classi"
-
+    
     echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
     echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
     
@@ -56,7 +56,7 @@ main() {
         
         case $choice in
             1)
-                echo "Crea le classi ed i gruppi aggiuntivi su GSUITE (solo classi e gruppi, senza studenti)"
+                echo "Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo classe $sezione_gsuite ...!"
@@ -72,7 +72,7 @@ main() {
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             3)
-                echo "3. Esporta, un file CSV per ogni classe"
+                echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
 
                 mkdir -p "$EXPORT_DIR_DATE"
                 declare -A gruppi_classe
@@ -135,7 +135,7 @@ main() {
                 ;;
             6)
                 mkdir -p "$EXPORT_DIR_DATE"
-                echo "Esporta, un unico file CSV con tutte le classi ..."
+                echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."
                 
                 $SQLITE_CMD studenti.db -header -csv "
                 SELECT s.sezione_gsuite AS classe, s.cl AS anno, s.letter AS sezione, s.addr_gsuite AS indirizzo,
