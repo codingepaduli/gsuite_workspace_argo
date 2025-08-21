@@ -11,14 +11,24 @@ source "./_maps.sh"
 
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
+# Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
+SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "
+# Itera sull'array
+for value in "${GSUITE_ADDITIONAL_GROUPS[@]}"; do
+    # Aggiungi il valore alla lista, racchiudendolo tra apici
+    SQL_QUERY_ADDITIONAL_GROUPS+=" UNION ALL"
+    SQL_QUERY_ADDITIONAL_GROUPS+=" SELECT '$value' AS value"
+done
+SQL_QUERY_ADDITIONAL_GROUPS+=") SELECT value FROM temp WHERE value IS NOT NULL "
+
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi su GSuite"
     echo "-------------"
     echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
-    echo "1. Crea le classi su GSUITE (solo classi, senza studenti)"
-    echo "2. Cancella le classi da GSUITE"
+    echo "1. Crea le classi ed i gruppi aggiuntivi su GSUITE (solo classi e gruppi, senza studenti)"
+    echo "2. Cancella le classi ed i gruppi aggiuntivi da GSUITE"
     echo "3. Esporta da DB locale, un file CSV per ogni classe"
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
@@ -26,8 +36,8 @@ show_menu() {
     echo "7. Toglie i ritirati dalle classi e effettua i cambi di classe"
     echo "8. Aggiungi nuovi studenti (vedi periodo) alle classi"
 
-    echo "11. Esporta da GSuite, un file CSV per ogni classe"
-    echo "12. Esporta da GSuite, un unico file CSV con tutte le classi"
+    echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
+    echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
     
     echo "20. Esci"
 }
@@ -46,20 +56,20 @@ main() {
         
         case $choice in
             1)
-                echo "Crea le classi su GSUITE (solo classi, senza studenti)"
+                echo "Crea le classi ed i gruppi aggiuntivi su GSUITE (solo classi e gruppi, senza studenti)"
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Creo classe $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " /* NO */ "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             2)
-                echo "Cancello le classi da GSUITE"
+                echo "Cancella le classi ed i gruppi aggiuntivi da GSUITE"
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Cancello classe $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " /* NO */ "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             3)
                 echo "3. Esporta, un file CSV per ogni classe"
@@ -202,16 +212,16 @@ main() {
                   " | sed "s/\"//g")
                 ;;
             11)
-                echo "11. Esporta da GSuite, un file CSV per ogni classe"
+                echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
                 mkdir -p "$EXPORT_DIR_DATE"
 
                 while IFS="," read -r sezione_gsuite; do
                     echo "Salvo gruppo GSuite $sezione_gsuite"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " > "$EXPORT_DIR_DATE/classe_$sezione_gsuite.csv"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             12)
-                echo "12. Esporta da GSuite, un unico file CSV con tutte le classi"
+                echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
                 mkdir -p "$EXPORT_DIR_DATE"
                 touch "$EXPORT_DIR_DATE/classi_tutte.csv"
                 echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
@@ -219,7 +229,7 @@ main() {
                 while IFS="," read -r sezione_gsuite; do
                     echo "Salvo gruppo GSuite $sezione_gsuite"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             20)
                 echo "Arrivederci!"
@@ -247,6 +257,8 @@ showConfig() {
     log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_STUDENTI_DA" 
     log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_STUDENTI_A"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "Query sezioni: $SQL_QUERY_SEZIONI"
+    log::_write_log "CONFIG" "Query altri gruppi: $SQL_QUERY_ADDITIONAL_GROUPS"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
   fi

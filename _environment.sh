@@ -84,6 +84,9 @@ TABELLA_SEZIONI="" # sezioni_2024_25
 # Tabella gruppi
 TABELLA_GRUPPI="" # gruppi_2024_25
 
+# Gruppi GSuite addizionali (non in sezioni)
+GSUITE_ADDITIONAL_GROUPS=("")
+
 # All classes and addresses enabled
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'od', 'idd', 'et', 'tlt', 'm_sirio', 'et_sirio') "
