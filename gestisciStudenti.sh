@@ -55,7 +55,7 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
 
                 # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il TEXT);"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar TEXT, email_gsuite VARCHAR(200), aggiunto_il TEXT);"
                 ;;
             1)
                 echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
