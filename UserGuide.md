@@ -177,6 +177,41 @@ After exporting student's data from Argo, you can run the script:
 
 Some operations needs you set the variables required for the operation. Check you set them in case of error.
 
+### Export all users from GSuite
+
+Users data are exported from GSuite, from the User section:
+
+![gSuiteUsers.png](/dati_gsuite/gsuite_export_all_users.png).
+
+Click on "download" and select all columns:
+
+![gSuiteUserDownload.png](/dati_gsuite/gsuite_export_all_users_choose_all_fields.png).
+
+Delete unwanted columns and replace the header as: 
+``nome cognome email_gsuite org_unit stato_utente ultimo_login spazio_email spazio_storage spazio_gdrive selezionato_il``;
+
+Save the CSV file in the folder ``$BASE_DIR/dati_gsuite/``.
+
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh): 
+
+```bash
+TABELLA_UTENTI_GSUITE="utenti_gsuite_2024_09_06"``
+```
+
+The path from where the data are imported (check it in the script) is: 
+
+```bash
+FILE_CSV_STUDENTI="$BASE_DIR/dati_gsuite/$TABELLA_STUDENTI.csv"
+```
+
+### All GSuite user management
+
+After exporting student's data from Argo, you can run the script:
+
+- ``./gestisciTuttiUtentiGsuite.sh`` to manage all users.
+
+Some operations needs you set the variables required for the operation. Check you set them in case of error.
+
 ## Troubleshooting
 
 Note: GAM OAuth Token has validity of 6 months from the last access. After 6 months of inactivity, you will get the error "gam ERROR: ('invalid_grant: Bad Request')" or ``{"error": "invalid_grant", "error_description": "Bad Request"}``. In this case, you need to re-authorize the Admin Access, running another time the command:
