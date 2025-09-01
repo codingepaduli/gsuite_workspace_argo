@@ -87,48 +87,6 @@ QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
   )
 "
 
-PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA="
-FROM $TABELLA_STUDENTI sa 
-INNER JOIN $TABELLA_SEZIONI s 
-  ON sa.sez = s.sez_argo AND sa.cl =s.cl
-INNER JOIN $TABELLA_STUDENTI_GSUITE sg
-  ON sa.email_gsuite = sg.email
-WHERE LOWER(SUBSTR(sg.email, 1, MIN(2, LENGTH(sg.email)))) IN ('s.')
-  AND sg.\"group\" NOT IN ('/Studenti/Diurno')
-ORDER BY sa.email_gsuite
-"
-
-QUERY_STUDENTI_DIURNO_OU_ERRATA="
-SELECT sa.email_gsuite
-$PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA
-"
-
-FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA="
-SELECT sg.\"group\", sa.email_gsuite
-$PARTIAL_QUERY_STUDENTI_DIURNO_OU_ERRATA
-"
-
-PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA="
-FROM $TABELLA_STUDENTI_SERALE sa 
-INNER JOIN $TABELLA_SEZIONI s 
-  ON sa.sez = s.sez_argo AND sa.cl =s.cl
-INNER JOIN $TABELLA_STUDENTI_GSUITE sg
-  ON sa.email_gsuite = sg.email
-WHERE LOWER(SUBSTR(sg.email, 1, MIN(2, LENGTH(sg.email)))) IN ('s.')
-  AND sg.\"group\" NOT IN ('/Studenti/Serale')
-ORDER BY sa.email_gsuite
-"
-
-QUERY_STUDENTI_SERALE_OU_ERRATA="
-SELECT sa.email_gsuite
-$PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA
-"
-
-FULL_QUERY_STUDENTI_SERALE_OU_ERRATA="
-SELECT sg.\"group\", sa.email_gsuite
-$PARTIAL_QUERY_STUDENTI_SERALE_OU_ERRATA
-"
-
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi di GSuite su tabella ${TABELLA_STUDENTI_GSUITE}"
@@ -145,11 +103,7 @@ show_menu() {
     echo "10. Sospendi studenti su GSuite non presenti su Argo"
     echo "11. Cancella account studenti su GSuite non presenti su Argo"
     echo "13. Visualizza studenti su Argo con mail non presente su GSuite"
-    echo "14. Visualizza studenti diurno con OU errata"
-    echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
-    echo "16. Visualizza studenti serale con OU errata"
-    echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
-
+    
     echo "18. Sospendi tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
     echo "19. ELIMINA tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
     
@@ -258,30 +212,6 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$QUERY_STUDENTI_SU_ARGO_NON_GSUITE
                 "
-                ;;
-            14)
-                echo "Visualizza studenti diurno con OU errata"
-
-                # FIXME students are only in table "TABELLA_STUDENTI" 
-                # $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_DIURNO_OU_ERRATA"
-                ;;
-            15)
-                echo "Sposta studenti diurno con OU errata su OU 'Diurno'"
-
-                # FIXME students are only in table "TABELLA_STUDENTI" 
-                # $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Diurno" --query "$QUERY_STUDENTI_DIURNO_OU_ERRATA"
-                ;;
-            16)
-                echo "Visualizza studenti serale con OU errata"
-
-                # FIXME students are only in table "TABELLA_STUDENTI" 
-                # $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "$FULL_QUERY_STUDENTI_SERALE_OU_ERRATA"
-                ;;
-            17)
-                echo "Sposta studenti serale con OU errata su OU 'Serale'"
-
-                # FIXME students are only in table "TABELLA_STUDENTI" 
-                # $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "$QUERY_STUDENTI_SERALE_OU_ERRATA"
                 ;;
             18)
                 echo "18. Sospendi tutti gli studenti in tabella GSUITE ${TABELLA_STUDENTI_GSUITE}"
