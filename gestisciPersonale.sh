@@ -152,8 +152,8 @@ main() {
                 $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale), UPPER(cognome), UPPER(nome), LOWER(email_personale), LOWER(email_gsuite) 
                 FROM $TABELLA_PERSONALE_PRECEDENTE 
                 WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
-                    AND codice_fiscale NOT IN (
-                      SELECT codice_fiscale
+                    AND UPPER(codice_fiscale) NOT IN (
+                      SELECT UPPER(codice_fiscale)
                       FROM $TABELLA_PERSONALE );"
                 ;;
             8)
@@ -163,8 +163,8 @@ main() {
                 SELECT *
                 FROM $TABELLA_PERSONALE_PRECEDENTE
                 WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
-                    AND codice_fiscale NOT IN (
-                      SELECT codice_fiscale
+                    AND UPPER(codice_fiscale) NOT IN (
+                      SELECT UPPER(codice_fiscale)
                       FROM $TABELLA_PERSONALE );"
                 ;;
             9)
