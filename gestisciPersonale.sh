@@ -34,6 +34,12 @@ show_menu() {
 
 # Funzione principale
 main() {
+
+    if ! checkAllVarsNotEmpty "TABELLA_PERSONALE" "PERIODO_PERSONALE_DA" "PERIODO_PERSONALE_A" ; then
+        echo "Errore: Definisci le variabili nel file di configurazione." >&2
+        exit 1  # Termina lo script con codice di stato 1
+    fi
+
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " -r choice
@@ -97,6 +103,8 @@ main() {
                         AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A');"
                 ;;
             4)
+                checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
+
                 echo "Creo la mail ai nuovi docenti ..."
                 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE
@@ -109,6 +117,8 @@ main() {
                         AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
                 ;;
             5)
+                checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
+
                 echo "Creo la mail al nuovo personale ATA ..."
                 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE
@@ -121,6 +131,8 @@ main() {
                         AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
                 ;;
             6)
+                checkAllVarsNotEmpty "PASSWORD_CLASSROOM"
+
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto il nuovo personale in file CSV ..."
                 
@@ -133,6 +145,8 @@ main() {
                 ORDER BY cognome; " > "$EXPORT_DIR_DATE/nuovo_personale.csv"
                 ;;
             9)
+                checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA"
+                
                 echo "Crea il nuovo personale su GSuite ..."
 
                 $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query " 
@@ -154,6 +168,8 @@ main() {
                     ) AND UPPER(tipo_personale) = UPPER('ata');"
                 ;;
             10)
+                checkAllVarsNotEmpty "GRUPPO_CLASSROOM"
+                
                 echo "Aggiungo i nuovi docenti su Classroom ..."
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "SELECT LOWER(email_gsuite)
@@ -165,6 +181,8 @@ main() {
                     ) AND UPPER(tipo_personale) = UPPER('docente');"
                 ;;
             11)
+                checkAllVarsNotEmpty "DOMAIN" "WORDPRESS_ROLE_TEACHER" "WORDPRESS_ROLE_ATA"
+                
                 echo "Creo il nuovo personale su $DOMAIN ..."
                 
                 $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_TEACHER" --query "
@@ -186,6 +204,8 @@ main() {
                     ) AND UPPER(tipo_personale) = UPPER('ata');"
                 ;;
             12)
+                checkAllVarsNotEmpty "CURRENT_DATE"
+
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Crea script personale_CF_$CURRENT_DATE.sh ..."
                 
@@ -219,11 +239,15 @@ main() {
                         AND d.cancellato_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A' );"
                 ;;
             15)
+                checkAllVarsNotEmpty "CURRENT_DATE"
+
                 echo "Visualizza personale su wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command showUsersOnWordPress --group " NO " --query "select LOWER(email_gsuite) from $TABELLA_PERSONALE WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
                 ;;
             16)
+                checkAllVarsNotEmpty "CURRENT_DATE"
+
                 echo "Cancella personale da wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "select LOWER(email_gsuite) from $TABELLA_PERSONALE WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
@@ -242,6 +266,28 @@ main() {
         read -p "Premi Invio per continuare..." -r _
     done
 }
+
+showConfig() {
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella personale: $TABELLA_PERSONALE"
+    log::_write_log "CONFIG" "Tabella personale precedente per confronto: $TABELLA_PERSONALE_PRECEDENTE"
+    log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_PERSONALE_DA" 
+    log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_PERSONALE_A"
+    log::_write_log "CONFIG" "Dominio: $DOMAIN"
+    log::_write_log "CONFIG" "Gruppo Classroom: $GRUPPO_CLASSROOM"
+    log::_write_log "CONFIG" "Password Classroom: $PASSWORD_CLASSROOM"
+    log::_write_log "CONFIG" "File personale CSV: $FILE_PERSONALE_CSV"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
+}
+
+# Show config vars
+showConfig
 
 # Avvia la funzione principale
 main
