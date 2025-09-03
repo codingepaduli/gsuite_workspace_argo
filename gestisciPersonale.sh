@@ -21,6 +21,8 @@ show_menu() {
     echo "4. Creo la mail ai nuovi docenti"
     echo "5. Creo la mail al nuovo personale ATA"
     echo "6. Esporto il nuovo personale in file CSV"
+    echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
+    echo "8. Importa nella tabella attuale il personale della tabella precedente non incluso in quella attuale"
     echo "9. Crea il nuovo personale su GSuite"
     echo "10. Aggiungo i nuovi docenti su Classroom"
     echo "11. Creo il nuovo personale su WordPress"
@@ -143,6 +145,27 @@ main() {
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
                     ) OR (email_gsuite is NULL OR TRIM(email_gsuite) = '')
                 ORDER BY cognome; " > "$EXPORT_DIR_DATE/nuovo_personale.csv"
+                ;;
+            7)
+                echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
+
+                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale), UPPER(cognome), UPPER(nome), LOWER(email_personale), LOWER(email_gsuite) 
+                FROM $TABELLA_PERSONALE_PRECEDENTE 
+                WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
+                    AND codice_fiscale NOT IN (
+                      SELECT codice_fiscale
+                      FROM $TABELLA_PERSONALE );"
+                ;;
+            8)
+                echo "8. Importa nella tabella attuale il personale della tabella precedente non incluso in quella attuale"
+                
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_PERSONALE 
+                SELECT *
+                FROM $TABELLA_PERSONALE_PRECEDENTE
+                WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
+                    AND codice_fiscale NOT IN (
+                      SELECT codice_fiscale
+                      FROM $TABELLA_PERSONALE );"
                 ;;
             9)
                 checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA"
