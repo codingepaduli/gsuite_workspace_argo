@@ -45,6 +45,20 @@ QUERY_STUDENTI_SERALE_OU_ERRATA="
       -- filtro unità organizzativa
       AND sg.org_unit NOT IN ('/STUDENTI/SERALE') "
 
+QUERY_PERSONALE_OU_ERRATA="
+FROM $TABELLA_UTENTI_GSUITE t
+    INNER JOIN $TABELLA_PERSONALE p
+    ON UPPER(t.email_gsuite) = UPPER(p.email_gsuite) 
+WHERE 
+    1 = 1
+    AND (p.email_gsuite IS NOT NULL AND TRIM(p.email_gsuite) != '') 
+    -- filtro personale inserito e non cancellato
+    AND ( p.aggiunto_il IS NOT NULL AND TRIM(p.aggiunto_il) != ''
+        AND p.aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+    ) 
+    AND (p.cancellato_il IS NULL OR TRIM(p.cancellato_il) = '')
+"
+
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione tabella di tutti gli utenti GSuite"
@@ -56,6 +70,8 @@ show_menu() {
     echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
     echo "16. Visualizza studenti serale con OU errata"
     echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
+    echo "18. Visualizza personale con OU errata"
+    echo "19. Sposta personale con OU errata"
 
     echo "20. Esci"
 }
@@ -134,6 +150,48 @@ main() {
                 echo "Sposta studenti serale con OU errata su OU 'Serale'"
 
                 $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/Studenti/Serale" --query "SELECT sa.email_gsuite $QUERY_STUDENTI_SERALE_OU_ERRATA ORDER BY sa.email_gsuite;"
+                ;;
+            18)
+                echo "18. Visualizza personale con OU errata"
+
+                $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "
+                SELECT UPPER(t.cognome) as cognome, UPPER(t.nome) as nome, LOWER(t.org_unit) as org_unit, LOWER(t.email_gsuite) as email_gsuite 
+                $QUERY_PERSONALE_OU_ERRATA 
+                  -- filtro personale docente
+                  AND UPPER(p.tipo_personale) = UPPER('docente')
+                  AND LOWER(SUBSTR(p.email_gsuite, 1, MIN(2, LENGTH(p.email_gsuite)))) IN ('d.')
+                  AND LOWER(t.org_unit) NOT IN ('/docenti')  
+                ORDER BY p.email_gsuite;"
+
+                $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "
+                SELECT UPPER(t.cognome) as cognome, UPPER(t.nome) as nome, LOWER(t.org_unit) as org_unit, LOWER(t.email_gsuite) as email_gsuite
+                $QUERY_PERSONALE_OU_ERRATA 
+                  -- filtro personale ATA
+                  AND UPPER(p.tipo_personale) = UPPER('ata')
+                  AND LOWER(SUBSTR(p.email_gsuite, 1, MIN(2, LENGTH(p.email_gsuite)))) IN ('a.')
+                  AND LOWER(t.org_unit) NOT IN ('/ata')  
+                ORDER BY p.email_gsuite;"
+                ;;
+            19)
+                echo "19. Sposta personale con OU errata"
+
+                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/docenti" --query "
+                SELECT p.email_gsuite 
+                $QUERY_PERSONALE_OU_ERRATA 
+                  -- filtro personale docente
+                  AND UPPER(p.tipo_personale) = UPPER('docente')
+                  AND LOWER(SUBSTR(p.email_gsuite, 1, MIN(2, LENGTH(p.email_gsuite)))) IN ('d.')
+                  AND LOWER(t.org_unit) NOT IN ('/docenti')  
+                ORDER BY p.email_gsuite;"
+
+                $RUN_CMD_WITH_QUERY --command moveUsersToOU --group "/ATA" --query "
+                SELECT p.email_gsuite 
+                $QUERY_PERSONALE_OU_ERRATA 
+                  -- filtro personale ATA
+                  AND UPPER(p.tipo_personale) = UPPER('ata')
+                  AND LOWER(SUBSTR(p.email_gsuite, 1, MIN(2, LENGTH(p.email_gsuite)))) IN ('a.')
+                  AND LOWER(t.org_unit) NOT IN ('/ata')  
+                ORDER BY p.email_gsuite;"
                 ;;
             20)
                 echo "Arrivederci!"
