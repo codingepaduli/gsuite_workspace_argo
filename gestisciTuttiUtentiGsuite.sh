@@ -8,6 +8,18 @@ source "./_maps.sh"
 # File CSV di lavoro con personale versionata alla data indicata
 FILE_UTENTI_CSV="$BASE_DIR/dati_gsuite/$TABELLA_UTENTI_GSUITE.csv"
 
+# Query studenti su GSuite non presenti su Argo
+QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
+    FROM ${TABELLA_UTENTI_GSUITE} sg 
+    WHERE
+        -- filtro studenti
+        LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
+        AND LOWER(sg.email_gsuite) NOT IN (
+            SELECT LOWER(sa.email_gsuite) 
+            FROM $TABELLA_STUDENTI sa
+        )
+"
+
 # Query studenti
 QUERY_STUDENTI_DIURNO_OU_ERRATA="
   FROM $TABELLA_STUDENTI sa 
@@ -65,6 +77,8 @@ show_menu() {
     echo "-------------"
     echo "1. Cancello e ricreo la tabella di tutti gli utenti GSuite"
     echo "2. Importo e normalizzo i dati dal file CSV"
+
+    echo "5. Visualizza studenti su GSuite e non su Argo"
 
     echo "14. Visualizza studenti diurno con OU errata"
     echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
@@ -130,6 +144,12 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_UTENTI_GSUITE 
                 SET ultimo_login = date('2000-01-01')
                 WHERE ultimo_login is NOT NULL AND TRIM(UPPER(ultimo_login)) = UPPER('Never logged in');"
+                ;;
+            5)
+                echo "5. Visualizza studenti su GSuite e non su Argo"
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_STUDENTI_SU_GSUITE_NON_ARGO 
+                ORDER BY sg.email_gsuite;"
                 ;;
             14)
                 echo "Visualizza studenti diurno con OU errata"
