@@ -19,6 +19,17 @@ QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
             FROM $TABELLA_STUDENTI sa
         )
 "
+# Query studenti su GSuite non presenti su Argo
+QUERY_PERSONALE_SU_GSUITE_NON_ARGO="
+    FROM $TABELLA_UTENTI_GSUITE sg 
+    WHERE
+        -- filtro personale
+        LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.')
+        AND LOWER(sg.email_gsuite) NOT IN (
+            SELECT LOWER(p.email_gsuite) 
+            FROM $TABELLA_PERSONALE p
+        )
+"
 
 # Query studenti
 QUERY_STUDENTI_DIURNO_OU_ERRATA="
@@ -80,6 +91,7 @@ show_menu() {
 
     echo "5. Visualizza studenti su GSuite e non su Argo"
 
+    echo "12. Visualizza personale su GSuite e non su Argo"
     echo "14. Visualizza studenti diurno con OU errata"
     echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
     echo "16. Visualizza studenti serale con OU errata"
@@ -149,7 +161,13 @@ main() {
                 echo "5. Visualizza studenti su GSuite e non su Argo"
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_STUDENTI_SU_GSUITE_NON_ARGO 
-                ORDER BY sg.email_gsuite;"
+                ORDER BY LOWER(sg.email_gsuite);"
+                ;;
+            12)
+                echo "12. Visualizza personale su GSuite e non su Argo"
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_PERSONALE_SU_GSUITE_NON_ARGO 
+                ORDER BY UPPER(sg.cognome);"
                 ;;
             14)
                 echo "Visualizza studenti diurno con OU errata"
