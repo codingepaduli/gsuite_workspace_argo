@@ -31,6 +31,7 @@ show_menu() {
     echo "14. Elimina personale"
     echo "15. Visualizza personale su WordPress"
     echo "16. Elimina personale su WordPress"
+    echo "19. Controllo i dati"
     echo "20. Esci"
 }
 
@@ -282,6 +283,31 @@ main() {
                 echo "Cancella personale da wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "select LOWER(email_gsuite) from $TABELLA_PERSONALE WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
+                ;;
+            19)
+                echo "Controllo i dati"
+
+                echo "Codici fiscali duplicati"
+
+                $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "SELECT *
+                  FROM $TABELLA_PERSONALE 
+                  WHERE UPPER(codice_fiscale) IN (
+                      SELECT UPPER(codice_fiscale)
+                      FROM $TABELLA_PERSONALE 
+                      GROUP BY UPPER(codice_fiscale)
+                      HAVING COUNT(*) > 1
+                  )"
+                
+                echo "email duplicate"
+
+                $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "SELECT *
+                  FROM $TABELLA_PERSONALE 
+                  WHERE UPPER(email_gsuite) IN (
+                      SELECT UPPER(email_gsuite)
+                      FROM $TABELLA_PERSONALE 
+                      GROUP BY UPPER(email_gsuite)
+                      HAVING COUNT(*) > 1
+                  )"
                 ;;
             20)
                 echo "Arrivederci!"
