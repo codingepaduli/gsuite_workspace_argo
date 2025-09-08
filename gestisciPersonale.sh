@@ -98,7 +98,7 @@ main() {
             3)
                 echo "Visualizza personale neo-assunto ..."
                 
-                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale), UPPER(cognome), UPPER(nome), LOWER(email_personale), LOWER(email_gsuite) 
+                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_personale) as email_personale, LOWER(email_gsuite) as email_gsuite
                 FROM $TABELLA_PERSONALE 
                 WHERE email_gsuite is NULL OR TRIM(email_gsuite) = ''
                     OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
@@ -114,7 +114,8 @@ main() {
                             REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
                             REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                        AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
                         AND UPPER(tipo_personale) = UPPER('docente')
                         AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
                 ;;
@@ -128,7 +129,8 @@ main() {
                             REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
                             REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                        AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
                         AND UPPER(tipo_personale) = UPPER('ata')
                         AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
                 ;;
@@ -140,7 +142,8 @@ main() {
                 
                 $SQLITE_CMD studenti.db -header -csv "SELECT LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale
                 FROM $TABELLA_PERSONALE 
-                WHERE (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
                     ) OR (email_gsuite is NULL OR TRIM(email_gsuite) = '')
@@ -175,7 +178,8 @@ main() {
                 $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query " 
                 SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
                 FROM $TABELLA_PERSONALE
-                WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
                     AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
@@ -184,7 +188,8 @@ main() {
                 $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "
                 SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
                 FROM $TABELLA_PERSONALE
-                WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
                     AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
@@ -197,7 +202,8 @@ main() {
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "SELECT LOWER(email_gsuite)
                 FROM $TABELLA_PERSONALE 
-                WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
                     AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
@@ -211,7 +217,8 @@ main() {
                 $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_TEACHER" --query "
                 SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
                 FROM $TABELLA_PERSONALE
-                WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
                     AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                     AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
@@ -220,7 +227,8 @@ main() {
                 $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_ATA" --query "
                 SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
                 FROM $TABELLA_PERSONALE
-                WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
                     AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                     AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
