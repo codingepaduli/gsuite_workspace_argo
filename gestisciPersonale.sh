@@ -144,7 +144,7 @@ main() {
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
                     ) OR (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                ORDER BY cognome; " > "$EXPORT_DIR_DATE/nuovo_personale.csv"
+                ORDER BY UPPER(cognome); " > "$EXPORT_DIR_DATE/nuovo_personale.csv"
                 ;;
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
@@ -241,7 +241,7 @@ main() {
                     # Aggiungo il CF negli script
                     echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite', aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = '$contratto', dipartimento = '$dipartimento', note = '$note' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE ORDER BY codice_fiscale" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "select LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE ORDER BY UPPER(codice_fiscale)" | sed "s/\"//g")
                 ;;
             13)
                 echo "Sospendi (disabilita) personale ..."
