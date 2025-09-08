@@ -149,7 +149,7 @@ main() {
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
 
-                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale), UPPER(cognome), UPPER(nome), LOWER(email_personale), LOWER(email_gsuite) 
+                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, LOWER(email_gsuite) as email_gsuite 
                 FROM $TABELLA_PERSONALE_PRECEDENTE 
                 WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
                     AND UPPER(codice_fiscale) NOT IN (
