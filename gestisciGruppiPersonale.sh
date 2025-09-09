@@ -11,7 +11,16 @@ source "./_maps.sh"
 
 GRUPPO_DOCENTI="docenti_volta"
 
-add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WHERE d.email_gsuite IS NOT NULL AND d.email_gsuite != '' AND tipo_personale='docente' ORDER BY d.email_gsuite; "
+add_to_map "$GRUPPO_DOCENTI" "
+    SELECT LOWER(email_gsuite) AS email_gsuite
+    FROM $TABELLA_PERSONALE
+    WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != '')
+        AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+            AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+        ) 
+        AND UPPER(tipo_personale)=UPPER('docente') 
+        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+    ORDER BY LOWER(email_gsuite); "
 
 ###############################
 # Fine Gestione tutti docenti #
@@ -24,10 +33,16 @@ add_to_map "$GRUPPO_DOCENTI" "select d.email_gsuite from $TABELLA_PERSONALE d WH
 GRUPPO_SOSTEGNO="sostegno"
 
 add_to_map "$GRUPPO_SOSTEGNO" "
-SELECT LOWER(pa.email_gsuite) as email_gsuite
-FROM $TABELLA_PERSONALE pa 
-WHERE pa.dipartimento = 'SOSTEGNO'
-ORDER BY pa.email_gsuite ;"
+    SELECT LOWER(email_gsuite) AS email_gsuite
+    FROM $TABELLA_PERSONALE
+    WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != '')
+        AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+            AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+        ) 
+        AND UPPER(tipo_personale)=UPPER('docente') 
+        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+        AND UPPER(dipartimento) = 'SOSTEGNO'
+    ORDER BY LOWER(email_gsuite) ;"
 
 ##########################
 # Fine Gestione Sostegno #
@@ -38,20 +53,24 @@ ORDER BY pa.email_gsuite ;"
 #########################
 
 QUERY_DIPARTIMENTI="
-SELECT DISTINCT LOWER(pa.dipartimento)
-FROM $TABELLA_PERSONALE pa 
-WHERE pa.dipartimento IS NOT NULL AND TRIM(pa.dipartimento) != ''
-ORDER BY pa.dipartimento ;"
+    SELECT DISTINCT UPPER(dipartimento)
+    FROM $TABELLA_PERSONALE
+    WHERE dipartimento IS NOT NULL AND TRIM(dipartimento) != ''
+    ORDER BY UPPER(dipartimento) ;"
 
 while IFS="," read -r dipartimento; do
   echo "dipartimento $dipartimento"
 
   add_to_map "dipartimento_$dipartimento" "
-  SELECT LOWER(pa.email_gsuite) as email_gsuite
-  FROM $TABELLA_PERSONALE pa 
-  WHERE UPPER(pa.dipartimento) = UPPER('$dipartimento')
-  AND pa.tipo_personale = 'docente'
-  ORDER BY pa.email_gsuite ;"
+      SELECT LOWER(email_gsuite) AS email_gsuite
+      FROM $TABELLA_PERSONALE
+      WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != '')
+          AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+              AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+          )
+          AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+          AND UPPER(dipartimento) = UPPER('$dipartimento')
+      ORDER BY LOWER(email_gsuite);"
 
 done < <($SQLITE_CMD -csv studenti.db "$QUERY_DIPARTIMENTI" | sed 's/"//g' )
 
