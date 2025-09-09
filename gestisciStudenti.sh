@@ -190,8 +190,9 @@ main() {
                 SELECT s.email_gsuite 
                 FROM $TABELLA_STUDENTI s 
                 WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != '')
+                    AND (datar IS NOT NULL AND TRIM(datar) != ''
+                        AND datar BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
                     )
                 ORDER BY s.cl, s.sez, s.cognome, s.nome;"
                 ;;
@@ -202,8 +203,9 @@ main() {
                 SELECT s.email_gsuite 
                 FROM $TABELLA_STUDENTI s 
                 WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != '')
+                    AND (datar IS NOT NULL AND TRIM(datar) != ''
+                        AND datar BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
                     )
                 ORDER BY s.cl, s.sez, s.cognome, s.nome;"
                 ;;
