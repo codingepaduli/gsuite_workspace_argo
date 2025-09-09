@@ -248,7 +248,7 @@ main() {
                 while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
                     # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = '$email_gsuite', aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = '$contratto', dipartimento = '$dipartimento', note = '$note' WHERE codice_fiscale = '$codice_fiscale'\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
 
                 done < <($SQLITE_CMD -csv studenti.db "select LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE ORDER BY UPPER(codice_fiscale)" | sed "s/\"//g")
                 ;;
