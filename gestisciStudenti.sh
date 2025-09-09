@@ -75,7 +75,7 @@ main() {
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
                 SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
-                WHERE datar is NOT NULL AND datar != '';"
+                WHERE datar is NOT NULL AND TRIM(datar) != '';"
                 ;;
             2)
                 echo "Visualizza dati in tabella ..."
@@ -87,7 +87,10 @@ main() {
                 
                 $SQLITE_CMD studenti.db -header -table "SELECT cl, sez, cognome, nome, cod_fisc, aggiunto_il, email_gsuite 
                 FROM $TABELLA_STUDENTI 
-                WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE' 
+                WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
+                  OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                  )
                 ORDER BY cl, sez, cognome, nome;"
                 ;;
             4)
@@ -115,9 +118,9 @@ main() {
                         || '@$DOMAIN'
                     END,
                         aggiunto_il = '$CURRENT_DATE'
-                    WHERE sez NOT LIKE '%_sirio' AND
-                    email_gsuite is NULL 
-                    AND matricola IS NOT NULL;"
+                    WHERE sez NOT LIKE '%_sirio' 
+                        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
+                        AND (matricola IS NOT NULL AND TRIM(matricola) != '');"
 
                 # creo le mail del serale
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
@@ -126,15 +129,21 @@ main() {
                         || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
                         || '.' || matricola || '@$DOMAIN',
                       aggiunto_il = '$CURRENT_DATE'
-                    WHERE sez LIKE '%_sirio' AND 
-                    email_gsuite is NULL
-                    AND matricola IS NOT NULL;"
+                    WHERE sez LIKE '%_sirio' 
+                        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+                        AND (matricola IS NOT NULL AND TRIM(matricola) != '');"
                 ;;
             5)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto i nuovi studenti in file CSV ..."
                 
-                $SQLITE_CMD studenti.db -header -csv "SELECT cl, sez, cognome, nome, email_gsuite, 'Volta2425' as password FROM $TABELLA_STUDENTI WHERE email_gsuite is NULL OR aggiunto_il = '$CURRENT_DATE' ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_$CURRENT_DATE.csv"
+                $SQLITE_CMD studenti.db -header -csv "SELECT cl, sez, cognome, nome, email_gsuite, 'Volta2425' as password 
+                FROM $TABELLA_STUDENTI 
+                WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+                    OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    )
+                ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_$CURRENT_DATE.csv"
                 ;;
             6)
                 echo "Creo i nuovi studenti su GSuite ..."
@@ -142,15 +151,21 @@ main() {
                 # creo le mail del diurno
                 $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
                 FROM $TABELLA_STUDENTI 
-                WHERE sez NOT LIKE '%_sirio' AND 
-                    aggiunto_il='$CURRENT_DATE' 
+                WHERE sez NOT LIKE '%_sirio' 
+                    AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    ) 
                 ORDER BY cl, sez, cognome, nome;"
 
                 # creo le mail del serale
                 $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
                 FROM $TABELLA_STUDENTI 
-                WHERE sez LIKE '%_sirio' AND
-                    aggiunto_il='$CURRENT_DATE'
+                WHERE sez LIKE '%_sirio' 
+                    AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    ) 
                 ORDER BY cl, sez, cognome, nome;"
                 ;;
             7)
@@ -164,30 +179,32 @@ main() {
                 while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
 
                     # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = '$email_gsuite' WHERE cod_fisc = '$cod_fisc'\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select email_gsuite,  cod_fisc, cognome, nome, cl, sez FROM $TABELLA_STUDENTI ORDER BY cod_fisc" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "select LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, cl, sez FROM $TABELLA_STUDENTI ORDER BY UPPER(cod_fisc)" | sed "s/\"//g")
                 ;;
             8)
                 echo "Sospendi account studenti ..."
 
                 $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "
-                select s.email_gsuite 
-                from $TABELLA_STUDENTI s 
-                WHERE s.email_gsuite IS NOT NULL 
-                    AND s.email_gsuite != ''
-                    AND s.aggiunto_il='$CURRENT_DATE' 
+                SELECT s.email_gsuite 
+                FROM $TABELLA_STUDENTI s 
+                WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    )
                 ORDER BY s.cl, s.sez, s.cognome, s.nome;"
                 ;;
             9)
                 echo "Cancella account studenti ..."
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
-                select s.email_gsuite 
-                from $TABELLA_STUDENTI s 
-                WHERE s.email_gsuite IS NOT NULL 
-                    AND s.email_gsuite != ''
-                    AND s.aggiunto_il='$CURRENT_DATE' 
+                SELECT s.email_gsuite 
+                FROM $TABELLA_STUDENTI s 
+                WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                    )
                 ORDER BY s.cl, s.sez, s.cognome, s.nome;"
                 ;;
             12)
@@ -218,8 +235,7 @@ main() {
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
                 SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
-                WHERE datar is NOT NULL 
-                    AND datar != '';"
+                WHERE datar is NOT NULL AND TRIM(datar) != '';"
                 ;;
             14)
                 echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
@@ -229,8 +245,8 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI (cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il)
                   SELECT cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il
                   FROM $TABELLA_STUDENTI_SERALE AS ss
-                  WHERE ss.cod_fisc NOT IN (
-                    SELECT s.cod_fisc FROM $TABELLA_STUDENTI AS s
+                  WHERE UPPER(ss.cod_fisc) NOT IN (
+                    SELECT UPPER(s.cod_fisc) FROM $TABELLA_STUDENTI AS s
                   );"
 
                 ;;
@@ -242,10 +258,10 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
                   SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
                   FROM $TABELLA_STUDENTI
-                  WHERE cod_fisc IN (
-                      SELECT cod_fisc
+                  WHERE UPPER(cod_fisc) IN (
+                      SELECT UPPER(cod_fisc)
                       FROM $TABELLA_STUDENTI
-                      GROUP BY cod_fisc
+                      GROUP BY UPPER(cod_fisc)
                       HAVING COUNT(*) > 1
                   );"
 
@@ -254,12 +270,11 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
                   SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
                   FROM $TABELLA_STUDENTI
-                  WHERE email_gsuite IN (
-                      SELECT email_gsuite
+                  WHERE LOWER(email_gsuite) IN (
+                      SELECT LOWER(email_gsuite)
                       FROM $TABELLA_STUDENTI
-                      WHERE email_gsuite IS NOT NULL
-                        AND  email_gsuite != ''
-                      GROUP BY email_gsuite
+                      WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
+                      GROUP BY LOWER(email_gsuite)
                       HAVING COUNT(*) > 1
                   );"
                 ;;
