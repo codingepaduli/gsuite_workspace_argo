@@ -58,6 +58,8 @@ main() {
                     CASE
                           WHEN TRIM(SUBSTR(sa.sez,2)) = 'in' THEN 'INF' 
                           WHEN TRIM(SUBSTR(sa.sez,2)) = 'm' THEN 'MEC' 
+                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'mDD' THEN 'MDD' 
+                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'me_sirio' THEN 'MEC_SIRIO'
                           WHEN TRIM(SUBSTR(sa.sez,2)) = 'm_sirio' THEN 'MEC_SIRIO' 
                           WHEN TRIM(SUBSTR(sa.sez,2)) = 'tlt' THEN 'TLC' 
                           WHEN TRIM(SUBSTR(sa.sez,2)) = 'tr' THEN 'AER' 
