@@ -78,20 +78,23 @@ main() {
                 declare -A gruppi_classe
 
                 while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="SELECT sa.email_gsuite
+                    gruppi_classe[$sezione_gsuite]="SELECT sz.sezione_gsuite AS classe, UPPER(sa.cognome) AS cognome,
+                        UPPER(sa.nome) AS nome, LOWER(sa.email_gsuite) as email_gsuite,  UPPER(sa.cod_fisc) AS cod_fisc, sa.datan, sa.datar
                                   FROM $TABELLA_STUDENTI sa 
                                     INNER JOIN $TABELLA_SEZIONI sz 
                                     ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
                                   WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND sa.email_gsuite IS NOT NULL
-                                    AND sa.email_gsuite != ''
+                                    AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
+                                    AND (sa.aggiunto_il IS NOT NULL AND TRIM(sa.aggiunto_il) != ''
+                                        AND sa.aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+                                    )
                                     AND (sa.datar IS NULL OR sa.datar = '')
-                                  ORDER BY sa.email_gsuite;"
+                                  ORDER BY sz.sezione_gsuite, UPPER(sa.cognome);"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+                    $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
                 done
                 ;;
             4)
