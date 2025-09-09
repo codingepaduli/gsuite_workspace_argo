@@ -272,12 +272,13 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
                   SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
                   FROM $TABELLA_STUDENTI
-                  WHERE LOWER(email_gsuite) IN (
-                      SELECT LOWER(email_gsuite)
-                      FROM $TABELLA_STUDENTI
-                      WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
-                      GROUP BY LOWER(email_gsuite)
-                      HAVING COUNT(*) > 1
+                  WHERE (email_gsuite is NOT NULL AND TRIM(email_gsuite) != '')
+                      AND LOWER(email_gsuite) IN (
+                          SELECT LOWER(email_gsuite)
+                          FROM $TABELLA_STUDENTI
+                          WHERE (email_gsuite is NOT NULL AND TRIM(email_gsuite) != '')
+                          GROUP BY LOWER(email_gsuite)
+                          HAVING COUNT(*) > 1
                   );"
                 ;;
 
