@@ -70,6 +70,7 @@ main() {
                     email_gsuite = TRIM(LOWER(email_gsuite)),
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)),
+                    sez = TRIM(sez),
                     datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
                 
                 # Normalizza dati
