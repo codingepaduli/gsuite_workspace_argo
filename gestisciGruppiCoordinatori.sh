@@ -59,11 +59,6 @@ SELECT DISTINCT LOWER(email_coordinatore) as email_coordinatore
     AND cl IN (5)
 ORDER BY LOWER(email_coordinatore);"
 
-##############################
-# Fine Gestione Coordinatori #
-##############################
-
-
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione Coordinatori"
@@ -76,8 +71,6 @@ show_menu() {
     echo "7. "
     echo "8. Inserisci membri nei gruppi  ..."
     echo "9. Rimuovi membri dai gruppi  ..."
-    echo "10. "
-    echo "11. Normalizza tabella"
     echo "20. Esci"
 }
 
