@@ -95,62 +95,6 @@ ORDER BY pa.email_gsuite ;"
 # Fine Gestione personale ata #
 ###############################
 
-#########################
-# Gestione Coordinatori #
-#########################
-
-GRUPPO_COORDINATORI="coordinatori"
-GRUPPO_COORDINATORI_PRIME="coordinatori_prime"
-GRUPPO_COORDINATORI_SECONDE="coordinatori_seconde"
-GRUPPO_COORDINATORI_TERZE="coordinatori_terze"
-GRUPPO_COORDINATORI_QUARTE="coordinatori_quarte"
-GRUPPO_COORDINATORI_QUINTE="coordinatori_quinte"
-
-add_to_map "$GRUPPO_COORDINATORI" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-ORDER BY g.email_gsuite;"
-
-add_to_map "$GRUPPO_COORDINATORI_PRIME" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-AND SUBSTR(g.aggiunto_il, 1, 1) = '1' 
-ORDER BY g.email_gsuite;"
-
-add_to_map "$GRUPPO_COORDINATORI_SECONDE" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-AND SUBSTR(g.aggiunto_il, 1, 1) = '2'
-ORDER BY g.email_gsuite;"
-
-add_to_map "$GRUPPO_COORDINATORI_TERZE" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-AND SUBSTR(g.aggiunto_il, 1, 1) = '3'
-ORDER BY g.email_gsuite;"
-
-add_to_map "$GRUPPO_COORDINATORI_QUARTE" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-AND SUBSTR(g.aggiunto_il, 1, 1) = '4'
-ORDER BY g.email_gsuite;"
-
-add_to_map "$GRUPPO_COORDINATORI_QUINTE" "
-SELECT LOWER(g.email_gsuite) as email_gsuite 
-FROM $TABELLA_GRUPPI g 
-WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' 
-AND SUBSTR(g.aggiunto_il, 1, 1) = '5'
-ORDER BY g.email_gsuite;"
-
-##############################
-# Fine Gestione Coordinatori #
-##############################
-
 ###################
 # Gestione BIENNI #
 ###################
@@ -202,9 +146,6 @@ show_menu() {
     echo "1. Creo la tabella $TABELLA_GRUPPI"
     echo "2. Crea tutti i gruppi su GSuite"
     echo "3. Backup tutti i gruppi su CSV distinti..."
-    echo "4. "
-    echo "5. Visualizza $GRUPPO_COORDINATORI con classi associate"
-    echo "6. Salva $GRUPPO_COORDINATORI con classi associate su CSV"
     echo "7. "
     echo "8. Inserisci membri nei gruppi  ..."
     echo "9. Rimuovi membri dai gruppi  ..."
@@ -248,25 +189,6 @@ main() {
                   echo "Saved in file $EXPORT_DIR_DATE/${nome_gruppo}_${CURRENT_DATE}.csv"
                 done
                 ;;
-            5)
-                echo "Visualizza $GRUPPO_COORDINATORI con classi associate"
-                
-                $SQLITE_CMD studenti.db -header -table "SELECT UPPER(d.cognome) as cognome, UPPER(d.nome) as nome, LOWER(d.email_gsuite) as email_gsuite, g.aggiunto_il as coordinatori FROM $TABELLA_PERSONALE d INNER JOIN $TABELLA_GRUPPI g ON g.email_gsuite = d.email_gsuite WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY d.cognome, d.nome;"
-                ;;
-            6)
-                mkdir -p "$EXPORT_DIR_DATE"
-
-                echo "Salva $GRUPPO_COORDINATORI con classi associate in CSV..."
-                $SQLITE_CMD studenti.db -header -csv "SELECT UPPER(d.cognome) as cognome, UPPER(d.nome) as nome, LOWER(d.email_gsuite) as email_gsuite, g.aggiunto_il as coordinatori FROM $TABELLA_PERSONALE d INNER JOIN $TABELLA_GRUPPI g ON g.email_gsuite = d.email_gsuite WHERE g.nome_gruppo = '$GRUPPO_COORDINATORI' ORDER BY d.cognome, d.nome;" > "${EXPORT_DIR_DATE}/${GRUPPO_COORDINATORI}_con_classi_${CURRENT_DATE}.csv"
-                ;;
-            11)
-                # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_GRUPPI 
-                SET nome_gruppo = TRIM(LOWER(nome_gruppo)),
-                    codice_fiscale = TRIM(UPPER(codice_fiscale)),
-                    email_gsuite = TRIM(UPPER(email_gsuite)),
-                    email_personale = TRIM(UPPER(email_personale));"
-                ;;
             8)
                 echo "Inserisci membri nei gruppi  ..."
                 
@@ -287,6 +209,14 @@ main() {
 
                   $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
                 done
+                ;;
+            11)
+                # Normalizza dati
+                $SQLITE_CMD studenti.db "UPDATE $TABELLA_GRUPPI 
+                SET nome_gruppo = TRIM(LOWER(nome_gruppo)),
+                    codice_fiscale = TRIM(UPPER(codice_fiscale)),
+                    email_gsuite = TRIM(UPPER(email_gsuite)),
+                    email_personale = TRIM(UPPER(email_personale));"
                 ;;
             20)
                 echo "Arrivederci!"
