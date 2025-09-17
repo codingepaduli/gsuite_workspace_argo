@@ -16,6 +16,8 @@ QUERY_COORDINATORI="
     FROM $TABELLA_SEZIONI sz 
         LEFT JOIN $TABELLA_PERSONALE d 
         ON LOWER(sz.email_coordinatore) = LOWER(d.email_gsuite) 
+          AND LOWER(sz.email_coordinatore) IS NOT NULL 
+          AND LOWER(sz.email_coordinatore) != '' 
     WHERE 1=1 
         AND (
             (d.email_gsuite IS NOT NULL AND TRIM(d.email_gsuite != ''))

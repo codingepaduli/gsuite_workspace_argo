@@ -121,7 +121,8 @@ main() {
                         aggiunto_il = '$CURRENT_DATE'
                     WHERE sez NOT LIKE '%_sirio' 
                         AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
-                        AND (matricola IS NOT NULL AND TRIM(matricola) != '');"
+                        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+                        AND (datar IS NULL OR TRIM(datar) = '');"
 
                 # creo le mail del serale
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
@@ -132,7 +133,8 @@ main() {
                       aggiunto_il = '$CURRENT_DATE'
                     WHERE sez LIKE '%_sirio' 
                         AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                        AND (matricola IS NOT NULL AND TRIM(matricola) != '');"
+                        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+                        AND (datar IS NULL OR TRIM(datar) = '');"
                 ;;
             5)
                 mkdir -p "$EXPORT_DIR_DATE"
