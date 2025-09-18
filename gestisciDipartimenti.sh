@@ -3,16 +3,50 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
+source "./_maps.sh"
+
+QUERY_NOMI_DIPARTIMENTI="
+    SELECT DISTINCT UPPER(dipartimento)
+    FROM $TABELLA_PERSONALE
+    WHERE dipartimento IS NOT NULL 
+        AND TRIM(dipartimento) != ''
+    ORDER BY UPPER(dipartimento) ;"
+
+while IFS="," read -r dipartimento; do
+  add_to_map "$dipartimento" "
+      SELECT LOWER(email_gsuite) AS email_gsuite
+      FROM $TABELLA_PERSONALE
+      WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '')
+          AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+          AND UPPER(dipartimento) = UPPER('$dipartimento') 
+      ORDER BY LOWER(email_gsuite);"
+done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
+
+#####################################################################
+# PERSONALE_ATA - gestito a parte perché il nome non deve essere
+# 'dipartimento_personale_ata' ma solo 'personale_ata'
+DIPARTIMENTO_PERSONALE_ATA='PERSONALE_ATA'
+QUERY_PERSONALE_ATA=$(get_from_map "$DIPARTIMENTO_PERSONALE_ATA")
+remove_from_map "$DIPARTIMENTO_PERSONALE_ATA"
+#####################################################################
+
+echo "elenco dipartimenti:"
+echo "    "
+echo "    PERSONALE_ATA ------------ gestione separata ------------"
+for nome_gruppo in "${!gruppi[@]}"; do
+  echo " dipartimento $nome_gruppo"
+done
+echo "    "
 
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione Dipartimenti su GSuite"
     echo "-------------"
-    echo "1. Crea la tabella $TABELLA_DIPARTIMENTI"
-    echo "2. Importa dati in $TABELLA_DIPARTIMENTI da $TABELLA_CDC_ARGO e normalizza"
-    echo "3. Esporta lista dipartimenti"
-    echo "4. "
-    echo "5. Esporta lista delle sigole materie"
+    echo "1. Crea tutti i gruppi dipartimento su GSuite ..."
+    echo "2. Cancella tutti i gruppi dipartimento su GSuite ..."
+    echo "3. Inserisci membri nei gruppi  ..."
+    echo "4. Rimuovi membri dai gruppi  ..."
+    echo " "
     echo "20. Esci"
 }
 
@@ -24,119 +58,48 @@ main() {
         
         case $choice in
             1)
-                echo "Creo la tabella $TABELLA_DIPARTIMENTI ..."
+                echo "Crea tutti i gruppi dipartimento su GSuite ..."
                 
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_DIPARTIMENTI' (materie VARCHAR(200), dipartimento VARCHAR(200));"
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Creo gruppo $nome_gruppo su GSuite...!"
+                  $RUN_CMD_WITH_QUERY --command createGroup --group "dipartimento_$nome_gruppo" --query " /* NO */ "
+                done
+
+                echo "Creo gruppo $DIPARTIMENTO_PERSONALE_ATA su GSuite...!"
+                $RUN_CMD_WITH_QUERY --command createGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query " /* NO */ "
                 ;;
             2)
-                echo "Importa dati in $TABELLA_DIPARTIMENTI da $TABELLA_CDC_ARGO e normalizza ..."
+                echo "Cancella tutti i gruppi dipartimento su GSuite ..."
                 
-                $SQLITE_CMD studenti.db "insert into $TABELLA_DIPARTIMENTI (materie)
-                SELECT DISTINCT UPPER(cdc.materie)
-                  FROM $TABELLA_CDC_ARGO cdc
-                  INNER JOIN $TABELLA_PERSONALE d 
-                  ON (d.cognome || ' ' || d.nome) = cdc.docente 
-                  WHERE d.email_gsuite is NOT NULL 
-                  AND d.email_gsuite != '' 
-                  AND d.tipo_personale = 'docente'
-                  AND UPPER(cdc.materie) NOT IN ('EDUCAZIONE CIVICA', 'ORIENTAMENTO', 'POTENZIAMENTO', 'SOST')
-                  ORDER BY cdc.materie"
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Cancello gruppo $nome_gruppo su GSuite...!"
+                  $RUN_CMD_WITH_QUERY --command deleteGroup --group "dipartimento_$nome_gruppo" --query " /* NO */ "
+                done
 
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_DIPARTIMENTI 
-                SET dipartimento = 
-                    CASE
-                      WHEN materie = 'COMPLEMENTI' THEN 'MATEMATICA'
-                      WHEN materie = 'MAT' THEN 'MATEMATICA'
-                      WHEN materie = 'MAT+ COMPLEMENTI' THEN 'MATEMATICA'
-                      WHEN materie = 'MATEMATICA+COMPLEMEN' THEN 'MATEMATICA'
-
-                      -- O LETTERE?
-                      WHEN materie = 'DIRITTO E PRATICA' THEN 'DIRITTO'
-                      WHEN materie = 'DIRITTO ED ECONOMIA' THEN 'DIRITTO'
-
-                      WHEN materie = 'GEOGRAFIA' THEN 'LETTERE'
-                      WHEN materie = 'LINGUA E LETT. ITAL.' THEN 'LETTERE'
-                      WHEN materie = 'STORIA' THEN 'LETTERE'
-
-                      WHEN materie = 'INGLESE' THEN 'INGLESE'
-
-                      -- O LETTERE?
-                      WHEN materie = 'RELIGIONE/ATT.ALTERN' THEN 'RELIGIONE'
-
-                      WHEN materie = 'SCIEN. MOTOR. E SPOR' THEN 'SCIENZE_MOTORIE'
-
-                      WHEN materie = 'SC.TERRA E BIOLOGIA' THEN 'SCIENZE'
-                      WHEN materie = 'SCIEN. INTE(CHIMICA)' THEN 'SCIENZE'
-                      WHEN materie = 'SCIEN.INTEG.(FISICA)' THEN 'SCIENZE'
-                      WHEN materie = 'SCIENZE DELLA TERRA' THEN 'SCIENZE'
-                      -- WHEN materie = 'SCIENZE E TECN.APPLI' THEN 'SCIENZE'
-                      
-                      -- O DISEGNO ?
-                      WHEN materie = 'TECN.DI RAPP.GRAFICA' THEN 'SCIENZE'
-
-                      WHEN materie = 'ANATOMIA.FISILIO' THEN 'ODONTOTECNICO'
-                      WHEN materie = 'ESER. LABOR.ODONTOT' THEN 'ODONTOTECNICO'
-                      WHEN materie = 'GNATOLOGIA' THEN 'ODONTOTECNICO'
-                      WHEN materie = 'RAPPR.MODELLAZIONEOD' THEN 'ODONTOTECNICO'
-
-                      WHEN materie = 'D.P.O.' THEN 'MACCANICA'
-                      WHEN materie = 'MECC E SIS.PROPULSIV' THEN 'MACCANICA'
-                      WHEN materie = 'MECC. MACCH. ED ENER' THEN 'MACCANICA'
-                      WHEN materie = 'TECN.MECC.DI PROC.E' THEN 'TRASPORTI'
-
-                      -- O MACCANICA ?
-                      WHEN materie = 'SISTEMI AUTOMATICI' THEN 'ELETTRONICA'
-                      WHEN materie = 'ELETTRONICA ED ELETT' THEN 'ELETTRONICA'
-                      WHEN materie = 'ELETTROTECNICA ED EL' THEN 'ELETTRONICA'
-
-                      -- WHEN materie = 'GESTIONE PROGETTO OR' THEN ''
-                      
-                      WHEN materie = 'INFORMATICA' THEN 'INFORMATICA'
-                      WHEN materie = 'SISTEMI E RETI' THEN 'INFORMATICA'
-                      WHEN materie = 'TECN SISTEMI INF' THEN 'INFORMATICA'
-                      WHEN materie = 'TECNOLOGIE INFORMAT.' THEN 'INFORMATICA'
-                      WHEN materie = 'TECNOLOGIA DELLINFOR' THEN 'INFORMATICA'
-
-                      WHEN materie = 'LOGISTICA' THEN 'TRASPORTI'
-                      WHEN materie = 'STRUTTURA.COST.MEZZO' THEN 'TRASPORTI'
-
-                      WHEN materie = 'TELECOMUNICAZIONI' THEN 'TELECOMUNICAZIONI'
-
-                    END"
+                echo "Cancello gruppo $DIPARTIMENTO_PERSONALE_ATA su GSuite...!"
+                $RUN_CMD_WITH_QUERY --command deleteGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query " /* NO */ "
                 ;;
             3)
-                echo "Esporta lista docenti con possibili dipartimenti ..."
+                echo "Inserisci membri nei gruppi  ..."
+
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
                 
-                test estrazione dati con
-                $SQLITE_CMD -header -table studenti.db "SELECT DISTINCT dip.dipartimento, UPPER(cdc.materie), cdc.docente
-                  FROM $TABELLA_CDC_ARGO cdc
-                  INNER JOIN $TABELLA_PERSONALE d 
-                  ON (d.cognome || ' ' || d.nome) = cdc.docente 
-                  INNER JOIN $TABELLA_DIPARTIMENTI dip 
-                  ON UPPER(cdc.materie) = UPPER(dip.materie)
-                  WHERE d.email_gsuite is NOT NULL 
-                  AND d.email_gsuite != '' 
-                  AND d.tipo_personale = 'docente'
-                  AND UPPER(cdc.materie) NOT IN ('EDUCAZIONE CIVICA', 'ORIENTAMENTO', 'POTENZIAMENTO', 'SOST')
-                  ORDER BY cdc.docente"
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Inserisco membri nel gruppo $nome_gruppo ..."
+
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                done
                 ;;
             4)
-                #
-                ;;
-            5)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Esporta lista delle sigole materie ..."
+                echo "Rimuovi membri dai gruppi  ..."
 
-                $SQLITE_CMD -csv studenti.db "
-                  SELECT DISTINCT cdc.materie 
-                  FROM $TABELLA_CDC_ARGO cdc
-                  INNER JOIN $TABELLA_PERSONALE d 
-                  ON (d.cognome || ' ' || d.nome) = cdc.docente 
-                  WHERE d.email_gsuite is NOT NULL 
-                  AND d.email_gsuite != '' 
-                  AND d.tipo_personale = 'docente'
-                  AND cdc.materie NOT IN ('EDUCAZIONE CIVICA', 'ORIENTAMENTO', 'POTENZIAMENTO')
-                  " > "$EXPORT_DIR_DATE/materie.csv"
+                $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Rimuovo membri dal gruppo $nome_gruppo ..."
+
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                done
                 ;;
             20)
                 echo "Arrivederci!"
@@ -155,4 +118,3 @@ main() {
 
 # Avvia la funzione principale
 main
-
