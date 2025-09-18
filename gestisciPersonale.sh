@@ -153,12 +153,16 @@ main() {
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
 
-                $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, LOWER(email_gsuite) as email_gsuite 
+                $SQLITE_CMD studenti.db -header -table "
+                SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                    UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, 
+                    LOWER(email_gsuite) as email_gsuite, cancellato_il 
                 FROM $TABELLA_PERSONALE_PRECEDENTE 
                 WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
                     AND UPPER(codice_fiscale) NOT IN (
                       SELECT UPPER(codice_fiscale)
-                      FROM $TABELLA_PERSONALE );"
+                      FROM $TABELLA_PERSONALE )
+                ORDER BY UPPER(cognome);"
                 ;;
             8)
                 echo "8. Importa nella tabella attuale il personale della tabella precedente non incluso in quella attuale"
