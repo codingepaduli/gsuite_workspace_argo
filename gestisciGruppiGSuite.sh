@@ -5,32 +5,39 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-########################################################################
-# Questo script permette di importare i gruppi e di rimuovere i membri #
-# disabilitati, ma non è progettato per inserire i membri nei gruppi,  #
-# questa funzionalità è demandata agli specifici script.               # 
-########################################################################
+#########################################################################
+# Progettato per CREARE la tabella gruppi, NORMALIZZARE i dati presenti #
+# presenti e gestire la RIMOZIONE degli utenti disabilitati DAI GRUPPI. #
+# Non è progettato nè per importare i gruppi, nè per inserire i membri  #
+# nei gruppi, nè per disabilitare gli utenti, nè per cancellare i loro  #
+# account, queste funzionalità sono demandate agli specifici script.    # 
+#########################################################################
 
-# Gruppo insegnanti
-GRUPPO_DOCENTI="docenti_volta"
-
-# Gruppo insegnanti abilitati a classroom
-GRUPPO_CLASSROOM="insegnanti_classe"
-
-add_to_map "$GRUPPO_DOCENTI" " NO; "
-add_to_map "$GRUPPO_CLASSROOM" " NO; "
+QUERY_UTENTI_DA_RIMUOVERE="
+    FROM $TABELLA_GRUPPI dg 
+    WHERE 1=1
+      -- filtro studenti e personale
+        AND dg.email IS NOT NULL AND TRIM(LOWER(dg.email)) != ''
+        AND LOWER(SUBSTR(dg.email, 1, MIN(2, LENGTH(dg.email)))) IN ('d.', 'a.', 's.')
+        AND LOWER(dg.email) IN (
+            SELECT LOWER(t.email_gsuite)
+            FROM $TABELLA_UTENTI_GSUITE t
+            WHERE UPPER(t.stato_utente) = 'SUSPENDED'
+        )
+      -- filtro gruppo
+      -- AND \"group\" = 'nome_gruppo'
+"
 
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione gruppi GSuite"
     echo "-------------"
     echo "1. Creo la tabella gruppi GSuite"
-    echo "2. Importa in tabella i gruppi GSuite"
     echo "3. Normalizza dati in tabella"
     echo "4. Backup tutti i gruppi GSuite su CSV distinti..."
     echo "7. "
-    echo "8. Visualizza membri disabilitati da rimuovere dai gruppi GSuite"
-    echo "9. Rimuovi membri disabilitati dai gruppi GSuite"
+    echo "8. Visualizza utenti (con stato sospeso) da rimuovere dai gruppi GSuite"
+    echo "9. Rimuovi utenti (con stato sospeso) dai gruppi GSuite"
     echo "10. "
     echo "20. Esci"
 }
@@ -51,14 +58,6 @@ main() {
                 # Creo la tabella
                 $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_GRUPPI' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
                 ;;
-            2)
-                echo "Importa in tabella i gruppi GSuite"
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    echo "Salvo gruppo GSuite $nome_gruppo in tabella"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_GRUPPI" - --csv --empty-null
-                done
-                ;;
             3)
                 echo "Normalizza dati"
 
@@ -71,7 +70,8 @@ main() {
                     type = TRIM(UPPER(type)),
                     status = TRIM(UPPER(status));"
 
-                # Normalizza dati
+                # Normalizza il nome del gruppo, rimuovendo il suffisso
+                # (da "gruppo@abc.com" lo trasforma in "gruppo")
                 $SQLITE_CMD studenti.db "UPDATE $TABELLA_GRUPPI 
                     SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)
                     WHERE \"group\" LIKE '%@%';"
@@ -85,59 +85,36 @@ main() {
                   $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/${nome_gruppo}_${CURRENT_DATE}.csv"
                 done
                 ;;
-            6)
-                # echo "Inserisci membri nei gruppi  ..."
-                
-                # for nome_gruppo in "${!gruppi[@]}"; do
-                #   echo "Inserisco membri nel gruppo $nome_gruppo ...!"
-                #   echo "query ${gruppi[$nome_gruppo]} ...!"
-                #   $SQLITE_CMD studenti.db "${gruppi[$nome_gruppo]}"
-
-                #   $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                # done
-                ;;
             8)
-                echo "Visualizza membri disabilitati da rimuovere  ..."
+                echo "Visualizza utenti (con stato sospeso) da rimuovere dai gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "membri disabilitati da rimuovere dal gruppo $nome_gruppo ...!"
 
-                  local QUERY_UTENTI_DISABILITATI="SELECT LOWER(dg.email)
-                      FROM $TABELLA_GRUPPI dg 
-                      WHERE 1=1
+                  local QUERY_UTENTI_DISABILITATI="
+                      SELECT LOWER(dg.email)
+                      $QUERY_UTENTI_DA_RIMUOVERE
                         -- filtro gruppo
                           AND \"group\" = '$nome_gruppo'
-                        -- filtro studenti e personale
-                          AND LOWER(dg.email) NOT NULL AND TRIM(LOWER(dg.email)) != ''
-                          AND LOWER(SUBSTR(dg.email, 1, MIN(2, LENGTH(dg.email)))) IN ('d.', 'a.', 's.')
-                          AND LOWER(dg.email) IN (
-                            SELECT LOWER(t.email_gsuite)
-                            FROM $TABELLA_UTENTI_GSUITE t
-                            WHERE UPPER(t.stato_utente) = 'SUSPENDED'
-                          ) "
+                      ORDER BY LOWER(dg.email);
+                  "
 
                   $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "$QUERY_UTENTI_DISABILITATI"
                 done
                 ;;
             9)
-                echo "Rimuovi membri dai gruppi  ..."
+                echo "Rimuovi utenti (con stato sospeso) dai gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Rimuovo membri dal gruppo $nome_gruppo ...!"
 
-                  local QUERY_UTENTI_DISABILITATI="SELECT LOWER(dg.email)
-                      FROM $TABELLA_GRUPPI dg 
-                      WHERE 1=1
+                  local QUERY_UTENTI_DISABILITATI="
+                      SELECT LOWER(dg.email)
+                      $QUERY_UTENTI_DA_RIMUOVERE
                         -- filtro gruppo
                           AND \"group\" = '$nome_gruppo'
-                        -- filtro studenti e personale
-                          AND LOWER(dg.email) NOT NULL AND TRIM(LOWER(dg.email)) != ''
-                          AND LOWER(SUBSTR(dg.email, 1, MIN(2, LENGTH(dg.email)))) IN ('d.', 'a.', 's.')
-                          AND LOWER(dg.email) IN (
-                            SELECT LOWER(t.email_gsuite)
-                            FROM $TABELLA_UTENTI_GSUITE t
-                            WHERE UPPER(t.stato_utente) = 'SUSPENDED'
-                          ) "
+                      ORDER BY LOWER(dg.email);
+                  "
 
                   $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "$QUERY_UTENTI_DISABILITATI"
                 done

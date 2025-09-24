@@ -74,7 +74,6 @@ add_to_map "secondo_biennio_aereonautica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQ
 show_menu() {
     echo "Gestione gruppi docenti (da tabella $TABELLA_GRUPPI)"
     echo "-------------"
-    echo "1. Creo la tabella $TABELLA_GRUPPI"
     echo "2. Crea tutti i gruppi su GSuite"
     echo "3. Backup tutti i gruppi su CSV distinti..."
     echo "7. "
@@ -92,15 +91,6 @@ main() {
         read -p "Scegli un'opzione (1-20): " -r choice
         
         case $choice in
-            10)
-                echo "Creo la tabella $TABELLA_GRUPPI"
-
-                # Cancello la tabella
-                # $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_GRUPPI';"
-
-                # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_GRUPPI' (nome_gruppo VARCHAR(200), codice_fiscale VARCHAR(200), email_gsuite VARCHAR(200), email_personale VARCHAR(200), aggiunto_il VARCHAR(200));"
-                ;;
             2)
                 echo "Crea tutti i gruppi su GSuite ..."
                 
