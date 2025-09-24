@@ -5,34 +5,55 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-# File CSV 
-FILE_CSV="$BASE_DIR/dati_argo/docenti_gsuite/${TABELLA_DOCENTI_GSUITE}.csv"
+##########################################################################
+# Progettato per gestire il personale, non per CdC, non per dipartimenti # 
+##########################################################################
 
 # Gruppo insegnanti
 GRUPPO_DOCENTI="docenti_volta"
-GRUPPO_SOSTEGNO="sostegno"
-GRUPPO_COORDINATORI="coordinatori"
-
-# add_to_map "coordinatori"   " SELECT c.email FROM ${TABELLA_DOCENTI_GSUITE} c WHERE c.\"group\" = '$nome_gruppo' ORDER BY c.email; "
 
 # Gruppo insegnanti abilitati a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
 
-# add_to_map "$GRUPPO_CLASSROOM"   " NO "
+# Query personale tutto
+QUERY_PERSONALE="
+    FROM $TABELLA_PERSONALE
+    WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != ''))
+        AND UPPER(tipo_personale)=UPPER('docente') 
+        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')"
 
-# add_to_map "$GRUPPO_DOCENTI" "
-# SELECT csv.email
-# FROM ${TABELLA_DOCENTI_GSUITE} csv 
-# WHERE SUBSTR(csv.email, 1, 2) = 'd.'; "
+add_to_map "$GRUPPO_DOCENTI" " 
+    SELECT LOWER(email_gsuite) AS email_gsuite 
+    $QUERY_PERSONALE
+    ORDER BY LOWER(email_gsuite);"
+
+add_to_map "$GRUPPO_CLASSROOM" "
+    SELECT LOWER(email_gsuite) AS email_gsuite 
+    $QUERY_PERSONALE
+    ORDER BY LOWER(email_gsuite);"
+
+# Query personale aggiunto in un certo periodo
+QUERY_DELTA_PERSONALE="
+    $QUERY_PERSONALE
+    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+        AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+    )"
 
 # Query docenti su GSuite non presenti su Argo
 PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
-FROM ${TABELLA_DOCENTI_GSUITE} c 
-WHERE c.email NOT IN (
-    SELECT LOWER(d.email_gsuite) 
-    FROM $TABELLA_PERSONALE d
-    WHERE d.tipo_personale = 'docente'
-)
+FROM ${TABELLA_DOCENTI_GSUITE} dg 
+WHERE 1=1
+    -- filtro studenti
+    AND LOWER(SUBSTR(dg.email_gsuite, 1, MIN(2, LENGTH(dg.email_gsuite)))) IN ('d.')
+    AND UPPER(dg.stato_utente) = 'SUSPENDED'
+    AND LOwER(dg.email) NOT IN (
+        SELECT LOWER(email_gsuite) AS email_gsuite 
+        FROM $TABELLA_PERSONALE
+        WHERE 1=1
+            AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite != ''))
+            AND UPPER(tipo_personale)=UPPER('docente') 
+            AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+    )
 "
 
 # AND d.type = 'Suspended'
@@ -42,7 +63,7 @@ WHERE c.email NOT IN (
 
 # Query (tutte le info) docenti su GSuite non presenti su Argo
 FULL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
-SELECT c.id, c.name, c.email, c.type, c.status
+SELECT UPPER(dg.name) AS name, LOWER(dg.email) AS email
 $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO
 ORDER BY c.email;"
 
@@ -54,19 +75,20 @@ ORDER BY c.email;"
 
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione gruppi di GSuite su tabella ${TABELLA_DOCENTI_GSUITE}"
+    echo "Gestione gruppi GSuite del personale:"
     echo "-------------"
-    echo "1. Creo la tabella ${TABELLA_DOCENTI_GSUITE}"
-    echo "2. Inporta in tabella i gruppi GSuite"
-    echo "3. Importa tutti i docenti da singolo file CSV nella tabella"
-    echo "4. Visualizza docenti nei gruppi GSuite che non sono in Argo"
-    echo "5. Rimuovi dai gruppi GSuite i docenti che non sono in Argo"
-    echo "6. Svuota gruppi GSuite"
-    echo "7, Cancella gruppi GSuite"
+    echo "1. Aggiungi tutti i membri ai gruppi GSuite"
+    echo "2. Importa in tabella GRUPPI i gruppi GSuite"
+    echo "3. Visualizza nuovo personale da aggiungere ai gruppi GSuite"
+    echo "4. Aggiungi nuovo personale ai gruppi GSuite"
+    echo "5. Visualizza docenti nei gruppi GSuite che non sono in Argo"
+    echo "6. Disabilito i docenti GSuite che non sono in elenco Argo"
     echo "8. Visualizza docenti su GSuite non presenti su Argo"
     echo "9. Esporta docenti su GSuite non presenti su Argo"
     echo "10. Sospendi docenti su GSuite non presenti su Argo"
     echo "11. Cancella account docenti su GSuite non presenti su Argo"
+    echo "18. Crea i gruppi su GSuite ..."
+    echo "19. Cancella i gruppi da GSuite ..."
     echo "20. Esci"
 }
 
@@ -78,56 +100,98 @@ main() {
         
         case $choice in
             1)
-                echo "Creo la tabella ${TABELLA_DOCENTI_GSUITE} ..."
-
-                # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '${TABELLA_DOCENTI_GSUITE}' (\"group\" VARCHAR(200), name VARCHAR(200), id VARCHAR(200), email VARCHAR(200), role VARCHAR(200),	type VARCHAR(200), status VARCHAR(200));"
+                echo "Aggiungi tutti i membri ai gruppi GSuite ..."
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Creo gruppo $nome_gruppo su GSuite...!"
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                done
                 ;;
             2)
-                echo "Inporta in tabella i gruppi GSuite"
+                echo "Importa in tabella GRUPPI i gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                     echo "Salvo gruppo GSuite $nome_gruppo in tabella"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_DOCENTI_GSUITE}" - --csv --empty-null
+                    $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_GRUPPI" - --csv --empty-null
                 done
-
-                 # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE ${TABELLA_DOCENTI_GSUITE} 
-                SET \"group\" = substr(\"group\", 1, instr(\"group\", '@') - 1)"
                 ;;
             3)
-                echo "Importa tutti i docenti da singolo file CSV nella tabella"
-                
-                $SQLITE_UTILS_CMD insert studenti.db "${TABELLA_DOCENTI_GSUITE}" "$FILE_CSV" --csv --empty-null
-                ;;
-            4)
-                echo "Visualizza docenti nei gruppi GSuite che non sono in elenco Argo"
+                echo "Visualizza nuovo personale da aggiungere ai gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
-                  $SQLITE_CMD studenti.db --csv --header "SELECT c.\"group\", c.id, c.name, c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO AND c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
+                  echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
+                  $RUN_CMD_WITH_QUERY --command executeQuery --group " /* NO */ " --query "
+                      SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                          UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
+                          LOWER(email_gsuite) as email_gsuite
+                      $QUERY_DELTA_PERSONALE
+                      ORDER BY LOWER(email_gsuite);
+                  "
+                done
+                ;;
+            4)
+                echo "Aggiungi nuovo personale ai gruppi GSuite"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "
+                      SELECT LOWER(email_gsuite) as email_gsuite
+                      $QUERY_DELTA_PERSONALE
+                      ORDER BY LOWER(email_gsuite);
+                  "
                 done
                 ;;
             5)
-                echo "Rimuovi dai gruppi GSuite i docenti che non sono in elenco Argo"
+                echo "Visualizza personale nei gruppi GSuite che non sono in elenco Argo"
                 
-                for nome_gruppo in "${!gruppi[@]}"; do                
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "SELECT c.email $PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO AND c.\"group\" = '$nome_gruppo' ORDER BY c.email;"
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "disabilito utenti del gruppo $nome_gruppo"
+
+                  $SQLITE_CMD studenti.db --csv --header "
+                  SELECT g.\"group\", LOWER(g.name) AS name, LOWER(g.email) AS email
+                  FROM $TABELLA_GRUPPI g
+                  WHERE 1=1
+                    AND g.\"group\" = '$nome_gruppo'
+                    -- filtro email
+                    AND LOWER(g.email) NOT NULL AND TRIM(LOWER(g.email)) != ''
+                    AND LOWER(SUBSTR(g.email, 1, MIN(2, LENGTH(g.email)))) IN ('d.', 'a.')
+                    AND LOWER(g.email) IN (
+                      SELECT LOWER(pa.email_gsuite)
+                      FROM $TABELLA_PERSONALE pa
+                      WHERE 1=1
+                        AND (pa.email_gsuite IS NOT NULL AND TRIM(pa.email_gsuite) != '') 
+                        -- seleziono i cancellati
+                        AND (cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '')
+                    )
+                    ORDER BY LOWER(g.email);"
                 done
                 ;;
             6)
-                echo "Svuota gruppi GSuite"
-
+                echo "Disabilito i docenti GSuite che non sono in elenco Argo"
+                
                 for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Svuoto gruppo GSuite $nome_gruppo"
+                  echo "disabilito utenti del gruppo $nome_gruppo"
 
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            7)
-                echo "Cancella gruppi GSuite"
-
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
+                  $SQLITE_CMD studenti.db --csv --header "
+                  UPDATE $TABELLA_UTENTI_GSUITE
+                  SET stato_utente = 'SUSPENDED'
+                  WHERE LOWER(email_gsuite) IN (
+                    SELECT LOWER(g.email) AS email
+                    FROM $TABELLA_GRUPPI g
+                    WHERE 1=1
+                      AND g.\"group\" = '$nome_gruppo'
+                      -- filtro email
+                      AND LOWER(g.email) NOT NULL AND TRIM(LOWER(g.email)) != ''
+                        AND LOWER(SUBSTR(g.email, 1, MIN(2, LENGTH(g.email)))) IN ('d.', 'a.')
+                      AND LOWER(g.email) IN (
+                        SELECT LOWER(pa.email_gsuite)
+                        FROM $TABELLA_PERSONALE pa
+                        WHERE 1=1
+                          AND (pa.email_gsuite IS NOT NULL AND TRIM(pa.email_gsuite) != '') 
+                          -- seleziono i cancellati
+                          AND (cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '')
+                      )
+                    );"
                 done
                 ;;
             8)
@@ -151,6 +215,22 @@ main() {
                 echo "Cancella account docenti su GSuite non presenti su Argo"
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$QUERY_DOCENTI_SU_GSUITE_NON_ARGO"
+                ;;
+            18)
+                echo "Crea i gruppi su GSuite"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Creo gruppo $nome_gruppo su GSuite"
+                  $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
+                done
+                ;;
+            19)
+                echo "Cancella i gruppi da GSuite"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Cancello gruppo $nome_gruppo da GSuite"
+                  # $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
+                done
                 ;;
             20)
                 echo "Arrivederci!"
