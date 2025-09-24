@@ -81,14 +81,14 @@ show_menu() {
     echo "2. Importa in tabella GRUPPI i gruppi GSuite"
     echo "3. Visualizza nuovo personale da aggiungere ai gruppi GSuite"
     echo "4. Aggiungi nuovo personale ai gruppi GSuite"
-    echo "5. Visualizza docenti nei gruppi GSuite che non sono in Argo"
-    echo "6. Disabilito i docenti GSuite che non sono in elenco Argo"
-    echo "8. Visualizza docenti su GSuite non presenti su Argo"
-    echo "9. Esporta docenti su GSuite non presenti su Argo"
-    echo "10. Sospendi docenti su GSuite non presenti su Argo"
-    echo "11. Cancella account docenti su GSuite non presenti su Argo"
+    echo "5. (TODO da cancellare) Visualizza docenti nei gruppi GSuite che non sono in Argo"
+    echo "6. (TODO da spostare) Disabilito i docenti GSuite che non sono in elenco Argo"
+    echo "8. (TODO da spostare) Visualizza docenti su GSuite non presenti su Argo"
+    echo "9. (TODO da spostare) Esporta docenti su GSuite non presenti su Argo"
+    echo "10. (TODO da spostare) Sospendi docenti su GSuite non presenti su Argo"
+    echo "11. (TODO da spostare) Cancella account docenti su GSuite non presenti su Argo"
     echo "18. Crea i gruppi su GSuite ..."
-    echo "19. Cancella i gruppi da GSuite ..."
+    echo "19. Cancella i gruppi GSuite ..."
     echo "20. Esci"
 }
 
@@ -225,7 +225,7 @@ main() {
                 done
                 ;;
             19)
-                echo "Cancella i gruppi da GSuite"
+                echo "Cancella i gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Cancello gruppo $nome_gruppo da GSuite"

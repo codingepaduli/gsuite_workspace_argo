@@ -19,15 +19,18 @@ QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
             FROM $TABELLA_STUDENTI sa
         )
 "
-# Query studenti su GSuite non presenti su Argo
+# Query personale su GSuite non in servizio su Argo
 QUERY_PERSONALE_SU_GSUITE_NON_ARGO="
     FROM $TABELLA_UTENTI_GSUITE sg 
     WHERE
         -- filtro personale
         LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.')
         AND LOWER(sg.email_gsuite) NOT IN (
-            SELECT LOWER(p.email_gsuite) 
-            FROM $TABELLA_PERSONALE p
+            -- personale in servizio
+            SELECT LOWER(email_gsuite) 
+            FROM $TABELLA_PERSONALE
+            WHERE 1=1
+                AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
         )
 "
 
@@ -88,6 +91,7 @@ show_menu() {
     echo "-------------"
     echo "1. Cancello e ricreo la tabella di tutti gli utenti GSuite"
     echo "2. Importo e normalizzo i dati dal file CSV"
+    echo "3. Visualizza personale disabilitato"
 
     echo "5. Visualizza studenti su GSuite e non su Argo"
 
@@ -157,6 +161,18 @@ main() {
                 SET ultimo_login = date('2000-01-01')
                 WHERE ultimo_login is NOT NULL AND TRIM(UPPER(ultimo_login)) = UPPER('Never logged in');"
                 ;;
+            3)
+                echo "3. Visualizza utenti disabilitati"
+
+                $SQLITE_CMD -header -table studenti.db "SELECT UPPER(sg.cognome) AS cognome, UPPER(sg.nome) AS nome, LOWER(sg.org_unit) AS org_unit, LOWER(sg.email_gsuite) AS email_gsuite, UPPER(stato_utente) AS stato_utente
+                FROM $TABELLA_UTENTI_GSUITE sg
+                    WHERE 1=1 
+                        AND UPPER(stato_utente) = 'SUSPENDED'
+                        -- filtro personale
+                        AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.', 's.')
+                        AND UPPER(sg.org_unit) IN ('/DOCENTI', '/ATA', '/STUDENTI/DIURNO', '/STUDENTI/SERALE')
+                ORDER BY UPPER(sg.cognome);"
+                ;;
             5)
                 echo "5. Visualizza studenti su GSuite e non su Argo"
 
@@ -166,7 +182,7 @@ main() {
             12)
                 echo "12. Visualizza personale su GSuite e non su Argo"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_PERSONALE_SU_GSUITE_NON_ARGO 
+                $SQLITE_CMD -header -table studenti.db "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_PERSONALE_SU_GSUITE_NON_ARGO 
                 ORDER BY UPPER(sg.cognome);"
                 ;;
             14)
