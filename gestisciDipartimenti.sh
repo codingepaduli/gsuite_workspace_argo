@@ -5,6 +5,7 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
+# Query dei nomi dei dipartimenti e senza il prefisso "dipartimento_"
 QUERY_NOMI_DIPARTIMENTI="
     SELECT DISTINCT UPPER(dipartimento)
     FROM $TABELLA_PERSONALE
@@ -12,14 +13,14 @@ QUERY_NOMI_DIPARTIMENTI="
         AND TRIM(dipartimento) != ''
     ORDER BY UPPER(dipartimento) ;"
 
+# Le query del personale di ogni dipartimenti
 while IFS="," read -r dipartimento; do
   add_to_map "$dipartimento" "
-      SELECT LOWER(email_gsuite) AS email_gsuite
       FROM $TABELLA_PERSONALE
       WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '')
           AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
           AND UPPER(dipartimento) = UPPER('$dipartimento') 
-      ORDER BY LOWER(email_gsuite);"
+      "
 done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
 
 #####################################################################
@@ -46,6 +47,8 @@ show_menu() {
     echo "2. Cancella tutti i gruppi dipartimento su GSuite ..."
     echo "3. Inserisci membri nei gruppi  ..."
     echo "4. Rimuovi membri dai gruppi  ..."
+    echo " "
+    echo "7. Aggiorna i dipartimenti con i nuovi docenti  ..."
     echo " "
     echo "20. Esci"
 }
@@ -82,23 +85,58 @@ main() {
             3)
                 echo "Inserisci membri nei gruppi  ..."
 
-                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite 
+                ${QUERY_PERSONALE_ATA}
+                ORDER BY LOWER(email_gsuite);"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Inserisco membri nel gruppo $nome_gruppo ..."
 
-                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "
+                  SELECT LOWER(email_gsuite) AS email_gsuite 
+                  ${gruppi[$nome_gruppo]}
+                  ORDER BY LOWER(email_gsuite);"
                 done
                 ;;
             4)
                 echo "Rimuovi membri dai gruppi  ..."
 
-                $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
+                $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite 
+                ${QUERY_PERSONALE_ATA}
+                ORDER BY LOWER(email_gsuite);"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
                   echo "Rimuovo membri dal gruppo $nome_gruppo ..."
 
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "dipartimento_$nome_gruppo" --query "
+                  SELECT LOWER(email_gsuite) AS email_gsuite 
+                  ${gruppi[$nome_gruppo]}
+                  ORDER BY LOWER(email_gsuite);"
+                done
+                ;;
+            7)
+                echo "Aggiorna i dipartimenti con i nuovi docenti  ..."
+
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite 
+                ${QUERY_PERSONALE_ATA}
+                  AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                    AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+                  )
+                ORDER BY LOWER(email_gsuite);"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  echo "Inserisco membri nel gruppo $nome_gruppo ..."
+
+                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "
+                  SELECT LOWER(email_gsuite) AS email_gsuite 
+                  ${gruppi[$nome_gruppo]}
+                  AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                    AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+                  )
+                  ORDER BY LOWER(email_gsuite);"
                 done
                 ;;
             20)
