@@ -5,27 +5,6 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-##########################
-# Gestione tutti docenti #
-##########################
-
-GRUPPO_DOCENTI="docenti_volta"
-
-add_to_map "$GRUPPO_DOCENTI" "
-    SELECT LOWER(email_gsuite) AS email_gsuite
-    FROM $TABELLA_PERSONALE
-    WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != ''))
-        AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-            AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-        ) 
-        AND UPPER(tipo_personale)=UPPER('docente') 
-        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-    ORDER BY LOWER(email_gsuite); "
-
-###############################
-# Fine Gestione tutti docenti #
-###############################
-
 ###################
 # Gestione BIENNI #
 ###################
