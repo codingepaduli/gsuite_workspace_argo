@@ -91,8 +91,8 @@ show_menu() {
     echo "-------------"
     echo "1. Cancello e ricreo la tabella di tutti gli utenti GSuite"
     echo "2. Importo e normalizzo i dati dal file CSV"
-    echo "3. Visualizza personale disabilitato"
-
+    echo "3. Visualizza personale segnato come disabilitato"
+    echo "4. Disabilita su GSuite il personale segnato come disabilitato"
     echo "5. Visualizza studenti su GSuite e non su Argo"
 
     echo "12. Visualizza personale su GSuite e non su Argo"
@@ -166,12 +166,25 @@ main() {
 
                 $SQLITE_CMD -header -table studenti.db "SELECT UPPER(sg.cognome) AS cognome, UPPER(sg.nome) AS nome, LOWER(sg.org_unit) AS org_unit, LOWER(sg.email_gsuite) AS email_gsuite, UPPER(stato_utente) AS stato_utente
                 FROM $TABELLA_UTENTI_GSUITE sg
-                    WHERE 1=1 
-                        AND UPPER(stato_utente) = 'SUSPENDED'
-                        -- filtro personale
-                        AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.', 's.')
-                        AND UPPER(sg.org_unit) IN ('/DOCENTI', '/ATA', '/STUDENTI/DIURNO', '/STUDENTI/SERALE')
+                WHERE 1=1 
+                    AND UPPER(stato_utente) = 'SUSPENDED'
+                    -- filtro personale
+                    AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.', 's.')
+                    AND UPPER(sg.org_unit) IN ('/DOCENTI', '/ATA', '/STUDENTI/DIURNO', '/STUDENTI/SERALE')
                 ORDER BY UPPER(sg.cognome);"
+                ;;
+            4)
+                echo "4. Disabilita su GSuite il personale segnato come disabilitato"
+
+                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite
+                FROM $TABELLA_UTENTI_GSUITE
+                WHERE 1=1 
+                    AND UPPER(stato_utente) = 'SUSPENDED'
+                    -- filtro personale
+                    AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('d.', 'a.')
+                    AND UPPER(org_unit) IN ('/DOCENTI', '/ATA')
+                ORDER BY UPPER(cognome);"
                 ;;
             5)
                 echo "5. Visualizza studenti su GSuite e non su Argo"
