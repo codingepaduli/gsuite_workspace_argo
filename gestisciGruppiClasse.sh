@@ -33,8 +33,8 @@ show_menu() {
     echo "4. Aggiungi studenti alle classi"
     echo "5. Visualizza numero studenti per classe"
     echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
-    echo "7. Toglie i ritirati dalle classi e effettua i cambi di classe"
-    echo "8. Aggiungi nuovi studenti (vedi periodo) alle classi"
+    echo "8. Toglie i ritirati dalle classi e effettua i cambi di classe"
+    echo "9. Aggiungi nuovi studenti (vedi periodo) alle classi"
     
     echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
     echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
@@ -152,7 +152,7 @@ main() {
                   ORDER BY s.sezione_gsuite, sa.cognome, sa.nome;
                 " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
-            7)
+            8)
                 checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
 
                 echo "Toglie i ritirati dalle classi e effettua i cambi di classe, confrontando le tabelle $TABELLA_STUDENTI e $TABELLA_STUDENTI_PRECEDENTE ..."
@@ -164,33 +164,39 @@ main() {
                     INNER JOIN $TABELLA_STUDENTI_PRECEDENTE stP 
                     ON stD.email_gsuite = stP.email_gsuite
                     INNER JOIN $TABELLA_SEZIONI szp 
-                    ON stD.sez = szp.sez_argo AND stD.cl = szp.cl 
+                    ON stP.sez = szp.sez_argo AND stP.cl = szp.cl 
                     INNER JOIN $TABELLA_SEZIONI szd 
-                    ON stP.sez = szd.sez_argo AND stP.cl = szd.cl 
+                    ON stD.sez = szd.sez_argo AND stD.cl = szd.cl 
                   WHERE stD.email_gsuite IS NOT NULL 
                     AND stD.email_gsuite != ''  
                     AND (stP.datar IS NULL OR stP.datar = '')
                     AND (
-                      (stP.cl != stD.cl OR stP.sez != stD.sez)
-                    	OR (stP.datar = '' AND stD.datar != '')
-                    );
+                      -- cambia classe, sezione o si è ritirato
+                      stP.cl != stD.cl OR stP.sez != stD.sez OR stD.datar != ''
+                    )
                 "
 
                 while IFS="," read -r email_gsuite sezione_gsuite; do
                   echo "cancello $email_gsuite da classe $sezione_gsuite"
                   $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$sezione_gsuite" --query "SELECT '$email_gsuite' as email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "
-                  SELECT sp.email_gsuite, szp.sezione_gsuite $QUERY_DIFF
+                  SELECT stP.email_gsuite, szp.sezione_gsuite 
+                  $QUERY_DIFF
+                  ORDER BY stD.cl, stD.sez, LOWER(stD.email_gsuite);
                   " | sed "s/\"//g")
                 
                 while IFS="," read -r email_gsuite sezione_gsuite; do
                   echo "inserisco $email_gsuite in classe $sezione_gsuite"
                   $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$sezione_gsuite" --query "SELECT '$email_gsuite' as email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "
-                  SELECT sp.email_gsuite, szd.sezione_gsuite $QUERY_DIFF
+                  SELECT stD.email_gsuite, szd.sezione_gsuite 
+                  $QUERY_DIFF 
+                      -- aggiungo solo gli studenti che NON si sono ritirati
+                      AND (stD.datar IS NULL OR stD.datar = '')
+                  ORDER BY stD.cl, stD.sez, LOWER(stD.email_gsuite);
                   " | sed "s/\"//g")
                 ;;
-            8)
+            9)
                 checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
                 
                 echo "8. Aggiungi nuovi studenti (aggiunti tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A) alle classi"
