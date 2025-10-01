@@ -19,6 +19,7 @@ QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
             FROM $TABELLA_STUDENTI sa
         )
 "
+
 # Query personale su GSuite non in servizio su Argo
 QUERY_PERSONALE_SU_GSUITE_NON_ARGO="
     FROM $TABELLA_UTENTI_GSUITE sg 
@@ -32,6 +33,26 @@ QUERY_PERSONALE_SU_GSUITE_NON_ARGO="
             WHERE 1=1
                 AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
         )
+"
+
+# Query personale con stato sospeso
+QUERY_PERSONALE_SOSPESO="
+    FROM $TABELLA_UTENTI_GSUITE
+    WHERE 1=1 
+        AND UPPER(stato_utente) = 'SUSPENDED'
+        -- filtro personale
+        AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('d.', 'a.')
+        AND UPPER(org_unit) IN ('/DOCENTI', '/ATA')
+"
+
+# Query studenti con stato sospeso
+QUERY_STUDENTI_SOSPESI="
+    FROM $TABELLA_UTENTI_GSUITE
+    WHERE 1=1 
+        AND UPPER(stato_utente) = 'SUSPENDED'
+        -- filtro personale
+        AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('s.', 'sp')
+        AND UPPER(org_unit) IN ('/STUDENTI/DIURNO', '/STUDENTI/SERALE')
 "
 
 # Query studenti
@@ -165,26 +186,27 @@ main() {
             3)
                 echo "3. Visualizza utenti disabilitati"
 
-                $SQLITE_CMD -header -table studenti.db "SELECT UPPER(sg.cognome) AS cognome, UPPER(sg.nome) AS nome, LOWER(sg.org_unit) AS org_unit, LOWER(sg.email_gsuite) AS email_gsuite, UPPER(stato_utente) AS stato_utente
-                FROM $TABELLA_UTENTI_GSUITE sg
-                WHERE 1=1 
-                    AND UPPER(stato_utente) = 'SUSPENDED'
-                    -- filtro personale
-                    AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('d.', 'a.', 's.')
-                    AND UPPER(sg.org_unit) IN ('/DOCENTI', '/ATA', '/STUDENTI/DIURNO', '/STUDENTI/SERALE')
-                ORDER BY UPPER(sg.cognome);"
+                $SQLITE_CMD -header -table studenti.db "
+                SELECT UPPER(cognome) AS cognome, UPPER(nome) AS nome, 
+                    LOWER(org_unit) AS org_unit, LOWER(email_gsuite) AS email_gsuite, 
+                    UPPER(stato_utente) AS stato_utente
+                $QUERY_PERSONALE_SOSPESO
+                ORDER BY UPPER(cognome);"
+
+                echo " "
+                $SQLITE_CMD -header -table studenti.db "
+                SELECT UPPER(cognome) AS cognome, UPPER(nome) AS nome, 
+                    LOWER(org_unit) AS org_unit, LOWER(email_gsuite) AS email_gsuite, 
+                    UPPER(stato_utente) AS stato_utente
+                $QUERY_STUDENTI_SOSPESI
+                ORDER BY UPPER(cognome);"
                 ;;
             4)
                 echo "4. Disabilita su GSuite il personale segnato come disabilitato"
 
                 $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "
                 SELECT LOWER(email_gsuite) AS email_gsuite
-                FROM $TABELLA_UTENTI_GSUITE
-                WHERE 1=1 
-                    AND UPPER(stato_utente) = 'SUSPENDED'
-                    -- filtro personale
-                    AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('d.', 'a.')
-                    AND UPPER(org_unit) IN ('/DOCENTI', '/ATA')
+                $QUERY_PERSONALE_SOSPESO
                 ORDER BY UPPER(cognome);"
                 ;;
             5)
@@ -192,12 +214,7 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
                 SELECT LOWER(email_gsuite) AS email_gsuite
-                FROM $TABELLA_UTENTI_GSUITE
-                WHERE 1=1 
-                    AND UPPER(stato_utente) = 'SUSPENDED'
-                    -- filtro personale
-                    AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('d.', 'a.')
-                    AND UPPER(org_unit) IN ('/DOCENTI', '/ATA')
+                $QUERY_PERSONALE_SOSPESO
                 ORDER BY UPPER(cognome);"
                 ;;
             6)
