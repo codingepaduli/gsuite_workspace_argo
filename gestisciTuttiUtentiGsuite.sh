@@ -93,7 +93,8 @@ show_menu() {
     echo "2. Importo e normalizzo i dati dal file CSV"
     echo "3. Visualizza personale segnato come disabilitato"
     echo "4. Disabilita su GSuite il personale segnato come disabilitato"
-    echo "5. Visualizza studenti su GSuite e non su Argo"
+    echo "5. Cancella su GSuite il personale segnato come disabilitato"
+    echo "6. Visualizza studenti su GSuite e non su Argo"
 
     echo "12. Visualizza personale su GSuite e non su Argo"
     echo "14. Visualizza studenti diurno con OU errata"
@@ -187,7 +188,20 @@ main() {
                 ORDER BY UPPER(cognome);"
                 ;;
             5)
-                echo "5. Visualizza studenti su GSuite e non su Argo"
+                echo "5. Cancella su GSuite il personale segnato come disabilitato"
+
+                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite
+                FROM $TABELLA_UTENTI_GSUITE
+                WHERE 1=1 
+                    AND UPPER(stato_utente) = 'SUSPENDED'
+                    -- filtro personale
+                    AND LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ('d.', 'a.')
+                    AND UPPER(org_unit) IN ('/DOCENTI', '/ATA')
+                ORDER BY UPPER(cognome);"
+                ;;
+            6)
+                echo "6. Visualizza studenti su GSuite e non su Argo"
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_STUDENTI_SU_GSUITE_NON_ARGO 
                 ORDER BY LOWER(sg.email_gsuite);"
