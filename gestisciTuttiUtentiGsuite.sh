@@ -9,15 +9,21 @@ source "./_maps.sh"
 FILE_UTENTI_CSV="$BASE_DIR/dati_gsuite/$TABELLA_UTENTI_GSUITE.csv"
 
 # Query studenti su GSuite non presenti su Argo
-QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
-    FROM ${TABELLA_UTENTI_GSUITE} sg 
-    WHERE
-        -- filtro studenti
-        LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
-        AND LOWER(sg.email_gsuite) NOT IN (
-            SELECT LOWER(sa.email_gsuite) 
-            FROM $TABELLA_STUDENTI sa
-        )
+PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO="
+FROM $TABELLA_UTENTI_GSUITE sg 
+WHERE 1=1
+    -- filtro studenti GSUITE
+    AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
+    AND UPPER(sg.org_unit) IN ('/STUDENTI/DIURNO', '/STUDENTI/SERALE')
+    AND LOwER(sg.email_gsuite) NOT IN (
+        -- query studenti ARGO NON ritirati
+        SELECT LOWER(email_gsuite) AS email_gsuite 
+        FROM $TABELLA_STUDENTI
+        WHERE 1=1
+            AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '')
+            -- studenti ARGO NON ritirati
+            AND (datar IS NULL OR datar = '')
+    )
 "
 
 # Query personale su GSuite non in servizio su Argo
@@ -115,7 +121,8 @@ show_menu() {
     echo "3. Visualizza personale segnato come disabilitato"
     echo "4. Disabilita su GSuite il personale segnato come disabilitato"
     echo "5. Cancella su GSuite il personale segnato come disabilitato"
-    echo "6. Visualizza studenti su GSuite e non su Argo"
+    echo "6. Visualizza studenti da disabilitare perche presenti su GSuite e NON su Argo"
+    echo "7. Disabilita studenti presenti su GSuite e NON su Argo"
 
     echo "12. Visualizza personale su GSuite e non su Argo"
     echo "14. Visualizza studenti diurno con OU errata"
@@ -218,10 +225,28 @@ main() {
                 ORDER BY UPPER(cognome);"
                 ;;
             6)
-                echo "6. Visualizza studenti su GSuite e non su Argo"
+                echo "6. Visualizza (ed esporta) studenti da disabilitare perche presenti su GSuite e NON su Argo"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query  "SELECT UPPER(sg.cognome) as cognome, UPPER(sg.nome) as nome, LOWER(sg.org_unit) as org_unit, LOWER(sg.email_gsuite) as email_gsuite $QUERY_STUDENTI_SU_GSUITE_NON_ARGO 
-                ORDER BY LOWER(sg.email_gsuite);"
+                $SQLITE_CMD -header -table studenti.db "
+                SELECT LOWER(sg.email_gsuite) AS email_gsuite
+                $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
+                ORDER BY LOWER(sg.email_gsuite); "
+
+                $SQLITE_CMD -header -csv studenti.db "
+                SELECT LOWER(sg.email_gsuite) AS email_gsuite
+                $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
+                ORDER BY LOWER(sg.email_gsuite); " > "$EXPORT_DIR_DATE/studenti_disabilitare_$CURRENT_DATE.csv"
+                ;;
+            7)
+                echo "7. Disabilita studenti presenti su GSuite e NON su Argo"
+
+                $SQLITE_CMD -header -table studenti.db "
+                UPDATE $TABELLA_UTENTI_GSUITE
+                SET stato_utente = 'SUSPENDED'
+                WHERE LOWER(email_gsuite) IN (
+                    SELECT LOWER(sg.email_gsuite) AS email_gsuite
+                    $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
+                ); "
                 ;;
             12)
                 echo "12. Visualizza personale su GSuite e non su Argo"
