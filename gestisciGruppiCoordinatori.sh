@@ -102,21 +102,59 @@ main() {
             5)
                 echo "Visualizza coordinatori con classi associate"
                 
-                $SQLITE_CMD studenti.db -header -table "SELECT UPPER(sz.sezione_gsuite) AS sezione_gsuite, LOWER(sz.email_coordinatore) as email_coordinatore, UPPER(d.cognome) AS cognome, UPPER(d.nome) AS nome
+                $SQLITE_CMD studenti.db -header -table "
+                SELECT UPPER(sz.sezione_gsuite) AS sezione_gsuite, 
+                    LOWER(sz.email_coordinatore) as email_coordinatore, 
+                    UPPER(d.cognome) AS cognome, UPPER(d.nome) AS nome
                 $QUERY_COORDINATORI
-                -- visualizzo classi con coordinatori non presenti
-                OR (d.email_gsuite IS NULL OR TRIM(d.email_gsuite = ''))
+                    -- visualizzo classi con coordinatori non presenti
+                    OR (d.email_gsuite IS NULL OR TRIM(d.email_gsuite = ''))
                 ORDER BY UPPER(sezione_gsuite);"
                 ;;
             6)
+                echo "6. Salva $GRUPPO_COORDINATORI con classi associate su CSV"
+
                 mkdir -p "$EXPORT_DIR_DATE"
 
-                $SQLITE_CMD studenti.db -header -csv "SELECT UPPER(sz.sezione_gsuite) AS sezione_gsuite, LOWER(sz.email_coordinatore) as email_coordinatore, UPPER(d.cognome) AS cognome, UPPER(d.nome) AS nome
+                $SQLITE_CMD studenti.db -header -csv "
+                SELECT UPPER(sz.sezione_gsuite) AS sezione_gsuite, 
+                    LOWER(sz.email_coordinatore) as email_coordinatore, 
+                    UPPER(d.cognome) AS cognome, UPPER(d.nome) AS nome
                 $QUERY_COORDINATORI
-                -- visualizzo classi con coordinatori non presenti
-                OR (d.email_gsuite IS NULL OR TRIM(d.email_gsuite = ''))
+                    -- visualizzo classi con coordinatori non presenti
+                    OR (d.email_gsuite IS NULL OR TRIM(d.email_gsuite = ''))
                 ORDER BY UPPER(sezione_gsuite);
                 " > "${EXPORT_DIR_DATE}/coordinatori_${CURRENT_DATE}.csv"
+                ;;
+            7)
+                echo "6. Salva $GRUPPO_COORDINATORI con classi associate su file SQL"
+
+                mkdir -p "$EXPORT_DIR_DATE"
+                
+                {
+                      echo "#!/bin/bash"
+                      echo 'source "_environment.sh"'
+                      echo 'source "_environment_working_tables.sh"'
+                      echo 'source "./_maps.sh"'
+                      echo " "
+                } > "${EXPORT_DIR_DATE}/coordinatori_${CURRENT_DATE}.sh"
+                
+                while IFS="," read -r sezione_gsuite email_coordinatore cognome nome; do
+                    {
+                        echo '$SQLITE_CMD studenti.db -csv "'
+                        echo 'UPDATE $TABELLA_SEZIONI'
+                        echo "SET email_coordinatore='$email_coordinatore'"
+                        echo "WHERE sezione_gsuite='$sezione_gsuite'; -- $cognome $nome"
+                        echo '"'
+                    } >> "${EXPORT_DIR_DATE}/coordinatori_${CURRENT_DATE}.sh"
+                done < <($SQLITE_CMD studenti.db -csv "
+                SELECT UPPER(sz.sezione_gsuite) AS sezione_gsuite, 
+                    LOWER(sz.email_coordinatore) as email_coordinatore, 
+                    UPPER(d.cognome) AS cognome, UPPER(d.nome) AS nome
+                $QUERY_COORDINATORI
+                    -- visualizzo classi con coordinatori non presenti
+                    OR (d.email_gsuite IS NULL OR TRIM(d.email_gsuite = ''))
+                ORDER BY UPPER(sezione_gsuite);" | sed "s/\"//g")
                 ;;
             8)
                 echo "Inserisci membri nei gruppi  ..."
