@@ -3,9 +3,13 @@
 # shellcheck source=./_environment.sh
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
+source "./_maps.sh"
 
-# File CSV da importare
-FILE_CDC_ARGO_CSV="$BASE_DIR/dati_argo/Cdc/$TABELLA_CDC_ARGO.csv"
+# File PDF da convertire e importare
+FILE_CDC_ARGO_PDF="$BASE_DIR/dati_argo/cdc/$TABELLA_CDC_ARGO.pdf"
+FILE_CDC_ARGO_CSV="$BASE_DIR/dati_argo/cdc/$TABELLA_CDC_ARGO.csv"
+FILE_CDC_ARGO_IMPORT_CSV="$BASE_DIR/dati_argo/cdc/full_$TABELLA_CDC_ARGO.csv"
+FILE_CDC_ARGO_FILTERED_CSV="$BASE_DIR/dati_argo/cdc/filtered_$TABELLA_CDC_ARGO.csv"
 
 # SQL_FILTRO_ANNI=" AND sz.cl IN (1) " 
 # SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
@@ -16,7 +20,8 @@ SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $
 show_menu() {
     echo "Gestione CdC su GSuite"
     echo "-------------"
-    echo "1. Crea la tabella CdC"
+    echo "0. Crea la tabella CdC"
+    echo "1. Converti PDF in CSV da importare"
     echo "2. Importa nella tabella i dati CdC da file CSV e normalizza"
     echo "3. Visualizzo i dati dei CdC"
     echo "4. Crea i gruppi Cdc"
@@ -35,20 +40,34 @@ main() {
         read -p "Scegli un'opzione (1-20): " -r choice
         
         case $choice in
-            1)
-                echo "Creo la tabella $TABELLA_CDC_ARGO ..."
+            0)
+                echo "Cancello e ricreo la tabella $TABELLA_CDC_ARGO ..."
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_CDC_ARGO';"
                 
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_CDC_ARGO' (docente VARCHAR(200), materie  VARCHAR(200), classi VARCHAR(200));"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+                  CREATE TABLE IF NOT EXISTS '$TABELLA_CDC_ARGO' (
+                      \"Pr.\" INTEGER,
+                      Docente VARCHAR(200),
+                      Materie VARCHAR(200),
+                      Classi VARCHAR(200) 
+                  );"
+                ;;
+            1)
+                python3 pdfTables2csv.py "$FILE_CDC_ARGO_PDF" --skip_duplicate_header --remove_newlines > "$FILE_CDC_ARGO_CSV"
+
+                python3 csvReaderUtil.py "$FILE_CDC_ARGO_CSV" > "$FILE_CDC_ARGO_IMPORT_CSV"
+
                 ;;
             2)
                 echo "Importa dati in $TABELLA_CDC_ARGO da CSV e normalizza ..."
                 
-                $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_CDC_ARGO" "$FILE_CDC_ARGO_CSV" --csv --empty-null
+                $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_CDC_ARGO" "$FILE_CDC_ARGO_IMPORT_CSV" --csv --empty-null
 
                 $SQLITE_CMD studenti.db "UPDATE $TABELLA_CDC_ARGO 
-                  SET docente = TRIM(UPPER(docente)),
-                      materie = TRIM(UPPER(materie)),
-                      classi = SUBSTR(classi, 1, INSTR(classi,' ')-1);"
+                  SET Docente = TRIM(UPPER(Docente)),
+                      Materie = TRIM(UPPER(Materie)),
+                      Classi = SUBSTR(Classi, 1, INSTR(Classi,' ')-1);"
                 ;;
             3)
                 echo "Visualizzo i dati dei CdC ..."
