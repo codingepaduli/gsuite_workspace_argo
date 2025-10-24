@@ -10,13 +10,19 @@ def read_csv_file(file_path):
 
     try:
         with open(file_path, 'r') as file:
-            csv_reader_first_line = csv.reader(file)
-            first_row = next(csv_reader_first_line)
-            fieldCount = len(first_row);
-            previousRowArray =  [""] * fieldCount;
-            
+            # Flusso di lettura e scrittura del file
             csv_reader = csv.reader(file)
             csv_writer = csv.writer(sys.stdout)
+
+            # Leggo l'intestazione del file CSV
+            first_row = next(csv_reader)
+            csv_writer.writerow(first_row)
+            
+            # Conto il numero di campi
+            fieldCount = len(first_row);
+            previousRowArray =  [""] * fieldCount;
+
+            # Leggo le righe coi dati
             for row in csv_reader:
                 
                 for index in range(len(row)):
@@ -24,7 +30,6 @@ def read_csv_file(file_path):
                     previousRowArray[index] = field
 
                 csv_writer.writerow(previousRowArray)
-                    
                 
     except FileNotFoundError:
         print(f"Errore: Il file {file_path} non è stato trovato.")
@@ -39,7 +44,6 @@ def main():
         sys.exit(1)
 
     file_path = sys.argv[1]
-    print(f"Aprendo il file: {file_path}")
     read_csv_file(file_path)
 
 if __name__ == "__main__":
