@@ -38,7 +38,7 @@ SQL_FILTRO_ANNI_SECONDO_BIENNIO=" AND sz.cl IN (3,4)"
 
 SQL_FILTRO_SEZIONI_ELETTRONICA=" AND sz.addr_argo IN ( 'en', 'et' )"
 SQL_FILTRO_SEZIONI_INFORMATICA=" AND sz.addr_argo IN ( 'in', 'idd', 'tlt' )"
-SQL_FILTRO_SEZIONI_MECCANICA=" AND sz.addr_argo IN ( 'm', mDD )"
+SQL_FILTRO_SEZIONI_MECCANICA=" AND sz.addr_argo IN ( 'm', 'mDD' )"
 SQL_FILTRO_SEZIONI_ODONTOTECNICA=" AND sz.addr_argo IN ( 'od' )"
 SQL_FILTRO_SEZIONI_AEREONAUTICA=" AND sz.addr_argo IN ( 'tr' )"
 
@@ -71,7 +71,7 @@ show_menu() {
     echo "0. Crea la tabella CdC"
     echo "1. Converti PDF in CSV da importare"
     echo "2. Importa nella tabella i dati CdC da file CSV e normalizza"
-    echo "3. Visualizzo i dati dei CdC"
+    echo "3. Esporta i dati dei CdC in CSV, un file per ogni CdC"
     echo "4. Crea i gruppi Cdc"
     echo "5. Backup dei gruppi CdC con i relativi membri"
     echo "6. Cancello i gruppi CdC"
@@ -82,6 +82,7 @@ show_menu() {
     echo "13. Cancella tutti i gruppi dei bienni da GSuite"
     echo "14. Inserisci membri nei gruppi dei bienni"
     echo "15. Rimuovi membri dai gruppi dei bienni"
+    echo "16. Esporta gruppi dei bienni in file CSV, un file per ogni gruppo"
     echo "20. Esci"
 }
 
@@ -125,10 +126,22 @@ main() {
                       Classi = SUBSTR(Classi, 1, INSTR(Classi,' ')-1);"
                 ;;
             3)
-                echo "Visualizzo i dati dei CdC ..."
+                echo "Esporta i dati dei CdC in CSV, un file per ogni CdC"
+
+                mkdir -p "$EXPORT_DIR_DATE"
                 
-                # test estrazione dati con
-                $SQLITE_CMD -header -table studenti.db "SELECT DISTINCT docente, classi FROM $TABELLA_CDC_ARGO ORDER BY docente;"
+                while IFS="," read -r sezione_gsuite; do
+                    local CDC="CDC_$sezione_gsuite"
+                    
+                    $SQLITE_CMD -header -csv studenti.db "
+                      SELECT DISTINCT UPPER(cdc.docente) AS docente, cdc.materie AS materia
+                      $QUERY_DOCENTI_CDC
+                          AND sz.sezione_gsuite = '$sezione_gsuite'
+                          AND UPPER(cdc.Materie) != UPPER('Educazione civica')
+                          AND UPPER(cdc.Materie) != UPPER('ORIENTAMENTO')
+                      ORDER BY docente;
+                      " > "$EXPORT_DIR_DATE/$CDC.csv"
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             4)
                 echo "Crea i gruppi CdC ..."
@@ -165,7 +178,7 @@ main() {
             8)
                 echo "Inserisco i membri nei gruppi dei CdC"
 
-                declare -A gruppi_cdc
+                local -A gruppi_cdc
 
                 while IFS="," read -r sezione_gsuite; do
                     # SELECT d.email_gsuite, d.codice_fiscale, cdc.docente, cdc.classi, sz.sezione_gsuite 
@@ -232,6 +245,16 @@ main() {
                   $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
                 done
                 ;;
+            16)
+                echo "Esporta gruppi dei bienni in file CSV, un file per ogni gruppo"
+
+                mkdir -p "$EXPORT_DIR_DATE"
+                
+                for nome_gruppo in "${!gruppi[@]}"; do
+                  $SQLITE_CMD -header -csv studenti.db "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo"
+                done
+                ;;
+            
             20)
                 echo "Arrivederci!"
                 exit 0
