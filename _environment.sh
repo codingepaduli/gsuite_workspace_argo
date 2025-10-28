@@ -120,13 +120,13 @@ PERIODO_PERSONALE_DA='2025-10-20'
 PERIODO_PERSONALE_A='2025-10-20'
 
 # Tabella personale precedente per confronto
-TABELLA_PERSONALE_PRECEDENTE="personale_argo_2025_09_23"
+TABELLA_PERSONALE_PRECEDENTE="" # personale_argo_2025_09_23
 
 #####################################
 # Tables' name for gSuite users     #
 #####################################
 
-TABELLA_UTENTI_GSUITE='tutti_2025_10_20'
+TABELLA_UTENTI_GSUITE='' # tutti_2025_10_20
 
 # unità organizzative gSuite
 GSUITE_OU_DOCENTI="DOCENTI"
@@ -137,7 +137,7 @@ GSUITE_OU_ATA="ATA"
 #####################################
 
 # Tabella CdC versionata alla data indicata
-TABELLA_CDC_ARGO="Cdc_2025_01_13"
+TABELLA_CDC_ARGO="" # Cdc_2025_01_13
 
 #####################################
 # Tables' name for Moduli           #
