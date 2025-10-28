@@ -41,7 +41,7 @@ QUERY_DELTA_PERSONALE="
 
 # Query docenti su GSuite non presenti su Argo
 PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
-FROM ${TABELLA_DOCENTI_GSUITE} dg 
+FROM $TABELLA_UTENTI_GSUITE dg 
 WHERE 1=1
     -- filtro studenti
     AND LOWER(SUBSTR(dg.email_gsuite, 1, MIN(2, LENGTH(dg.email_gsuite)))) IN ('d.')
