@@ -91,9 +91,9 @@ TABELLA_SEZIONI="" # sezioni_2024_25
 
 # All classes and addresses enabled
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
-SQL_FILTRO_SEZIONI_DIURNO=" AND sz.addr_argo IN ('tr', 'en', 'in', 'm', 'mDD', 'od', 'idd', 'et', 'tlt') "
-SQL_FILTRO_SEZIONI_SERALE=" AND sz.addr_argo IN ('m_sirio', 'et_sirio', 'me_sirio') "
-SQL_FILTRO_SEZIONI=" $SQL_FILTRO_SEZIONI_DIURNO $SQL_FILTRO_SEZIONI_SERALE "
+SQL_SEZIONI_DIURNO=" 'tr', 'en', 'in', 'm', 'mDD', 'od', 'idd', 'et', 'tlt' "
+SQL_SEZIONI_SERALE=" 'm_sirio', 'et_sirio', 'me_sirio' "
+SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('', ${SQL_SEZIONI_DIURNO:-"''"}, ${SQL_SEZIONI_SERALE:-"''"}) "
 
 ###########################################
 # Tables' name related to students' group #

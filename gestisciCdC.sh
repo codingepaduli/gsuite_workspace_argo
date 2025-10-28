@@ -29,6 +29,15 @@ WHERE 1=1
   AND UPPER(d.tipo_personale) = 'DOCENTE'
 "
 
+DELTA_QUERY_DOCENTI_CDC="
+$QUERY_DOCENTI_CDC
+  AND d.email_personale IS NOT NULL AND TRIM(d.email_personale) != ''
+  AND d.cancellato_il IS NULL OR TRIM(d.cancellato_il) = ''
+  AND ( d.aggiunto_il IS NOT NULL AND TRIM(d.aggiunto_il) != ''
+    AND d.aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+  )
+"
+
 #####################
 # Gestione BIENNI   #
 #####################
@@ -78,6 +87,7 @@ show_menu() {
     echo "7. "
     echo "8. Aggiungi membri ai gruppi dei Cdc"
     echo "9. Esporta un unico elenco docenti con classi associate in file CSV"
+    echo "10. Aggiungi NUOVI membri nei gruppi dei bienni"
     echo "12. Crea tutti i gruppi dei bienni su GSuite"
     echo "13. Cancella tutti i gruppi dei bienni da GSuite"
     echo "14. Inserisci membri nei gruppi dei bienni"
@@ -186,7 +196,7 @@ main() {
                       SELECT DISTINCT LOWER(d.email_gsuite)
                       $QUERY_DOCENTI_CDC
                           AND sz.sezione_gsuite = '$sezione_gsuite'
-                      ORDER BY docente;"
+                      ORDER BY d.cognome, d.nome;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_cdc[@]}"; do
@@ -208,6 +218,22 @@ main() {
                   -- AND cdc.materie != UPPER('Educazione civica')
                 ORDER BY docente;
                 " > "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
+                ;;
+            10)
+                echo "Inserisco i membri nei gruppi dei CdC"
+
+                while IFS="," read -r email_gsuite sezione_gsuite; do
+                    local CDC="CDC_$sezione_gsuite"
+
+                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$CDC" --query "SELECT '$email_gsuite' AS email_gsuite;"
+                done < <($SQLITE_CMD -csv studenti.db "
+                  SELECT DISTINCT LOWER(d.email_gsuite) AS email_gsuite, 
+                      sz.sezione_gsuite AS sezione_gsuite
+                  $DELTA_QUERY_DOCENTI_CDC
+                      $SQL_FILTRO_ANNI 
+                      $SQL_FILTRO_SEZIONI
+                  ORDER BY sz.sezione_gsuite, d.cognome, d.nome;
+                " | sed "s/\"//g")
                 ;;
             12)
                 echo "Crea tutti i gruppi dei bienni su GSuite"
