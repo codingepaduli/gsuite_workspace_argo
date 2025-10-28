@@ -12,6 +12,7 @@
 studenti.db
 studenti_CF*
 personale_CF*
+coordinatori_*
 wpusers.txt
 _environment_working_tables.sh
 debug.log
