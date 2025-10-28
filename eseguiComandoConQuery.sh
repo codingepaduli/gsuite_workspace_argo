@@ -146,9 +146,19 @@ case $command in
             $GAM_CMD update group "$nome_gruppo@$DOMAIN" add member user "$email"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
+    "addMembersToGroupByMap")
+        while IFS="," read -r gruppo email; do
+            $GAM_CMD update group "$gruppo@$DOMAIN" add member user "$email"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
     "deleteMembersFromGroup")
         while IFS="," read -r email; do
             $GAM_CMD update group "$nome_gruppo@$DOMAIN" remove member user "$email"
+        done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
+        ;;
+    "deleteMembersFromGroupByMap")
+        while IFS="," read -r gruppo email; do
+            $GAM_CMD update group "$gruppo@$DOMAIN" remove member user "$email"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "moveUsersToOU")

@@ -25,14 +25,17 @@ FROM $TABELLA_CDC_ARGO cdc
   INNER JOIN $TABELLA_PERSONALE d
   ON UPPER(d.cognome || ' ' || d.nome) = UPPER(cdc.docente) 
 WHERE 1=1 
+  AND d.email_personale IS NOT NULL AND TRIM(d.email_personale) != ''
   AND d.email_gsuite IS NOT NULL AND TRIM(d.email_gsuite) != '' 
+  AND d.cancellato_il IS NULL OR TRIM(d.cancellato_il) = ''
   AND UPPER(d.tipo_personale) = 'DOCENTE'
+  -- filtro sezioni
+  $SQL_FILTRO_ANNI 
+  $SQL_FILTRO_SEZIONI
 "
 
 DELTA_QUERY_DOCENTI_CDC="
 $QUERY_DOCENTI_CDC
-  AND d.email_personale IS NOT NULL AND TRIM(d.email_personale) != ''
-  AND d.cancellato_il IS NULL OR TRIM(d.cancellato_il) = ''
   AND ( d.aggiunto_il IS NOT NULL AND TRIM(d.aggiunto_il) != ''
     AND d.aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
   )
@@ -42,30 +45,52 @@ $QUERY_DOCENTI_CDC
 # Gestione BIENNI   #
 #####################
 
-SQL_FILTRO_ANNI_PRIMO_BIENNIO=" AND sz.cl IN (1,2)"
-SQL_FILTRO_ANNI_SECONDO_BIENNIO=" AND sz.cl IN (3,4)"
+QUERY_CAMPO_BIENNIO="
+    CASE 
+        WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('en', 'et')         THEN 'primo_biennio_elettronica'
+        WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'primo_biennio_informatica'
+        WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mDD')         THEN 'primo_biennio_meccanica'
+        WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('od')               THEN 'primo_biennio_odontotecnica'
+        WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('tr')               THEN 'primo_biennio_aeronautica'
+        
+        WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('en', 'et')         THEN 'secondo_biennio_elettronica'
+        WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'secondo_biennio_informatica'
+        WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mDD')         THEN 'secondo_biennio_meccanica'
+        WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('od')               THEN 'secondo_biennio_odontotecnica'
+        WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('tr')               THEN 'secondo_biennio_aeronautica'
+        
+        ELSE ''
+    END
+"
 
-SQL_FILTRO_SEZIONI_ELETTRONICA=" AND sz.addr_argo IN ( 'en', 'et' )"
-SQL_FILTRO_SEZIONI_INFORMATICA=" AND sz.addr_argo IN ( 'in', 'idd', 'tlt' )"
-SQL_FILTRO_SEZIONI_MECCANICA=" AND sz.addr_argo IN ( 'm', 'mDD' )"
-SQL_FILTRO_SEZIONI_ODONTOTECNICA=" AND sz.addr_argo IN ( 'od' )"
-SQL_FILTRO_SEZIONI_AEREONAUTICA=" AND sz.addr_argo IN ( 'tr' )"
+QUERY_DOCENTI_PER_BIENNIO="
+  SELECT DISTINCT 
+    $QUERY_CAMPO_BIENNIO AS gruppo,
+    LOWER(d.email_gsuite) AS email_gsuite
+  $QUERY_DOCENTI_CDC
+    AND sz.cl != 5
+  ORDER BY sezione_gsuite, d.cognome, d.nome;
+"
 
-QUERY_DOCENTI_PRIMO_BIENNIO="SELECT DISTINCT LOWER(d.email_gsuite) $QUERY_DOCENTI_CDC $SQL_FILTRO_ANNI_PRIMO_BIENNIO"
+DELTA_QUERY_DOCENTI_PER_BIENNIO="
+  SELECT DISTINCT 
+    $QUERY_CAMPO_BIENNIO AS gruppo,
+    LOWER(d.email_gsuite) AS email_gsuite
+  $DELTA_QUERY_DOCENTI_CDC
+  ORDER BY sezione_gsuite, d.cognome, d.nome;
+"
 
-QUERY_DOCENTI_SECONDO_BIENNIO="SELECT DISTINCT LOWER(d.email_gsuite) $QUERY_DOCENTI_CDC $SQL_FILTRO_ANNI_SECONDO_BIENNIO"
+add_to_map "primo_biennio_elettronica"      " "
+add_to_map "primo_biennio_informatica"      " "
+add_to_map "primo_biennio_meccanica"        " "
+add_to_map "primo_biennio_odontotecnica"    " "
+add_to_map "primo_biennio_aeronautica"      " "
 
-add_to_map "primo_biennio_elettronica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_ELETTRONICA ORDER BY docente"
-add_to_map "primo_biennio_informatica"  " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_INFORMATICA ORDER BY docente;"
-add_to_map "primo_biennio_meccanica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_MECCANICA ORDER BY docente; "
-add_to_map "primo_biennio_odontotecnica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_ODONTOTECNICA ORDER BY docente; "
-add_to_map "primo_biennio_aereonautica"   " $QUERY_DOCENTI_PRIMO_BIENNIO $SQL_FILTRO_SEZIONI_AEREONAUTICA ORDER BY docente; "
-
-add_to_map "secondo_biennio_elettronica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_ELETTRONICA ORDER BY docente"
-add_to_map "secondo_biennio_informatica"  " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_INFORMATICA ORDER BY docente;"
-add_to_map "secondo_biennio_meccanica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_MECCANICA ORDER BY docente; "
-add_to_map "secondo_biennio_odontotecnica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_ODONTOTECNICA ORDER BY docente; "
-add_to_map "secondo_biennio_aereonautica"   " $QUERY_DOCENTI_SECONDO_BIENNIO $SQL_FILTRO_SEZIONI_AEREONAUTICA ORDER BY docente; "
+add_to_map "secondo_biennio_elettronica"    " "
+add_to_map "secondo_biennio_informatica"    " "
+add_to_map "secondo_biennio_meccanica"      " "
+add_to_map "secondo_biennio_odontotecnica"  " "
+add_to_map "secondo_biennio_aeronautica"    " "
 
 ########################
 # Query sezioni        #
@@ -85,14 +110,15 @@ show_menu() {
     echo "5. Backup dei gruppi CdC con i relativi membri"
     echo "6. Cancello i gruppi CdC"
     echo "7. "
-    echo "8. Aggiungi membri ai gruppi dei Cdc"
+    echo "8. Aggiungi TUTTI i membri ai gruppi dei Cdc"
     echo "9. Esporta un unico elenco docenti con classi associate in file CSV"
-    echo "10. Aggiungi NUOVI membri nei gruppi dei bienni"
+    echo "10. Aggiungi i NUOVI membri ai gruppi dei Cdc"
     echo "12. Crea tutti i gruppi dei bienni su GSuite"
     echo "13. Cancella tutti i gruppi dei bienni da GSuite"
-    echo "14. Inserisci membri nei gruppi dei bienni"
+    echo "14. Inserisci TUTTI i membri nei gruppi dei bienni"
     echo "15. Rimuovi membri dai gruppi dei bienni"
     echo "16. Esporta gruppi dei bienni in file CSV, un file per ogni gruppo"
+    echo "17. Inserisci i NUOVI membri nei gruppi dei bienni"
     echo "20. Esci"
 }
 
@@ -188,23 +214,13 @@ main() {
             8)
                 echo "Inserisco i membri nei gruppi dei CdC"
 
-                local -A gruppi_cdc
-
-                while IFS="," read -r sezione_gsuite; do
-                    # SELECT d.email_gsuite, d.codice_fiscale, cdc.docente, cdc.classi, sz.sezione_gsuite 
-                    gruppi_cdc[$sezione_gsuite]="
-                      SELECT DISTINCT LOWER(d.email_gsuite)
-                      $QUERY_DOCENTI_CDC
-                          AND sz.sezione_gsuite = '$sezione_gsuite'
-                      ORDER BY d.cognome, d.nome;"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-
-                for nome_gruppo in "${!gruppi_cdc[@]}"; do
-                    local CDC="CDC_$nome_gruppo"
-
-                    echo creo gruppo "$CDC" "${gruppi_cdc[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$CDC" --query "${gruppi_cdc[$nome_gruppo]}"
-                done
+                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "
+                  SELECT DISTINCT 
+                    'CDC_' || sz.sezione_gsuite AS sezione_gsuite,
+                    LOWER(d.email_gsuite) AS email_gsuite
+                  $QUERY_DOCENTI_CDC
+                  ORDER BY sezione_gsuite, d.cognome, d.nome;
+                "
                 ;;
             9)
                 echo "Esporta un unico elenco docenti con classi associate in file CSV"
@@ -213,7 +229,7 @@ main() {
                 $SQLITE_CMD -header -csv studenti.db "
                 SELECT DISTINCT LOWER(d.email_gsuite), UPPER(d.codice_fiscale), 
                     UPPER(cdc.docente), cdc.classi, sz.sezione_gsuite 
-                $$QUERY_DOCENTI_CDC
+                $QUERY_DOCENTI_CDC
                   -- AND sz.sezione_gsuite = '3A_inf'
                   -- AND cdc.materie != UPPER('Educazione civica')
                 ORDER BY docente;
@@ -222,18 +238,12 @@ main() {
             10)
                 echo "Inserisco i membri nei gruppi dei CdC"
 
-                while IFS="," read -r email_gsuite sezione_gsuite; do
-                    local CDC="CDC_$sezione_gsuite"
-
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$CDC" --query "SELECT '$email_gsuite' AS email_gsuite;"
-                done < <($SQLITE_CMD -csv studenti.db "
-                  SELECT DISTINCT LOWER(d.email_gsuite) AS email_gsuite, 
-                      sz.sezione_gsuite AS sezione_gsuite
+                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "SELECT DISTINCT 
+                    'CDC_' || sz.sezione_gsuite AS sezione_gsuite,
+                    LOWER(d.email_gsuite) AS email_gsuite
                   $DELTA_QUERY_DOCENTI_CDC
-                      $SQL_FILTRO_ANNI 
-                      $SQL_FILTRO_SEZIONI
-                  ORDER BY sz.sezione_gsuite, d.cognome, d.nome;
-                " | sed "s/\"//g")
+                  ORDER BY sezione_gsuite, d.cognome, d.nome;
+                "
                 ;;
             12)
                 echo "Crea tutti i gruppi dei bienni su GSuite"
@@ -251,15 +261,9 @@ main() {
                 done
                 ;;
             14)
-                echo "Inserisci membri nei gruppi dei bienni"
+                echo "Inserisci TUTTI i membri nei gruppi dei bienni"
                 
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Inserisco membri nel gruppo $nome_gruppo ...!"
-                  echo "query ${gruppi[$nome_gruppo]} ...!"
-                  $SQLITE_CMD studenti.db "${gruppi[$nome_gruppo]}"
-
-                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
+                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$QUERY_DOCENTI_PER_BIENNIO"
                 ;;
             15)
                 echo "Rimuovi membri dai gruppi dei bienni"
@@ -280,7 +284,11 @@ main() {
                   $SQLITE_CMD -header -csv studenti.db "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo"
                 done
                 ;;
-            
+            17)
+                echo "Inserisci i NUOVI membri nei gruppi dei bienni"
+                
+                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$DELTA_QUERY_DOCENTI_PER_BIENNIO"
+                ;;
             20)
                 echo "Arrivederci!"
                 exit 0
