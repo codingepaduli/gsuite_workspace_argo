@@ -113,11 +113,11 @@ show_menu() {
     echo " "
     echo "9. Aggiungi i NUOVI membri ai gruppi dei Cdc"
     echo " "
+    echo "11. Cancella tutti i gruppi dei bienni da GSuite"
     echo "12. Crea tutti i gruppi dei bienni su GSuite"
-    echo "13. Cancella tutti i gruppi dei bienni da GSuite"
-    echo "14. Inserisci TUTTI i membri nei gruppi dei bienni"
+    echo "13. Inserisci TUTTI i membri nei gruppi dei bienni"
+    echo " "
     echo "15. Rimuovi membri dai gruppi dei bienni"
-    echo "16. Esporta gruppi dei bienni in file CSV, un file per ogni gruppo"
     echo "17. Inserisci i NUOVI membri nei gruppi dei bienni"
     echo "20. Esci"
 }
@@ -235,6 +235,13 @@ main() {
                   ORDER BY sezione_gsuite, d.cognome, d.nome;
                 "
                 ;;
+            11)
+                echo "Cancella tutti i gruppi dei bienni da GSuite"
+
+                for nome_gruppo in "${!gruppi[@]}"; do
+                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
+                done
+                ;;
             12)
                 echo "Crea tutti i gruppi dei bienni su GSuite"
                 
@@ -244,13 +251,6 @@ main() {
                 done
                 ;;
             13)
-                echo "Cancella tutti i gruppi dei bienni da GSuite"
-
-                for nome_gruppo in "${!gruppi[@]}"; do
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
-                done
-                ;;
-            14)
                 echo "Inserisci TUTTI i membri nei gruppi dei bienni"
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$QUERY_DOCENTI_PER_BIENNIO"
@@ -263,15 +263,6 @@ main() {
                   echo "query ${gruppi[$nome_gruppo]} ...!"
 
                   $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            16)
-                echo "Esporta gruppi dei bienni in file CSV, un file per ogni gruppo"
-
-                mkdir -p "$EXPORT_DIR_DATE"
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  $SQLITE_CMD -header -csv studenti.db "${gruppi[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo"
                 done
                 ;;
             17)
