@@ -108,10 +108,11 @@ show_menu() {
     echo "3. Esporta i dati dei CdC in CSV, un file per ogni CdC"
     echo "4. Crea i gruppi Cdc"
     echo "5. Cancello i gruppi CdC"
-    echo "7. "
-    echo "8. Aggiungi TUTTI i membri ai gruppi dei Cdc"
-    echo "9. Esporta un unico elenco docenti con classi associate in file CSV"
-    echo "10. Aggiungi i NUOVI membri ai gruppi dei Cdc"
+    echo "6. Esporta un unico elenco docenti con classi associate in file CSV"
+    echo "7. Aggiungi TUTTI i membri ai gruppi dei Cdc"
+    echo " "
+    echo "9. Aggiungi i NUOVI membri ai gruppi dei Cdc"
+    echo " "
     echo "12. Crea tutti i gruppi dei bienni su GSuite"
     echo "13. Cancella tutti i gruppi dei bienni da GSuite"
     echo "14. Inserisci TUTTI i membri nei gruppi dei bienni"
@@ -198,18 +199,7 @@ main() {
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$CDC" --query " NO "
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
-            8)
-                echo "Inserisco i membri nei gruppi dei CdC"
-
-                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "
-                  SELECT DISTINCT 
-                    'CDC_' || sz.sezione_gsuite AS sezione_gsuite,
-                    LOWER(d.email_gsuite) AS email_gsuite
-                  $QUERY_DOCENTI_CDC
-                  ORDER BY sezione_gsuite, d.cognome, d.nome;
-                "
-                ;;
-            9)
+            6)
                 echo "Esporta un unico elenco docenti con classi associate in file CSV"
 
                 # test estrazione dati con
@@ -224,7 +214,18 @@ main() {
                 ORDER BY sezione_gsuite, d.cognome, d.nome;
                 " > "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
                 ;;
-            10)
+            7)
+                echo "Inserisco TUTTI i membri nei gruppi dei CdC"
+
+                $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "
+                  SELECT DISTINCT 
+                    'CDC_' || sz.sezione_gsuite AS sezione_gsuite,
+                    LOWER(d.email_gsuite) AS email_gsuite
+                  $QUERY_DOCENTI_CDC
+                  ORDER BY sezione_gsuite, d.cognome, d.nome;
+                "
+                ;;
+            9)
                 echo "Inserisco i membri nei gruppi dei CdC"
 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "SELECT DISTINCT 
