@@ -117,8 +117,8 @@ show_menu() {
     echo "12. Crea tutti i gruppi dei bienni su GSuite"
     echo "13. Inserisci TUTTI i membri nei gruppi dei bienni"
     echo " "
-    echo "15. Rimuovi membri dai gruppi dei bienni"
-    echo "17. Inserisci i NUOVI membri nei gruppi dei bienni"
+    echo "15. Inserisci i NUOVI membri nei gruppi dei bienni"
+    echo " "
     echo "20. Esci"
 }
 
@@ -256,16 +256,6 @@ main() {
                 $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$QUERY_DOCENTI_PER_BIENNIO"
                 ;;
             15)
-                echo "Rimuovi membri dai gruppi dei bienni"
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Rimuovo membri dal gruppo $nome_gruppo ...!"
-                  echo "query ${gruppi[$nome_gruppo]} ...!"
-
-                  $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            17)
                 echo "Inserisci i NUOVI membri nei gruppi dei bienni"
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$DELTA_QUERY_DOCENTI_PER_BIENNIO"
