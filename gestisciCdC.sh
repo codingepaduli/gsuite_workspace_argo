@@ -107,8 +107,7 @@ show_menu() {
     echo "2. Importa nella tabella i dati CdC da file CSV e normalizza"
     echo "3. Esporta i dati dei CdC in CSV, un file per ogni CdC"
     echo "4. Crea i gruppi Cdc"
-    echo "5. Backup dei gruppi CdC con i relativi membri"
-    echo "6. Cancello i gruppi CdC"
+    echo "5. Cancello i gruppi CdC"
     echo "7. "
     echo "8. Aggiungi TUTTI i membri ai gruppi dei Cdc"
     echo "9. Esporta un unico elenco docenti con classi associate in file CSV"
@@ -190,18 +189,6 @@ main() {
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
                 ;;
             5)
-                echo "Backup dei gruppi CdC ..."
-
-                mkdir -p "$EXPORT_DIR_DATE"
-
-                while IFS="," read -r sezione_gsuite; do
-                    local CDC="CDC_$sezione_gsuite"
-
-                    echo "Backup gruppo $CDC ...!"
-                    $RUN_CMD_WITH_QUERY --command printGroup --group "$CDC" --query " NO " > "$EXPORT_DIR_DATE/$CDC.csv"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
-            6)
                 echo "Cancello i gruppi CdC ..."
 
                 while IFS="," read -r sezione_gsuite; do
@@ -227,12 +214,14 @@ main() {
 
                 # test estrazione dati con
                 $SQLITE_CMD -header -csv studenti.db "
-                SELECT DISTINCT LOWER(d.email_gsuite), UPPER(d.codice_fiscale), 
-                    UPPER(cdc.docente), cdc.classi, sz.sezione_gsuite 
+                SELECT DISTINCT LOWER(d.email_gsuite) AS email_gsuite,
+                    UPPER(cdc.docente) AS docente, sz.sezione_gsuite AS sezione_gsuite,
+                    cdc.materie AS materia
                 $QUERY_DOCENTI_CDC
                   -- AND sz.sezione_gsuite = '3A_inf'
-                  -- AND cdc.materie != UPPER('Educazione civica')
-                ORDER BY docente;
+                    AND UPPER(cdc.Materie) != UPPER('Educazione civica')
+                    AND UPPER(cdc.Materie) != UPPER('ORIENTAMENTO')
+                ORDER BY sezione_gsuite, d.cognome, d.nome;
                 " > "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
                 ;;
             10)
