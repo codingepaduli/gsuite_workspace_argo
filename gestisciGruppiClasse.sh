@@ -5,10 +5,6 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-#SQL_FILTRO_ANNI=" AND sz.cl IN (5) " 
-#SQL_FILTRO_SEZIONI=" AND sz.sez_argo IN ( 'Cm' ) "
-#SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('m_sirio', 'et_sirio') "
-
 SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
@@ -39,6 +35,8 @@ show_menu() {
     echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
     echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
     
+    echo "14. Reset password di TUTTI gli studenti delle classi"
+
     echo "20. Esci"
 }
 
@@ -78,23 +76,24 @@ main() {
                 declare -A gruppi_classe
 
                 while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="SELECT sz.sezione_gsuite AS classe, UPPER(sa.cognome) AS cognome,
-                        UPPER(sa.nome) AS nome, LOWER(sa.email_gsuite) AS email_gsuite,  UPPER(sa.cod_fisc) AS cod_fisc, sa.datan, sa.datar
-                                  FROM $TABELLA_STUDENTI sa 
-                                    INNER JOIN $TABELLA_SEZIONI sz 
-                                    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                  WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                    AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
-                                    AND (sa.aggiunto_il IS NOT NULL AND TRIM(sa.aggiunto_il) != ''
-                                        AND sa.aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                                    )
-                                    AND (sa.datar IS NULL OR sa.datar = '')
-                                  ORDER BY sz.sezione_gsuite, UPPER(sa.cognome);"
+                    gruppi_classe[$sezione_gsuite]="
+                        SELECT sz.sezione_gsuite AS classe, UPPER(sa.cognome) AS cognome,
+                            UPPER(sa.nome) AS nome, LOWER(sa.email_gsuite) AS email_gsuite,  
+                            UPPER(sa.cod_fisc) AS cod_fisc, sa.datan AS data_nascita, 
+                            sa.datar AS data_ritiro
+                        FROM $TABELLA_STUDENTI sa 
+                            INNER JOIN $TABELLA_SEZIONI sz 
+                            ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
+                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                            AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
+                        ORDER BY sz.sezione_gsuite, UPPER(sa.cognome);"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+
+                    $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
                 done
                 ;;
             4)
@@ -104,15 +103,14 @@ main() {
 
                 while IFS="," read -r sezione_gsuite; do
                     gruppi_classe[$sezione_gsuite]="
-                                SELECT sa.email_gsuite
-                                FROM $TABELLA_STUDENTI sa 
-                                  INNER JOIN $TABELLA_SEZIONI sz 
-                                  ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                                WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                                  AND sa.email_gsuite IS NOT NULL
-                                  AND sa.email_gsuite != ''
-                                  AND (sa.datar IS NULL OR sa.datar = '')
-                                ORDER BY sa.email_gsuite;"
+                        SELECT sa.email_gsuite
+                        FROM $TABELLA_STUDENTI sa 
+                          INNER JOIN $TABELLA_SEZIONI sz 
+                          ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
+                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                          AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
+                          AND (sa.datar IS NULL OR sa.datar = '')
+                        ORDER BY sa.email_gsuite;"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
 
                 for nome_gruppo in "${!gruppi_classe[@]}"; do
@@ -250,6 +248,27 @@ main() {
                     echo "Salvo gruppo GSuite $sezione_gsuite"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
                 done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
+                ;;
+            14)
+                echo "Reset password di TUTTI gli studenti delle classi"
+
+                declare -A gruppi_classe
+
+                while IFS="," read -r sezione_gsuite; do
+                    gruppi_classe[$sezione_gsuite]="
+                        SELECT LOWER(sa.email_gsuite)
+                        FROM $TABELLA_STUDENTI sa 
+                          INNER JOIN $TABELLA_SEZIONI sz 
+                          ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
+                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
+                          AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
+                        ORDER BY sa.email_gsuite;"
+                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+
+                for nome_gruppo in "${!gruppi_classe[@]}"; do
+                    # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
+                    $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "${gruppi_classe[$nome_gruppo]}"
+                done
                 ;;
             20)
                 echo "Arrivederci!"

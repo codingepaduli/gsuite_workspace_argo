@@ -23,6 +23,9 @@ SQLITE_UTILS_CMD="sqlite-utils"
 # Comando Google Admin Manager
 GAM_CMD="$HOME/bin/gam/gam"
 
+# Libreoffice conversion
+LIBREOFFICE_CMD='libreoffice --headless --convert-to xlsx'
+
 # Script to run
 RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
 
