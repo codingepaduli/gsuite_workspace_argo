@@ -119,6 +119,7 @@ show_menu() {
     echo " "
     echo "15. Inserisci i NUOVI membri nei gruppi dei bienni"
     echo " "
+    echo "17. Prepara EMAIL degli account studenti, da inviare ai coordinatori"
     echo "20. Esci"
 }
 
@@ -259,6 +260,27 @@ main() {
                 echo "Inserisci i NUOVI membri nei gruppi dei bienni"
                 
                 $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$DELTA_QUERY_DOCENTI_PER_BIENNIO"
+                ;;
+            17)
+                echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
+
+                while IFS="," read -r sezione_gsuite email_coordinatore; do
+
+                    local TO="$email_coordinatore", # CDC_$sezione_gsuite@$DOMAIN, 
+                    local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+
+                    local MESSAGE="
+                      \n Buongiorno,
+                      \n in allegato l'elenco degli account degli studenti della classe $sezione_gsuite .
+                      \n Richieste e segnalazioni di imprecisioni o problematiche relative agli account studenti possono essere inoltrate a supporto_digitale@$DOMAIN .
+                      \n Tutti i docenti sono abilitati ad effettuare il reset password degli studenti, come da circolare 211 (in allegato).
+                      \n Cordiali saluti"
+
+                    echo "Invio EMAIL degli account studenti della classe $sezione_gsuite - coordinatore $email_coordinatore"
+
+                    $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
+
+                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
                 ;;
             20)
                 echo "Arrivederci!"
