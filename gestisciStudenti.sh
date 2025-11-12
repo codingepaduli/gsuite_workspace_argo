@@ -86,7 +86,7 @@ main() {
             3)
                 echo "Visualizza nuovi studenti ..."
                 
-                $SQLITE_CMD studenti.db -header -table "SELECT cl, sez, cognome, nome, cod_fisc, aggiunto_il, email_gsuite 
+                $SQLITE_CMD studenti.db -header -table "SELECT cl || sez, cognome || ' ' || nome AS NOME, aggiunto_il, datar, email_gsuite
                 FROM $TABELLA_STUDENTI 
                 WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
                   OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
@@ -140,7 +140,7 @@ main() {
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto i nuovi studenti in file CSV ..."
                 
-                $SQLITE_CMD studenti.db -header -csv "SELECT cl, sez, cognome, nome, email_gsuite, 'Volta2425' as password 
+                $SQLITE_CMD studenti.db -header -csv "SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password 
                 FROM $TABELLA_STUDENTI 
                 WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '')
                     OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
@@ -152,7 +152,7 @@ main() {
                 echo "Creo i nuovi studenti su GSuite ..."
                 
                 # creo le mail del diurno
-                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
+                $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
                 FROM $TABELLA_STUDENTI 
                 WHERE sez NOT LIKE '%_sirio' 
                     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
@@ -162,7 +162,7 @@ main() {
                 ORDER BY cl, sez, cognome, nome;"
 
                 # creo le mail del serale
-                $RUN_CMD_WITH_QUERY --command createStudents --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, e_mail, ' ' 
+                $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
                 FROM $TABELLA_STUDENTI 
                 WHERE sez LIKE '%_sirio' 
                     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
