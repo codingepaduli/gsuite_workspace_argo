@@ -24,7 +24,7 @@ SQLITE_UTILS_CMD="sqlite-utils"
 GAM_CMD="$HOME/bin/gam/gam"
 
 # Libreoffice conversion
-LIBREOFFICE_CMD='libreoffice --headless --convert-to xlsx'
+LIBREOFFICE_CMD='flatpak run org.libreoffice.LibreOffice --headless --convert-to xlsx ' # 'echo '
 
 # Script to run
 RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
@@ -85,6 +85,9 @@ TABELLA_STUDENTI_PRECEDENTE="" # studenti_argo_2025_06_01
 PERIODO_STUDENTI_DA='2025-10-20'
 PERIODO_STUDENTI_A='2025-10-20'
 
+PASSWORD_STUDENTI='Pwd'
+RESET_PASSWORD='Pwd'
+
 ####################################
 # Tables' name related to sections #
 ####################################
@@ -96,6 +99,8 @@ TABELLA_SEZIONI="" # sezioni_2024_25
 SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
 SQL_SEZIONI_DIURNO=" 'tr', 'en', 'in', 'm', 'mDD', 'od', 'idd', 'et', 'tlt' "
 SQL_SEZIONI_SERALE=" 'm_sirio', 'et_sirio', 'me_sirio' "
+
+# GSuite data are UPPERCASE
 SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('', ${SQL_SEZIONI_DIURNO:-"''"}, ${SQL_SEZIONI_SERALE:-"''"}) "
 
 ###########################################
