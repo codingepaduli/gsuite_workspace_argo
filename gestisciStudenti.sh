@@ -139,14 +139,33 @@ main() {
             5)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto i nuovi studenti in file CSV ..."
-                
-                $SQLITE_CMD studenti.db -header -csv "SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password 
+
+                local NEW_STUDENTS_REPORT="
                 FROM $TABELLA_STUDENTI 
-                WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                    OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                WHERE 1=1
+                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                         AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
                     )
-                ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_$CURRENT_DATE.csv"
+                "
+                
+                $SQLITE_CMD studenti.db -header -csv " 
+                SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password
+                $NEW_STUDENTS_REPORT 
+                ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+
+                $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+
+
+                for classe in {1..5}
+                do
+                    $SQLITE_CMD studenti.db -header -csv " 
+                    SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password
+                    $NEW_STUDENTS_REPORT
+                        AND cl = $classe
+                    ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
+
+                    $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
+                done
                 ;;
             6)
                 echo "Creo i nuovi studenti su GSuite ..."
