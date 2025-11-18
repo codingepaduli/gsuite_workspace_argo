@@ -118,11 +118,12 @@ show_menu() {
     echo "-------------"
     echo "1. Cancello e ricreo la tabella di tutti gli utenti GSuite"
     echo "2. Importo e normalizzo i dati dal file CSV"
-    echo "3. Visualizza personale segnato come disabilitato"
+    echo "3. Visualizza utenti segnati come disabilitati"
     echo "4. Disabilita su GSuite il personale segnato come disabilitato"
     echo "5. Cancella su GSuite il personale segnato come disabilitato"
     echo "6. Visualizza studenti da disabilitare perche presenti su GSuite e NON su Argo"
     echo "7. Disabilita studenti presenti su GSuite e NON su Argo"
+    echo "8. Cancella su GSuite il personale segnato come disabilitato"
 
     echo "12. Visualizza personale su GSuite e non su Argo"
     echo "14. Visualizza studenti diurno con OU errata"
@@ -191,7 +192,7 @@ main() {
                 WHERE ultimo_login is NOT NULL AND TRIM(UPPER(ultimo_login)) = UPPER('Never logged in');"
                 ;;
             3)
-                echo "3. Visualizza utenti disabilitati"
+                echo "3. Visualizza utenti segnati come disabilitati"
 
                 $SQLITE_CMD -header -table studenti.db "
                 SELECT UPPER(cognome) AS cognome, UPPER(nome) AS nome, 
@@ -227,6 +228,8 @@ main() {
             6)
                 echo "6. Visualizza (ed esporta) studenti da disabilitare perche presenti su GSuite e NON su Argo"
 
+                mkdir -p "$EXPORT_DIR_DATE"
+
                 $SQLITE_CMD -header -table studenti.db "
                 SELECT LOWER(sg.email_gsuite) AS email_gsuite
                 $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
@@ -247,6 +250,14 @@ main() {
                     SELECT LOWER(sg.email_gsuite) AS email_gsuite
                     $PARTIAL_QUERY_STUDENTI_SU_GSUITE_NON_ARGO
                 ); "
+                ;;
+            8)
+                echo "8. Cancella su GSuite il personale segnato come disabilitato"
+
+                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
+                SELECT LOWER(email_gsuite) AS email_gsuite
+                $QUERY_STUDENTI_SOSPESI
+                ORDER BY UPPER(cognome);"
                 ;;
             12)
                 echo "12. Visualizza personale su GSuite e non su Argo"
