@@ -266,7 +266,8 @@ main() {
 
                 while IFS="," read -r sezione_gsuite email_coordinatore; do
 
-                    local TO="$email_coordinatore", # CDC_$sezione_gsuite@$DOMAIN, 
+                    local TO="$email_coordinatore" # , CDC_$sezione_gsuite@$DOMAIN
+
                     local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
 
                     local MESSAGE="
@@ -280,7 +281,7 @@ main() {
 
                     $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
 
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI AND sz.email_coordinatore IS NOT NULL AND LOWER(sz.email_coordinatore) != '' ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
                 ;;
             20)
                 echo "Arrivederci!"
