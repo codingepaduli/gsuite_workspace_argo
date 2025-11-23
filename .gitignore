@@ -3,7 +3,13 @@
 # git update-index --no-assume-unchanged _environment.sh
 /sqlite
 /export
-/dati_argo
+/dati_argo/cdc/*.csv
+/dati_argo/cdc/*.xlsx
+/dati_argo/cdc/*.pdf
+/dati_argo/personale_argo/*.csv
+/dati_argo/personale_argo/*.xlsx
+/dati_argo/studenti_argo/*.csv
+/dati_argo/studenti_argo/*.xls
 /dati_gsuite/personale
 /dati_gsuite/studenti
 /dati_gsuite/*.csv
