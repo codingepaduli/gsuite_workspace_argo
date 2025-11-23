@@ -6,8 +6,9 @@
 2. [Features](#features)
 3. [Installation](#installation)
 4. [Troubleshooting](#troubleshooting)
-5. [FAQs](#faqs)
-6. [Contact Support](#contact-support)
+5. [Students management](#students-management)
+6. [GSuite user management](#gsuite-user-management)
+7. [CdC Management](#cdc-management)
 
 ## Introduction
 
@@ -108,13 +109,25 @@ sqlite3 studenti.db
 
 Check the file ``studenti.db`` will be created, or execute a ``CREATE TABLE`` command in order the file will be created.
 
+## Students management
+
 ### Export student's data
 
 Student's data are exported from Argo:
 
-![portaleArgo.png](/dati_argo/studenti_argo/portaleArgo.png).
+![portaleArgo.png](/dati_argo/studenti_argo/portaleArgo.png)
 
-Fields to export are:
+Run a custom export:
+
+![argoStudenti-EsportaPersonalizzata.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata.png)
+
+![argoStudenti-EsportaPersonalizzata-apri.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata-apri.png)
+
+![argoStudenti-EsportazioneDati-apriElenco.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-apriElenco.png)
+
+![argoStudenti-EsportazioneDati-avvia.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-avvia.png)
+
+Fields to export and required in the CSV are:
 
 - COGNOME
 - NOME
@@ -131,51 +144,38 @@ Fields to export are:
 - RITIRATO
 - DATA_RITIRO
 
-Run a custom export:
-
-![argoStudenti-EsportaPersonalizzata.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata.png).
-
-![argoStudenti-EsportaPersonalizzata-apri.png](/dati_argo/studenti_argo/argoStudenti-EsportaPersonalizzata-apri.png).
-
-![argoStudenti-EsportazioneDati-apriElenco.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-apriElenco.png).
-
-![argoStudenti-EsportazioneDati-avvia.png](/dati_argo/studenti_argo/argoStudenti-EsportazioneDati-avvia.png).
-
 Copy the student's data CSV file (exported from Argo) in the folder ``$BASE_DIR/dati_argo/studenti_argo/``.
 
-Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh): 
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh):
 
 ```bash
-TABELLA_STUDENTI="studenti_argo_2024_09_06"``
+TABELLA_STUDENTI="studenti_argo_2024_09_06"
 ```
 
-The path from where the data are imported (check it in the script) is: 
+The path from where the data are imported (check it in the script) is:
 
 ```bash
 FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
 ```
 
-Prepare Excel file:
+Prepare Excel and CSV file:
 
-- Check first row fields to match the CREATE TABLE command in the script;
+- Check the columns matches the fields to export (you can check the CREATE TABLE command in the script in case of trouble);
+- Delete all empty rows;
 - Save the Excel as CSV.
 
-Prepare CSV file:
-
-- Transform the first row in lowercase;
-- Replace all `` ,`` occurrences with ``,``;
-- Delete all empty rows matching ``,,,,,,,,,``.
-
-### Students Management
+### Operations on students and classes
 
 After exporting student's data from Argo, you can run the script:
 
 - ``./gestisciStudenti.sh`` to manage students;
-- ``./gestisciSezioni`` to manage students'class;
+- ``./gestisciSezioni`` to manage students'class and class supervisors;
 - ``./gestisciGruppiGSuiteStudenti.sh`` to manage groups on GSuite;
 - ``./gestisciGruppiClasse.sh`` to manage students'class on GSuite.
 
 Some operations needs you set the variables required for the operation. Check you set them in case of error.
+
+## GSuite user management
 
 ### Export all users from GSuite
 
@@ -187,24 +187,24 @@ Click on "download" and select all columns:
 
 ![gSuiteUserDownload.png](/dati_gsuite/gsuite_export_all_users_choose_all_fields.png).
 
-Delete unwanted columns and replace the header as: 
+Delete unwanted columns and replace the header as:
 ``nome cognome email_gsuite org_unit stato_utente ultimo_login spazio_email spazio_storage spazio_gdrive selezionato_il``;
 
 Save the CSV file in the folder ``$BASE_DIR/dati_gsuite/``.
 
-Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh): 
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh):
 
 ```bash
-TABELLA_UTENTI_GSUITE="utenti_gsuite_2024_09_06"``
+TABELLA_UTENTI_GSUITE="utenti_gsuite_2024_09_06"
 ```
 
-The path from where the data are imported (check it in the script) is: 
+The path from where the data are imported (check it in the script) is:
 
 ```bash
 FILE_CSV_STUDENTI="$BASE_DIR/dati_gsuite/$TABELLA_STUDENTI.csv"
 ```
 
-### All GSuite user management
+### Operations on GSuite users
 
 After exporting student's data from Argo, you can run the script:
 
@@ -212,7 +212,40 @@ After exporting student's data from Argo, you can run the script:
 
 Some operations needs you set the variables required for the operation. Check you set them in case of error.
 
-## Troubleshooting
+## CdC Management
+
+CdC data are exported from Argo:
+
+![portaleArgo.png](/dati_argo/studenti_argo/portaleArgo.png)
+
+Start a Print clicking the menu "Stampa", "Elenchi", "Particolari" and select the menu item "Docenti con materie e classi":
+
+![portaleArgo.png](/dati_argo/cdc/argoCdC.png)
+
+Copy the CdC data PDF file (exported from Argo) in the folder ``$BASE_DIR/dati_argo/cdc/``.
+
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh):
+
+```bash
+TABELLA_CDC_ARGO="CdC_2025_10_24"
+```
+
+The path from where the data are imported (check it in the script) is:
+
+```bash
+FILE_CDC_ARGO_PDF="$BASE_DIR/dati_argo/cdc/$TABELLA_CDC_ARGO.pdf"
+```
+
+### Operations on CdC
+
+After exporting student's data from Argo, you can run the script:
+
+- ``./gestisciCdC.sh`` to manage all CdC;
+- ``./gestisciGruppiGSuiteDocenti.sh`` to manage employees groups.
+
+Some operations needs you set the variables required for the operation. Check you set them in case of error.
+
+### Troubleshooting
 
 Note: GAM OAuth Token has validity of 6 months from the last access. After 6 months of inactivity, you will get the error "gam ERROR: ('invalid_grant: Bad Request')" or ``{"error": "invalid_grant", "error_description": "Bad Request"}``. In this case, you need to re-authorize the Admin Access, running another time the command:
 
