@@ -24,10 +24,32 @@ SQLITE_UTILS_CMD="sqlite-utils"
 GAM_CMD="$HOME/bin/gam/gam"
 
 # Libreoffice conversion
-LIBREOFFICE_CMD='flatpak run org.libreoffice.LibreOffice --headless --convert-to xlsx ' # 'echo '
+LIBREOFFICE_CMD='flatpak run org.libreoffice.LibreOffice --headless ' # 'echo --convert-to xlsx '
 
 # Script to run
-RUN_CMD_WITH_QUERY="./eseguiComandoConQuery.sh "
+RUN_CMD_WITH_QUERY="$BASE_DIR/eseguiComandoConQuery.sh "
+
+# Sovrascrive la data corrente (formato yyyy-mm-dd)
+# e il path della cartella di esportazione
+CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
+
+#########################################
+#       Import / Export folders         #
+#########################################
+
+ARGO_IMPORT_DIR="$BASE_DIR/dati_argo/"
+
+STUDENTI_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/studenti_argo/"
+
+CDC_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/cdc/"
+
+PERSONALE_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/personale_argo/"
+
+# Cartella di esportazione
+EXPORT_DIR="$BASE_DIR/export"
+
+# Sotto-cartella di esportazione con data
+EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
 
 #########################################
 #           Config data                 #
@@ -55,20 +77,6 @@ dryRunFlag=$( [ -n "$DRY_RUN" ] && echo "YES" || echo "NO" )
 LOG_OUTPUT=("file" "console")
 LOG_LEVEL="CONFIG"
 LOG_FILE="debug.log"
-
-# Sovrascrive la data corrente (formato yyyy-mm-dd)
-# e il path della cartella di esportazione
-CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
-
-#########################################
-#           Export folders              #
-#########################################
-
-# Cartella di esportazione
-EXPORT_DIR="$BASE_DIR/export"
-
-# Sotto-cartella di esportazione con data
-EXPORT_DIR_DATE="$EXPORT_DIR/export_$CURRENT_DATE"
 
 ####################################
 # Tables' name related to students #
