@@ -93,7 +93,7 @@ main() {
                     echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
 
-                    $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+                    $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
                 done
                 ;;
             4)
@@ -183,7 +183,19 @@ main() {
                 SELECT LOWER(stD.email_gsuite) AS email_gsuite, szp.sezione_gsuite AS sez_prima, szd.sezione_gsuite AS sez_dopo, stD.datar AS data_ritiro
                 $QUERY_DIFF
                 ORDER BY stD.cl, stD.sez, LOWER(stD.email_gsuite); 
-                " > "$EXPORT_DIR_DATE/studenti_spostati_o_ritirati_$CURRENT_DATE.csv"
+                " > "$EXPORT_DIR_DATE/cambi_studenti_tutti.csv"
+
+                for classe in {1..5}
+                do
+                    $SQLITE_CMD -header -csv studenti.db "
+                    SELECT LOWER(stD.email_gsuite) AS email_gsuite, szp.sezione_gsuite AS sez_prima, szd.sezione_gsuite AS sez_dopo, stD.datar AS data_ritiro
+                    $QUERY_DIFF
+                        AND stP.cl = $classe
+                    ORDER BY stD.cl, stD.sez, LOWER(stD.email_gsuite); 
+                    " > "$EXPORT_DIR_DATE/cambi_studenti_classe_$classe.csv"
+
+                    $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/cambi_studenti_classe_$classe.csv"
+                done
 
                 while IFS="," read -r email_gsuite sezione_gsuite; do
                   echo "cancello $email_gsuite da classe $sezione_gsuite"

@@ -6,8 +6,8 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
 # File CSV 
-FILE_CSV_STUDENTI="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI.csv"
-FILE_CSV_STUDENTI_SERALE="$BASE_DIR/dati_argo/studenti_argo/$TABELLA_STUDENTI_SERALE.csv"
+FILE_CSV_STUDENTI="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.csv"
+FILE_CSV_STUDENTI_SERALE="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.csv"
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -62,6 +62,8 @@ main() {
                 # Importa CSV dati
                 # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI" "$FILE_CSV_STUDENTI" --csv --empty-null
 
+                $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
+
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
 
                 # Normalizza dati
@@ -76,7 +78,17 @@ main() {
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
                 SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
-                WHERE datar is NOT NULL AND TRIM(datar) != '';"
+                WHERE datar IS NOT NULL AND TRIM(datar) != '';"
+
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
+                SET email_gsuite=''
+                WHERE email_gsuite IS NULL OR TRIM(email_gsuite) = '';"
+
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
+                SET aggiunto_il=''
+                WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
                 ;;
             2)
                 echo "Visualizza dati in tabella ..."
@@ -153,7 +165,7 @@ main() {
                 $NEW_STUDENTS_REPORT 
                 ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
 
-                $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
 
 
                 for classe in {1..5}
@@ -164,7 +176,7 @@ main() {
                         AND cl = $classe
                     ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
 
-                    $LIBREOFFICE_CMD --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
+                    $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
                 done
                 ;;
             6)
@@ -245,6 +257,8 @@ main() {
                 # Importa CSV dati
                 # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI_SERALE" "$FILE_CSV_STUDENTI_SERALE" --csv --empty-null
 
+                $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
+
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
                 # Normalizza dati
@@ -260,6 +274,16 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
                 SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
                 WHERE datar is NOT NULL AND TRIM(datar) != '';"
+
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
+                SET email_gsuite=''
+                WHERE email_gsuite IS NULL OR TRIM(email_gsuite) = '';"
+
+                # Normalizza dati
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
+                SET aggiunto_il=''
+                WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
                 ;;
             14)
                 echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
