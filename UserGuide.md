@@ -245,6 +245,37 @@ After exporting student's data from Argo, you can run the script:
 
 Some operations needs you set the variables required for the operation. Check you set them in case of error.
 
+## Employees Management
+
+Employees data are exported from Argo:
+
+![portaleArgo.png](/dati_argo/personale_argo/argoPersonale.png)
+
+Click on "Print", "Employees" and select the menu item "All by location".
+
+Copy the Employees data file (exported from Argo) in the folder ``$BASE_DIR/dati_argo/personale_argo/``.
+
+Set the name of the CSV file in the script variable in file [_environment_working_tables.sh](_environment_working_tables.sh):
+
+```bash
+TABELLA_PERSONALE="personale_argo_2025_10_20"
+```
+
+The path from where the data are imported (check it in the script) is:
+
+```bash
+FILE_CDC_ARGO_PDF="$BASE_DIR/dati_argo/personale_argo/$TABELLA_PERSONALE.pdf"
+```
+
+### Operations on CdC
+
+After exporting student's data from Argo, you can run the script:
+
+- ``./gestisciPersonale.sh`` to manage all employees;
+- ``./gestisciGruppiGSuiteDocenti.sh`` to manage employees groups.
+
+Some operations needs you set the variables required for the operation. Check you set them in case of error.
+
 ### Troubleshooting
 
 Note: GAM OAuth Token has validity of 6 months from the last access. After 6 months of inactivity, you will get the error "gam ERROR: ('invalid_grant: Bad Request')" or ``{"error": "invalid_grant", "error_description": "Bad Request"}``. In this case, you need to re-authorize the Admin Access, running another time the command:
