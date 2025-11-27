@@ -112,6 +112,20 @@ WHERE
     AND (p.cancellato_il IS NULL OR TRIM(p.cancellato_il) = '')
 "
 
+QUERY_STUDENTI_ACCESSO_ACCOUNT="
+  FROM $TABELLA_STUDENTI sa 
+  INNER JOIN $TABELLA_SEZIONI sz 
+    ON sa.sez = sz.sez_argo AND sa.cl =sz.cl
+  INNER JOIN $TABELLA_UTENTI_GSUITE sg
+    ON UPPER(sa.email_gsuite) = UPPER(sg.email_gsuite) 
+  WHERE 
+      1 = 1
+      AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '') 
+      -- filtro studenti
+      AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
+      AND (sa.datar IS NULL OR TRIM(sa.datar) = '')
+"
+
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione tabella di tutti gli utenti GSuite"
@@ -124,7 +138,7 @@ show_menu() {
     echo "6. Visualizza studenti da disabilitare perche presenti su GSuite e NON su Argo"
     echo "7. Disabilita studenti presenti su GSuite e NON su Argo"
     echo "8. Cancella su GSuite il personale segnato come disabilitato"
-
+    echo "10. Esporta conteggio di studenti che non fanno accesso da tanto tempo"
     echo "12. Visualizza personale su GSuite e non su Argo"
     echo "14. Visualizza studenti diurno con OU errata"
     echo "15. Sposta studenti diurno con OU errata su OU 'Diurno'"
@@ -154,12 +168,42 @@ main() {
                     nome VARCHAR(200),
                     cognome VARCHAR(200),
                     email_gsuite VARCHAR(200),
+                    pwd VARCHAR(200),
+                    pwdHash VARCHAR(200),
                     org_unit VARCHAR(200),
+                    priMail VARCHAR(200),
                     stato_utente VARCHAR(200),
                     ultimo_login TEXT,
+                    recoveryEmail VARCHAR(200),
+                    homeEmail VARCHAR(200),
+                    workEmail VARCHAR(200),
+                    recoveryPhone VARCHAR(200),
+                    workPhone VARCHAR(200),
+                    homePhone VARCHAR(200),
+                    mobilePhone VARCHAR(200),
+                    workAddr VARCHAR(200),
+                    homeAddr VARCHAR(200),
+                    id VARCHAR(200),
+                    type VARCHAR(200),
+                    title VARCHAR(200),
+                    manager VARCHAR(200),
+                    department VARCHAR(200),
+                    cost VARCHAR(200),
+                    enroll VARCHAR(200),
+                    enforce VARCHAR(200),
+                    buildingId VARCHAR(200),
+                    floorName VARCHAR(200),
+                    floorSection VARCHAR(200),
                     spazio_email REAL,
                     spazio_gdrive REAL,
+                    spazio_foto REAL,
+                    spazio_limite VARCHAR(200),
                     spazio_storage REAL,
+                    changePwdNextLogin VARCHAR(200),
+                    newStatus VARCHAR(200),
+                    license VARCHAR(200),
+                    newLicense VARCHAR(200),
+                    protection VARCHAR(200),
                     selezionato_il TEXT);"
                 ;;
             2)
@@ -179,7 +223,7 @@ main() {
                     spazio_email = CAST(spazio_email AS REAL) * 1000,
                     spazio_gdrive = CAST(spazio_gdrive AS REAL) * 1000,
                     spazio_storage = CAST(spazio_storage AS REAL) * 1000,
-                    selezionato_il = TRIM(UPPER(selezionato_il));"
+                    selezionato_il = '';"
                 
                 # Normalizza data ultimo_login
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_UTENTI_GSUITE 
@@ -258,6 +302,19 @@ main() {
                 SELECT LOWER(email_gsuite) AS email_gsuite
                 $QUERY_STUDENTI_SOSPESI
                 ORDER BY UPPER(cognome);"
+                ;;
+            10)
+                echo "10. Esporta conteggio di studenti che non fanno accesso da tanto tempo"
+
+                mkdir -p "$EXPORT_DIR_DATE"
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+                    SELECT sz.sezione_gsuite, COUNT(*) AS numero_studenti
+                    $QUERY_STUDENTI_ACCESSO_ACCOUNT
+                        AND sg.ultimo_login < '$LIMITE_ULTIMO_ACCESSO'
+                    GROUP BY sz.sezione_gsuite
+                    ORDER BY sz.sezione_gsuite
+                " > "$EXPORT_DIR_DATE/conteggio_non_accesso.csv"
                 ;;
             12)
                 echo "12. Visualizza personale su GSuite e non su Argo"
