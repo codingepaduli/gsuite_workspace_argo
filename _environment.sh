@@ -148,6 +148,8 @@ TABELLA_UTENTI_GSUITE='' # tutti_2025_10_20
 GSUITE_OU_DOCENTI="DOCENTI"
 GSUITE_OU_ATA="ATA"
 
+LIMITE_ULTIMO_ACCESSO="2025-11-01"
+
 #####################################
 # Tables' name for CdC              #
 #####################################
