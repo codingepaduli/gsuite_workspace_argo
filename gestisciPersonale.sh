@@ -171,7 +171,8 @@ main() {
                 SELECT *
                 FROM $TABELLA_PERSONALE_PRECEDENTE
                 WHERE 1=1
-                    AND cancellato_il IS NOT NULL AND TRIM(cancellato_il) != ''
+                    -- seleziono non cancellati (cancellato_il NULL o vuoto)
+                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
                     AND codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
                     AND UPPER(codice_fiscale) NOT IN (
                       SELECT UPPER(codice_fiscale)
@@ -183,7 +184,8 @@ main() {
                 echo "Crea il nuovo personale su GSuite ..."
 
                 $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query " 
-                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
+                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare,
+                '$PASSWORD_CLASSROOM'
                 FROM $TABELLA_PERSONALE
                 WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
                     AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
@@ -193,7 +195,8 @@ main() {
                     ) AND UPPER(tipo_personale) = UPPER('docente');"
 
                 $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "
-                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
+                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare,
+                '$PASSWORD_CLASSROOM'
                 FROM $TABELLA_PERSONALE
                 WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
                     AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
