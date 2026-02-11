@@ -66,6 +66,9 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
 
+                birthdayDateFormat=$(getDateFormat 'datan')
+                cancelledDateFormat=$(getDateFormat 'datar')
+
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
                 SET cod_fisc = TRIM(UPPER(cod_fisc)),
@@ -73,11 +76,11 @@ main() {
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)),
                     sez = TRIM(sez),
-                    datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
+                    datan = date($birthdayDateFormat);"
                 
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
-                SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
+                SET datar = date($cancelledDateFormat)
                 WHERE datar IS NOT NULL AND TRIM(datar) != '';"
 
                 # Normalizza dati
@@ -261,6 +264,9 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
+                birthdayDateFormat=$(getDateFormat 'datan')
+                cancelledDateFormat=$(getDateFormat 'datar')
+
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
                 SET cod_fisc = TRIM(UPPER(cod_fisc)),
@@ -268,11 +274,11 @@ main() {
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)),
                     sez = TRIM(sez) || '_sirio',
-                    datan = date(substr(datan, 7, 4) || '-' || substr(datan, 4, 2) || '-' || substr(datan, 1, 2));"
+                    datan = date($birthdayDateFormat);"
 
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
-                SET datar = date(substr(datar, 7, 4) || '-' || substr(datar, 4, 2) || '-' || substr(datar, 1, 2))
+                SET datar = date($cancelledDateFormat)
                 WHERE datar is NOT NULL AND TRIM(datar) != '';"
 
                 # Normalizza dati
@@ -312,6 +318,14 @@ main() {
                       GROUP BY UPPER(cod_fisc)
                       HAVING COUNT(*) > 1
                   );"
+                
+                echo "codici fiscali duplicati col serale:"
+
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+                  SELECT ss.cod_fisc, ss.cognome, ss.nome, ss.cl, ss.sez, s.cl, s.sez 
+                  FROM $TABELLA_STUDENTI_SERALE ss 
+                  INNER JOIN $TABELLA_STUDENTI s 
+                    ON UPPER(ss.cod_fisc) = UPPER(s.cod_fisc);"
 
                 echo "email GSuite duplicate:"
                 

@@ -25,9 +25,26 @@ remove_from_map() {
 }
 
 ######################
-#       Utils        #
+# Data format        #
 ######################
 
+# Get yyyy-mm-dd from '2024-12-31'
+getDateFromAmericanFormat() {
+  echo "substr($1, 1, 4) || '-' || substr($1, 6, 2) || '-' || substr($1, 9, 2)"
+}
+
+# Get yyyy-mm-dd from '31-12-2024'
+getDateFromItalianFormat() {
+  echo "substr($1, 7, 4) || '-' || substr($1, 4, 2) || '-' || substr($1, 1, 2)"
+}
+
+getDateFormat() {
+  getDateFromItalianFormat "$1"
+}
+
+######################
+#       Utils        #
+######################
 
 # Check all variables are defined
 ## Run: checkAllVarsDefined JAVA_HOME PROVA_MIA
@@ -156,7 +173,7 @@ export -f handle_error
 # log::_write_log "WARN" "TEST warn"
 # log::_write_log "ERROR" "ERRORE NON PREVISTO"
 
-set -eEuo pipefail
+set -uo pipefail
 
 trap 'log::_write_log "ERROR" "$BASH_COMMAND"' ERR
 
