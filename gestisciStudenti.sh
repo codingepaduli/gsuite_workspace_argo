@@ -325,7 +325,8 @@ main() {
                   SELECT ss.cod_fisc, ss.cognome, ss.nome, ss.cl, ss.sez, s.cl, s.sez 
                   FROM $TABELLA_STUDENTI_SERALE ss 
                   INNER JOIN $TABELLA_STUDENTI s 
-                    ON UPPER(ss.cod_fisc) = UPPER(s.cod_fisc);"
+                    ON UPPER(ss.cod_fisc) = UPPER(s.cod_fisc)
+                  WHERE ss.sez != s.sez;"
 
                 echo "email GSuite duplicate:"
                 
