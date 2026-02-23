@@ -28,6 +28,8 @@ show_menu() {
     echo "2. Creo le email e i relativi account su GSuite, li esporto in CSV"
     echo "3. Aggiungi i nuovi studenti alle classi, effettua gli spostamenti, toglie i ritirati"
 
+    echo "5. Invio singola email ad ogni coordinatore con elenco studenti per classe"
+
     echo "20. Esci"
 }
 
@@ -94,6 +96,16 @@ main() {
         
         ./gestisciGruppiClasse.sh "$SMOVE_STUDENTS_IN_CLASSES"
         ./gestisciGruppiClasse.sh "$ADD_NEW_STUDENTS_IN_CLASSES"
+      ;;
+      5)
+        echo "5. Invio singola email ad ogni coordinatore con elenco studenti per classe"
+
+        local EXPORT_CLASSES=3
+        local SEND_MAIL_TO_SUPERVISORS=6
+        
+        ./gestisciGruppiClasse.sh "$EXPORT_CLASSES"
+        ./gestisciSezioni.sh "$SEND_MAIL_TO_SUPERVISORS"
+        read -p "Premi per continuare " -r _
       ;;
       20)
         echo "Arrivederci!"

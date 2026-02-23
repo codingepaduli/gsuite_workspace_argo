@@ -15,6 +15,8 @@ show_menu() {
     echo "2. Crea dati delle sezioni"
     echo "3. Visualizza sezioni"
     echo "4. Esporto le sezioni in file CSV"
+    echo ""
+    echo "6. Invia elenco classi ai coordinatori"
     echo " "
     echo "20. Esci"
 }
@@ -77,6 +79,40 @@ main() {
                 
                 $SQLITE_CMD studenti.db -header -csv "SELECT * FROM $TABELLA_SEZIONI ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
                 ;;
+            6)
+              echo "Invia elenco classi ai coordinatori"
+
+              echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
+
+                while IFS="," read -r sezione_gsuite email_coordinatore; do
+
+                    local TO="$email_coordinatore" # , CDC_$sezione_gsuite@$DOMAIN
+
+                    local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+
+                    local MESSAGE="
+                      \n Buongiorno,
+                      \n in allegato l'elenco degli account degli studenti della classe $sezione_gsuite .
+                      \n Richieste e segnalazioni di imprecisioni o problematiche relative agli account studenti possono essere inoltrate a supporto_digitale@$DOMAIN .
+                      \n Tutti i docenti sono abilitati ad effettuare il reset password degli studenti, come da circolare 211 (in allegato).
+                      \n Cordiali saluti"
+
+                    echo "Invio EMAIL degli account studenti della classe $sezione_gsuite - coordinatore $email_coordinatore"
+
+                    if [ ! -e "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" ]; then
+                      echo "Il file $EXPORT_DIR_DATE/$sezione_gsuite.xlsx non esiste."
+                      break;
+                    fi
+
+                    if [ ! -e "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf" ]; then
+                      echo "Il file $EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf non esiste."
+                      break;
+                    fi
+
+                    $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
+
+                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI AND sz.email_coordinatore IS NOT NULL AND LOWER(sz.email_coordinatore) != '' ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+            ;;
             20)
                 echo "Arrivederci!"
                 exit 0
