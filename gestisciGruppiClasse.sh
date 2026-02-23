@@ -48,9 +48,7 @@ main() {
         exit 1  # Termina lo script con codice di stato 1
     fi
 
-    while true; do
-        show_menu
-        read -p "Scegli un'opzione (1-20): " -r choice
+    choice="$1"
         
         case $choice in
             1)
@@ -291,10 +289,6 @@ main() {
                 sleep 1
                 ;;
         esac
-        
-        # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." -r _
-    done
 }
 
 showConfig() {
@@ -318,6 +312,13 @@ showConfig() {
 # Show config vars
 showConfig
 
+if [ "$#" -eq 1 ]; then
+  scelta=$1
+else
+  show_menu
+  read -p "Scegli un'opzione (1-20): " -r scelta
+fi
+
 # Avvia la funzione principale
-main
+main "$scelta"
 

@@ -25,7 +25,7 @@ show_menu() {
     echo "7. Crea script studenti_CF.sh"
     echo "8. Sospendi studenti"
     echo "9. Cancella studenti"
-    echo "10. "
+    echo "10. Sposta script studenti_CF.sh relativo alla tabella precedente in root"
     echo "11. "
     echo "12. Cancello e ricreo la tabella studenti SERALE"
     echo "13. Importo e normalizzo i dati del SERALE"
@@ -43,9 +43,7 @@ main() {
         exit 1  # Termina lo script con codice di stato 1
     fi
 
-    while true; do
-        show_menu
-        read -p "Scegli un'opzione (1-20): " -r choice
+    choice="$1"
         
         case $choice in
             0)
@@ -55,7 +53,7 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
 
                 # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar TEXT, email_gsuite VARCHAR(200), aggiunto_il TEXT);"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar TEXT, email_gsuite VARCHAR(200) DEFAULT NULL, aggiunto_il TEXT DEFAULT NULL);"
                 ;;
             1)
                 echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
@@ -207,18 +205,27 @@ main() {
                 ;;
             7)
                 mkdir -p "$EXPORT_DIR_DATE"
-                echo "Crea script studenti_CF_$CURRENT_DATE.sh ..."
+                echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
                 
-                echo "#!/bin/bash" > "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
-                echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
-                echo 'source "_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
+                echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+                echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+                echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
+                # Tabella CF corrente
                 while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
 
                     # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/studenti_CF_$CURRENT_DATE.sh"
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
 
                 done < <($SQLITE_CMD -csv studenti.db "select LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, cl, sez FROM $TABELLA_STUDENTI ORDER BY UPPER(cod_fisc)" | sed "s/\"//g")
+
+                # Tabella CF precedente
+                while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+
+                    # Aggiungo il CF negli script
+                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+
+                done < <($SQLITE_CMD -csv studenti.db "select LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, cl, sez FROM $TABELLA_STUDENTI_PRECEDENTE ORDER BY UPPER(cod_fisc)" | sed "s/\"//g")
                 ;;
             8)
                 echo "Sospendi account studenti ..."
@@ -246,6 +253,15 @@ main() {
                     )
                 ORDER BY s.cl, s.sez, s.cognome, s.nome;"
                 ;;
+            10)
+              echo "Sposta script studenti_CF.sh relativo alla tabella precedente in root"
+              cp "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_STUDENTI.sh" 
+              chmod +x "$BASE_DIR/$TABELLA_STUDENTI.sh"
+
+              # run the script
+              echo "Eseguo script aggiornamento email" 
+              "$BASE_DIR/$TABELLA_STUDENTI.sh"
+            ;;
             12)
                 echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
                 
@@ -253,7 +269,7 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI_SERALE';"
 
                 # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200), aggiunto_il TEXT);"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200) DEFAULT NULL, aggiunto_il TEXT DEFAULT NULL);"
                 ;;
             13)
                 echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI_SERALE ..."
@@ -352,10 +368,6 @@ main() {
                 sleep 1
                 ;;
         esac
-        
-        # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." -r _
-    done
 }
 
 showConfig() {
@@ -373,8 +385,15 @@ showConfig() {
   fi
 }
 
-# Show config vars
-showConfig
+if [ "$#" -eq 1 ]; then
+  scelta="$1"
+else
+  # Show config vars
+  showConfig
+
+  show_menu
+  read -p "Scegli un'opzione (1-20): " -r scelta
+fi
 
 # Avvia la funzione principale
-main
+main "$scelta"
