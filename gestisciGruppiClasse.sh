@@ -147,6 +147,8 @@ main() {
                   AND (sa.datar IS NULL OR sa.datar = '')
                   ORDER BY s.sezione_gsuite, sa.cognome, sa.nome;
                 " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+
+                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
                 ;;
             8)
                 checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
