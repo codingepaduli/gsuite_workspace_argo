@@ -109,7 +109,7 @@ SQL_SEZIONI_DIURNO=" 'tr', 'en', 'in', 'm', 'mDD', 'od', 'idd', 'et', 'tlt' "
 SQL_SEZIONI_SERALE=" 'm_sirio', 'et_sirio', 'me_sirio' "
 
 # GSuite data are UPPERCASE
-SQL_FILTRO_SEZIONI=" AND sz.addr_argo IN ('', ${SQL_SEZIONI_DIURNO:-"''"}, ${SQL_SEZIONI_SERALE:-"''"}) "
+SQL_FILTRO_SEZIONI=" sz.addr_argo IN ('', ${SQL_SEZIONI_DIURNO:-"''"}, ${SQL_SEZIONI_SERALE:-"''"}) "
 
 ###########################################
 # Tables' name related to students' group #

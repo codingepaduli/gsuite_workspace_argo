@@ -9,7 +9,7 @@ source "./_maps.sh"
 FILE_CSV="$BASE_DIR/dati_argo/studenti_gsuite/${TABELLA_STUDENTI_GSUITE}.csv"
 
 # Seleziona le classi
-SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI AND $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # Popolo le classi
 while IFS="," read -r sezione_gsuite; do
@@ -28,7 +28,7 @@ FROM ${TABELLA_STUDENTI_GSUITE} c
         -- filtri sezioni
         1=1 
         $SQL_FILTRO_ANNI 
-        $SQL_FILTRO_SEZIONI
+        AND $SQL_FILTRO_SEZIONI
         AND LOWER(c.email) NOT IN (
             SELECT LOWER(sa.email_gsuite) 
             FROM $TABELLA_STUDENTI sa
@@ -38,7 +38,7 @@ FROM ${TABELLA_STUDENTI_GSUITE} c
                 -- filtri sezioni
                 1=1 
                 $SQL_FILTRO_ANNI 
-                $SQL_FILTRO_SEZIONI
+                AND $SQL_FILTRO_SEZIONI
         )
 "
 
@@ -69,7 +69,7 @@ QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
     -- filtri sezioni
     1=1 
     $SQL_FILTRO_ANNI 
-    $SQL_FILTRO_SEZIONI
+    AND $SQL_FILTRO_SEZIONI
     -- filtri studenti
     AND sa.email_gsuite IS NOT NULL
     AND sa.email_gsuite != ''
@@ -83,7 +83,7 @@ QUERY_STUDENTI_SU_ARGO_NON_GSUITE="
         -- filtri sezioni
         1=1 
         $SQL_FILTRO_ANNI 
-        $SQL_FILTRO_SEZIONI
+        AND $SQL_FILTRO_SEZIONI
   )
 "
 
