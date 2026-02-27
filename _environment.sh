@@ -104,7 +104,7 @@ RESET_PASSWORD='Pwd'
 TABELLA_SEZIONI="" # sezioni_2024_25
 
 # All classes and addresses enabled
-SQL_FILTRO_ANNI=" AND sz.cl IN (1, 2, 3, 4, 5) " 
+SQL_FILTRO_ANNI=" 1, 2, 3, 4, 5 " 
 SQL_SEZIONI_DIURNO=" 'tr', 'en', 'in', 'm', 'mDD', 'od', 'idd', 'et', 'tlt' "
 SQL_SEZIONI_SERALE=" 'm_sirio', 'et_sirio', 'me_sirio' "
 

@@ -111,7 +111,7 @@ main() {
 
                     $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
 
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 AND $SQL_FILTRO_ANNI AND $SQL_FILTRO_SEZIONI AND sz.email_coordinatore IS NOT NULL AND LOWER(sz.email_coordinatore) != '' ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND $SQL_FILTRO_SEZIONI AND sz.email_coordinatore IS NOT NULL AND LOWER(sz.email_coordinatore) != '' ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
             ;;
             20)
                 echo "Arrivederci!"

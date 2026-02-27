@@ -30,7 +30,7 @@ WHERE 1=1
   AND d.cancellato_il IS NULL OR TRIM(d.cancellato_il) = ''
   AND UPPER(d.tipo_personale) = 'DOCENTE'
   -- filtro sezioni
-  AND $SQL_FILTRO_ANNI 
+  AND sz.cl IN ( $SQL_FILTRO_ANNI ) 
   AND $SQL_FILTRO_SEZIONI
 "
 
@@ -96,7 +96,7 @@ add_to_map "secondo_biennio_aeronautica"    " "
 # Query sezioni        #
 ########################
 
-SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND $SQL_FILTRO_ANNI AND $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
 
 # Funzione per mostrare il menu
 show_menu() {
