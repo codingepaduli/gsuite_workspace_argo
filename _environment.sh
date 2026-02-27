@@ -78,6 +78,10 @@ LOG_OUTPUT=("file" "console")
 LOG_LEVEL="CONFIG"
 LOG_FILE="debug.log"
 
+# Usati nelle query SQL, non modificare
+export DISABLE_QUERY_FILTER=1
+export ENABLE_QUERY_FILTER=0
+
 ####################################
 # Tables' name related to students #
 ####################################

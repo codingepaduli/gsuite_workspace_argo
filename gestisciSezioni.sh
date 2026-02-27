@@ -4,6 +4,7 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
+source "./_query.sh"
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -71,18 +72,25 @@ main() {
                 ;;
             3)
                 echo "Visualizza dati delle sezioni ..."
-                $SQLITE_CMD -header -table studenti.db "SELECT * FROM $TABELLA_SEZIONI ORDER BY cl, sez_argo;"
+
+                query=$(query::getQuerySezioni "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
+
+                $SQLITE_CMD -header -table studenti.db " $query"
                 ;;
             4)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto le sezioni in file CSV ..."
+
+                query=$(query::getQuerySezioni "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
                 
-                $SQLITE_CMD studenti.db -header -csv "SELECT * FROM $TABELLA_SEZIONI ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
+                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
                 ;;
             6)
               echo "Invia elenco classi ai coordinatori"
 
               echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
+
+              query=$(query::getQuerySezioni "sezione_gsuite, email_coordinatore" "addr_argo" "$DISABLE_QUERY_FILTER" " "  "$DISABLE_QUERY_FILTER" " "  "$DISABLE_QUERY_FILTER"  " "  "$DISABLE_QUERY_FILTER" " "  "$ENABLE_QUERY_FILTER" )
 
                 while IFS="," read -r sezione_gsuite email_coordinatore; do
 
@@ -111,7 +119,7 @@ main() {
 
                     $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
 
-                done < <($SQLITE_CMD -csv studenti.db "SELECT sz.sezione_gsuite, sz.email_coordinatore FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) AND sz.email_coordinatore IS NOT NULL AND LOWER(sz.email_coordinatore) != '' ORDER BY sz.sezione_gsuite" | sed 's/"//g' )
+                done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
             ;;
             20)
                 echo "Arrivederci!"
