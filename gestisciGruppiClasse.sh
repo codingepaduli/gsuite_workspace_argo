@@ -5,7 +5,7 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) ORDER BY sz.sezione_gsuite"
 
 # Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
 SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "

@@ -72,7 +72,7 @@ QUERY_STUDENTI_DIURNO_OU_ERRATA="
       -- filtri sezioni
       1=1 
       AND sz.cl IN ( $SQL_FILTRO_ANNI ) 
-      AND $SQL_FILTRO_SEZIONI
+      AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI )
       -- filtro studenti
       AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
       -- filtro studenti diurno / serale
@@ -90,7 +90,7 @@ QUERY_STUDENTI_SERALE_OU_ERRATA="
       -- filtri sezioni
       1=1 
       AND sz.cl IN ( $SQL_FILTRO_ANNI ) 
-      AND $SQL_FILTRO_SEZIONI
+      AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI )
       -- filtro studenti
       AND LOWER(SUBSTR(sg.email_gsuite, 1, MIN(2, LENGTH(sg.email_gsuite)))) IN ('s.')
       -- filtro studenti diurno / serale
