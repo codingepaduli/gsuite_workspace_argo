@@ -109,8 +109,8 @@ function log::_write_log {
   shift
 
   timestamp=$(date +'%y.%m.%d %H:%M:%S')
-  file="${BASH_SOURCE[2]##*/}"
-  function_name="${FUNCNAME[2]}"
+  file="${BASH_SOURCE[-1]##*/}"
+  function_name="${FUNCNAME[-1]}"
 
   if log::level_is_active "$log_level" && [[ " ${LOG_OUTPUT[*]} " =~ " console " ]]; then
     printf '%s [%s] [%s - %s]: %s\n'  "$log_level" "$timestamp" "$file" "$function_name" "${*}" >&2
@@ -173,7 +173,7 @@ export -f handle_error
 # log::_write_log "WARN" "TEST warn"
 # log::_write_log "ERROR" "ERRORE NON PREVISTO"
 
-set -uo pipefail
+set -Eeuo pipefail
 
 trap 'log::_write_log "ERROR" "$BASH_COMMAND"' ERR
 

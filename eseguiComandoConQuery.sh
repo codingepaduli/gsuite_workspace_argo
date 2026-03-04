@@ -81,7 +81,7 @@ fi
 case $command in
     "createUsers")
         while IFS="," read -r email_gsuite cognome nome cod_fisc email_personale tel password; do
-            $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "$password" changepassword on org "$nome_gruppo" recoveryemail "$email_personale"
+          $GAM_CMD create user "$email_gsuite" firstname "$nome" lastname "$cognome" password "$password" changepassword on org "$nome_gruppo" recoveryemail "$email_personale" || true  # Ignora l'errore di questo comando specifico
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "resetPasswordUser")
@@ -143,22 +143,22 @@ case $command in
         ;;
     "addMembersToGroup")
         while IFS="," read -r email; do
-            $GAM_CMD update group "$nome_gruppo@$DOMAIN" add member user "$email"
+          $GAM_CMD update group "$nome_gruppo@$DOMAIN" add member user "$email" || true  # Ignora l'errore di questo comando specifico
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "addMembersToGroupByMap")
         while IFS="," read -r gruppo email; do
-            $GAM_CMD update group "$gruppo@$DOMAIN" add member user "$email"
+          $GAM_CMD update group "$gruppo@$DOMAIN" add member user "$email" || true  # Ignora l'errore di questo comando specifico
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "deleteMembersFromGroup")
         while IFS="," read -r email; do
-            $GAM_CMD update group "$nome_gruppo@$DOMAIN" remove member user "$email"
+          $GAM_CMD update group "$nome_gruppo@$DOMAIN" remove member user "$email" || true  # Ignora l'errore di questo comando specifico
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "deleteMembersFromGroupByMap")
         while IFS="," read -r gruppo email; do
-            $GAM_CMD update group "$gruppo@$DOMAIN" remove member user "$email"
+          $GAM_CMD update group "$gruppo@$DOMAIN" remove member user "$email" || true  # Ignora l'errore di questo comando specifico
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "moveUsersToOU")
