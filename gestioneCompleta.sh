@@ -5,7 +5,7 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 $SQL_FILTRO_ANNI $SQL_FILTRO_SEZIONI ORDER BY sz.sezione_gsuite"
+SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) ORDER BY sz.sezione_gsuite"
 
 # Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
 SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "
@@ -62,8 +62,12 @@ main() {
         read -p "Premi per continuare " -r _
       ;;
       1)
+        local CREATE_SCRIPT_CF_STUDENTS=7
         local MOVE_SCRIPT_OLD_STUDENTS=10
         local CHECK_STUDENTS=16
+
+        ./gestisciStudenti.sh "$CREATE_SCRIPT_CF_STUDENTS"
+        read -p "Premi per continuare " -r _
 
         ./gestisciStudenti.sh "$MOVE_SCRIPT_OLD_STUDENTS"
         read -p "Premi per continuare " -r _
@@ -80,7 +84,6 @@ main() {
         local CREATE_GSUITE_ACCOUNT_STUDENTS=6
         local CREATE_SCRIPT_CF_STUDENTS=7
         
-
         ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
         ./gestisciStudenti.sh "$CREATE_MAIL_STUDENTS"
         ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
