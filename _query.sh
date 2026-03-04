@@ -6,7 +6,8 @@ source "./_maps.sh"
 
 # ./_query.sh "cl, addr_argo" "addr_argo" "$DISABLE_QUERY_FILTER" "1, 2, 3"  
 #       "$DISABLE_QUERY_FILTER" "'tr', 'en'"  "$DISABLE_QUERY_FILTER"  " "  
-#       "$DISABLE_QUERY_FILTER" " '1A_MEC' "  "$ENABLE_QUERY_FILTER"
+#       "$DISABLE_QUERY_FILTER" " '1A_MEC' "  
+#        "$ENABLE_QUERY_FILTER"  "$ENABLE_QUERY_FILTER"
 
 function query::getQuerySezioni {
     local FIELDS="${1:-" * "}"
@@ -20,6 +21,7 @@ function query::getQuerySezioni {
     local FILTER_CLASSES_ON="${9:-" 1 "}"
     local FILTER_CLASSES="${10:-" '' "}"
     local FILTER_SUPERVISORS_EXISTS_ON="${11:-" 1 "}"
+    local FILTER_SUPERVISORS_NOT_EXISTS_ON="${12:-" 0 "}"
 
     echo "
           SELECT $FIELDS 
@@ -30,7 +32,10 @@ function query::getQuerySezioni {
             AND (1=$FILTER_ADDRESS_GSUITE_ON OR addr_gsuite IN ( $FILTER_ADDRESS_GSUITE ) )
             AND (1=$FILTER_CLASSES_ON OR sezione_gsuite IN ( $FILTER_CLASSES ) )
             AND (1=$FILTER_SUPERVISORS_EXISTS_ON OR 
-                  ( email_coordinatore IS NOT NULL AND LOWER(email_coordinatore) != '' )
+                  ( email_coordinatore IS NOT NULL AND LOWER( email_coordinatore) != '' )
+                )
+            AND (1=$FILTER_SUPERVISORS_NOT_EXISTS_ON OR 
+                  ( email_coordinatore IS NULL OR LOWER(email_coordinatore) = '' )
                 )
           ORDER BY $ORDERING ASC ;
     " 
