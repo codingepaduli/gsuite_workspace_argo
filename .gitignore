@@ -17,6 +17,7 @@
 /dati_gsuite/*.ods
 studenti.db
 studenti_CF*
+studenti_argo_*
 personale_CF*
 coordinatori_*
 wpusers.txt
