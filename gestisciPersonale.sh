@@ -158,7 +158,10 @@ main() {
                     UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, 
                     LOWER(email_gsuite) as email_gsuite, cancellato_il 
                 FROM $TABELLA_PERSONALE_PRECEDENTE 
-                WHERE codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
+                WHERE 1=1
+                    -- seleziono non cancellati (cancellato_il NULL o vuoto)
+                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+                    AND codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
                     AND UPPER(codice_fiscale) NOT IN (
                       SELECT UPPER(codice_fiscale)
                       FROM $TABELLA_PERSONALE )
