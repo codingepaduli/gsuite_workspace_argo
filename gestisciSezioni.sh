@@ -73,7 +73,7 @@ main() {
             3)
                 echo "Visualizza dati delle sezioni ..."
 
-                query=$(query::getQuerySezioni "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
+                query=$(query::getQuerySezioniDefaultValues "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
 
                 $SQLITE_CMD -header -table studenti.db " $query"
                 ;;
@@ -81,7 +81,7 @@ main() {
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto le sezioni in file CSV ..."
 
-                query=$(query::getQuerySezioni "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
+                query=$(query::getQuerySezioniDefaultValues "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
                 
                 $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
                 ;;
@@ -90,7 +90,7 @@ main() {
 
               echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
 
-              query=$(query::getQuerySezioni "sezione_gsuite, email_coordinatore" "addr_argo" "$DISABLE_QUERY_FILTER" " "  "$DISABLE_QUERY_FILTER" " "  "$DISABLE_QUERY_FILTER"  " "  "$DISABLE_QUERY_FILTER" " "  "$ENABLE_QUERY_FILTER" )
+              query=$(query::getQuerySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )
 
                 while IFS="," read -r sezione_gsuite email_coordinatore; do
 
