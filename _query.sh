@@ -29,7 +29,6 @@ declare -A sectionQueryParam=(
   [FILTER_SUPERVISORS_EXISTS_OFF]=1
   [FILTER_SUPERVISORS_NOT_EXISTS_ON]=0
   [FILTER_SUPERVISORS_NOT_EXISTS_OFF]=1
-  [OFF]=100
 )
 
 function query::getQuerySezioni {
@@ -80,7 +79,140 @@ function query::getQuerySezioniSupervisorNotEmpty {
   echo "$query"
 }
 
+declare -A employeesQueryParam=(
+  [FIELDS]=" * "
+  [ORDERING]=" cognome "  # Esempio di ordinamento
+  [FILTER_TIPO_PERSONALE_ON]=0
+  [FILTER_TIPO_PERSONALE_OFF]=1
+  [FILTER_TIPO_PERSONALE]=" '' "
+
+  [FILTER_CODICE_FISCALE_EXISTS_ON]=0
+  [FILTER_CODICE_FISCALE_EXISTS_OFF]=1
+  [FILTER_CODICE_FISCALE_NOT_EXISTS_ON]=0
+  [FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]=1
+
+  [FILTER_EMAIL_PERSONALE_EXISTS_ON]=0
+  [FILTER_EMAIL_PERSONALE_EXISTS_OFF]=1
+  [FILTER_EMAIL_PERSONALE_NOT_EXISTS_ON]=0
+  [FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]=1
+
+  [FILTER_EMAIL_GSUITE_EXISTS_ON]=0
+  [FILTER_EMAIL_GSUITE_EXISTS_OFF]=1
+  [FILTER_EMAIL_GSUITE_NOT_EXISTS_ON]=0
+  [FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]=1
+
+  [FILTER_AGGIUNTO_IL_ON]=0
+  [FILTER_AGGIUNTO_IL_OFF]=1
+  [FILTER_AGGIUNTO_IL_MIN]=" '2020-01-01' "
+  [FILTER_AGGIUNTO_IL_MAX]=" '2030-01-01' "
+
+  [FILTER_CANCELLATO_IL_ON]=0
+  [FILTER_CANCELLATO_IL_OFF]=1
+  [FILTER_CANCELLATO_IL_MIN]=" '2020-01-01' "
+  [FILTER_CANCELLATO_IL_MAX]=" '2030-01-01' "
+
+  [FILTER_CONTRATTO_EXISTS_ON]=0
+  [FILTER_CONTRATTO_EXISTS_OFF]=1
+  [FILTER_CONTRATTO_NOT_EXISTS_ON]=0
+  [FILTER_CONTRATTO_NOT_EXISTS_OFF]=1
+
+  [FILTER_DIPARTIMENTO_EXISTS_ON]=0
+  [FILTER_DIPARTIMENTO_EXISTS_OFF]=1
+  [FILTER_DIPARTIMENTO_NOT_EXISTS_ON]=0
+  [FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]=1
+
+  [FILTER_NOTE_EXISTS_ON]=0
+  [FILTER_NOTE_EXISTS_OFF]=1
+  [FILTER_NOTE_NOT_EXISTS_ON]=0
+  [FILTER_NOTE_NOT_EXISTS_OFF]=1
+)
+
+function query::getQueryEmployeesData {
+    local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
+    local ORDERING="${2:-${employeesQueryParam[ORDERING]}}"
+    
+    local FILTER_TIPO_PERSONALE_FLAG="${3:-${employeesQueryParam[FILTER_TIPO_PERSONALE_OFF]}}"
+    local FILTER_TIPO_PERSONALE_IN="${4:-${employeesQueryParam[FILTER_TIPO_PERSONALE]}}"
+    
+    local FILTER_CODICE_FISCALE_EXISTS="${5:-${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}}"
+    local FILTER_CODICE_FISCALE_NOT_EXISTS="${6:-${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}}"
+    local FILTER_EMAIL_PERSONALE_EXISTS="${7:-${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}}"
+    local FILTER_EMAIL_PERSONALE_NOT_EXISTS="${8:-${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}}"
+    local FILTER_EMAIL_GSUITE_EXISTS="${9:-${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}}"
+    local FILTER_EMAIL_GSUITE_NOT_EXISTS="${10:-${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}}"
+    
+    local FILTER_AGGIUNTO_IL_FLAG="${11:-${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}}"
+    local FILTER_AGGIUNTO_IL_MIN="${12:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MIN]}}"
+    local FILTER_AGGIUNTO_IL_MAX="${13:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MAX]}}"
+    
+    local FILTER_CANCELLATO_IL_FLAG="${14:-${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}}"
+    local FILTER_CANCELLATO_IL_MIN="${15:-${employeesQueryParam[FILTER_CANCELLATO_IL_MIN]}}"
+    local FILTER_CANCELLATO_IL_MAX="${16:-${employeesQueryParam[FILTER_CANCELLATO_IL_MAX]}}"
+    
+    local FILTER_CONTRATTO_EXISTS="${17:-${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}}"
+    local FILTER_CONTRATTO_NOT_EXISTS="${18:-${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}}"
+    
+    local FILTER_DIPARTIMENTO_EXISTS="${19:-${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}}"
+    local FILTER_DIPARTIMENTO_NOT_EXISTS="${20:-${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}}"
+    
+    local FILTER_NOTE_EXISTS="${21:-${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}}"
+    local FILTER_NOTE_NOT_EXISTS="${22:-${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}}"
+
+    # Costruzione della query basata sui parametri
+    echo "
+          SELECT $FIELDS 
+          FROM $TABELLA_PERSONALE
+          WHERE 1=1 
+            AND (1=$FILTER_TIPO_PERSONALE_FLAG OR LOWER(tipo_personale) IN ( $FILTER_TIPO_PERSONALE_IN ))
+            AND (1=$FILTER_CODICE_FISCALE_EXISTS OR 
+                  (codice_fiscale IS NOT NULL AND LOWER(codice_fiscale) != ''))
+            AND (1=$FILTER_CODICE_FISCALE_NOT_EXISTS OR 
+                  (codice_fiscale IS NULL OR LOWER(codice_fiscale) = ''))
+            AND (1=$FILTER_EMAIL_PERSONALE_EXISTS OR 
+                  (email_personale IS NOT NULL AND LOWER(email_personale) != ''))
+            AND (1=$FILTER_EMAIL_PERSONALE_NOT_EXISTS OR 
+                  (email_personale IS NULL OR LOWER(email_personale) = ''))
+            AND (1=$FILTER_EMAIL_GSUITE_EXISTS OR 
+                  (email_gsuite IS NOT NULL AND LOWER(email_gsuite) != ''))
+            AND (1=$FILTER_EMAIL_GSUITE_NOT_EXISTS OR 
+                  (email_gsuite IS NULL OR LOWER(email_gsuite) = ''))
+            AND (1=$FILTER_AGGIUNTO_IL_FLAG OR (aggiunto_il BETWEEN $FILTER_AGGIUNTO_IL_MIN AND $FILTER_AGGIUNTO_IL_MAX ))
+            AND (1=$FILTER_CANCELLATO_IL_FLAG OR (cancellato_il BETWEEN $FILTER_CANCELLATO_IL_MIN AND $FILTER_CANCELLATO_IL_MAX ))
+            AND (1=$FILTER_CONTRATTO_EXISTS OR 
+                  (contratto IS NOT NULL AND LOWER(contratto) != ''))
+            AND (1=$FILTER_CONTRATTO_NOT_EXISTS OR 
+                  (contratto IS NULL OR LOWER(contratto) = ''))
+            AND (1=$FILTER_DIPARTIMENTO_EXISTS OR 
+                  (dipartimento IS NOT NULL AND LOWER(dipartimento) != ''))
+            AND (1=$FILTER_DIPARTIMENTO_NOT_EXISTS OR 
+                  (dipartimento IS NULL OR LOWER(dipartimento) = ''))
+            AND (1=$FILTER_NOTE_EXISTS OR 
+                  (note IS NOT NULL AND LOWER(note) != ''))
+            AND (1=$FILTER_NOTE_NOT_EXISTS OR 
+                  (note IS NULL OR LOWER(note) = ''))
+          ORDER BY $ORDERING ASC;
+    "
+}
+
+function query::getQueryEmployeesDefaultValues {
+  local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
+  local ORDERING="${2:-${employeesQueryParam[ORDERING]}}"
+
+  query=$(query::getQueryEmployeesData "$FIELDS" "$ORDERING")
+  echo "$query"
+}
+
+function query::getQueryTeachersWithGSuiteEmail {
+  local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
+  local ORDERING="${2:-${employeesQueryParam[ORDERING]}}"
+
+  query=$(query::getQueryEmployeesData "$FIELDS" "$ORDERING" "${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}" " 'docente' " "${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}" "${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}" "${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}" " 'min' " " 'max' "  "${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}" " 'min' " " 'max' " "${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}" "${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}" )
+  echo "$query"
+}
+
+# Esempio di come chiamare la funzione
+
 if log::level_is_active "DEBUG"; then
-  query="$(query::getQuerySezioniSupervisorNotEmpty )"
+  query="$(query::getQueryTeachersWithGSuiteEmail )"
   echo "$query"
 fi
