@@ -154,7 +154,6 @@ function query::getQueryEmployeesData {
     local FILTER_EMAIL_GSUITE_PREFIX_FLAG="${11:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}}"
     local FILTER_EMAIL_GSUITE_PREFIX="${12:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}}"
     
-
     local FILTER_AGGIUNTO_IL_FLAG="${13:-${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}}"
     local FILTER_AGGIUNTO_IL_MIN="${14:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MIN]}}"
     local FILTER_AGGIUNTO_IL_MAX="${15:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MAX]}}"
@@ -171,7 +170,7 @@ function query::getQueryEmployeesData {
     
     local FILTER_NOTE_EXISTS="${23:-${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}}"
     local FILTER_NOTE_NOT_EXISTS="${24:-${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}}"
-    # Costruzione della query basata sui parametri
+
     echo "
           SELECT $FIELDS 
           FROM $TABELLA_PERSONALE
@@ -219,6 +218,37 @@ function query::getQueryEmployeesDefaultValues {
   echo "$query"
 }
 
+function query::getTeachersForCreatingEmail {
+  declare cliParam=()
+  cliParam[1]="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_personale) as email_personale, LOWER(email_gsuite) as email_gsuite"
+  cliParam[2]="${2:-${employeesQueryParam[ORDERING]}}"
+  cliParam[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_OFF]}"
+  cliParam[4]=" '' "
+  cliParam[5]="${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}"
+  cliParam[6]="${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}"
+  cliParam[7]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_ON]}"
+  cliParam[8]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
+  cliParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}"
+  cliParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_ON]}"
+  cliParam[11]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
+  cliParam[12]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
+  cliParam[13]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
+  cliParam[14]="'$PERIODO_PERSONALE_DA'"
+  cliParam[15]="'$PERIODO_PERSONALE_A'"
+  cliParam[16]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
+  cliParam[17]="'min'"
+  cliParam[18]="'max'"
+  cliParam[19]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
+  cliParam[20]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
+  cliParam[21]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
+  cliParam[22]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
+  cliParam[23]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
+  cliParam[24]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
+
+  query=$(query::getQueryEmployeesData "${cliParam[@]}" )
+  echo "$query"
+}
+
 function query::getQueryTeachersWithGSuiteEmail {
   declare cliParam=()
   cliParam[1]="${1:-${employeesQueryParam[FIELDS]}}"
@@ -252,6 +282,6 @@ function query::getQueryTeachersWithGSuiteEmail {
 
 # Esempio di come chiamare la funzione
 if log::level_is_active "DEBUG"; then
-  query="$(query::getQueryTeachersWithGSuiteEmail )"
+  query="$(query::getTeachersForCreatingEmail )"
   echo "$query"
 fi
