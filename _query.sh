@@ -101,6 +101,10 @@ declare -A employeesQueryParam=(
   [FILTER_EMAIL_GSUITE_NOT_EXISTS_ON]=0
   [FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]=1
 
+  [FILTER_EMAIL_GSUITE_PREFIX_ON]=0
+  [FILTER_EMAIL_GSUITE_PREFIX_OFF]=1
+  [FILTER_EMAIL_GSUITE_PREFIX]=" '' "
+
   [FILTER_AGGIUNTO_IL_ON]=0
   [FILTER_AGGIUNTO_IL_OFF]=1
   [FILTER_AGGIUNTO_IL_MIN]=" '2020-01-01' "
@@ -140,7 +144,7 @@ function query::getQueryEmployeesData {
     local FILTER_EMAIL_PERSONALE_NOT_EXISTS="${8:-${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}}"
     local FILTER_EMAIL_GSUITE_EXISTS="${9:-${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}}"
     local FILTER_EMAIL_GSUITE_NOT_EXISTS="${10:-${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}}"
-    
+
     local FILTER_AGGIUNTO_IL_FLAG="${11:-${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}}"
     local FILTER_AGGIUNTO_IL_MIN="${12:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MIN]}}"
     local FILTER_AGGIUNTO_IL_MAX="${13:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MAX]}}"
@@ -158,6 +162,9 @@ function query::getQueryEmployeesData {
     local FILTER_NOTE_EXISTS="${21:-${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}}"
     local FILTER_NOTE_NOT_EXISTS="${22:-${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}}"
 
+    local FILTER_EMAIL_GSUITE_PREFIX_FLAG="${23:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}}"
+    local FILTER_EMAIL_GSUITE_PREFIX="${24:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}}"
+    
     # Costruzione della query basata sui parametri
     echo "
           SELECT $FIELDS 
@@ -176,8 +183,10 @@ function query::getQueryEmployeesData {
                   (email_gsuite IS NOT NULL AND LOWER(email_gsuite) != ''))
             AND (1=$FILTER_EMAIL_GSUITE_NOT_EXISTS OR 
                   (email_gsuite IS NULL OR LOWER(email_gsuite) = ''))
-            AND (1=$FILTER_AGGIUNTO_IL_FLAG OR (aggiunto_il BETWEEN $FILTER_AGGIUNTO_IL_MIN AND $FILTER_AGGIUNTO_IL_MAX ))
-            AND (1=$FILTER_CANCELLATO_IL_FLAG OR (cancellato_il BETWEEN $FILTER_CANCELLATO_IL_MIN AND $FILTER_CANCELLATO_IL_MAX ))
+            AND (1=$FILTER_AGGIUNTO_IL_FLAG OR 
+                  (aggiunto_il BETWEEN $FILTER_AGGIUNTO_IL_MIN AND $FILTER_AGGIUNTO_IL_MAX ))
+            AND (1=$FILTER_CANCELLATO_IL_FLAG OR 
+                  (cancellato_il BETWEEN $FILTER_CANCELLATO_IL_MIN AND $FILTER_CANCELLATO_IL_MAX ))
             AND (1=$FILTER_CONTRATTO_EXISTS OR 
                   (contratto IS NOT NULL AND LOWER(contratto) != ''))
             AND (1=$FILTER_CONTRATTO_NOT_EXISTS OR 
@@ -190,6 +199,8 @@ function query::getQueryEmployeesData {
                   (note IS NOT NULL AND LOWER(note) != ''))
             AND (1=$FILTER_NOTE_NOT_EXISTS OR 
                   (note IS NULL OR LOWER(note) = ''))
+            AND (1=$FILTER_EMAIL_GSUITE_PREFIX_FLAG OR 
+                  LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ( $FILTER_EMAIL_GSUITE_PREFIX ))
           ORDER BY $ORDERING ASC;
     "
 }
@@ -203,15 +214,41 @@ function query::getQueryEmployeesDefaultValues {
 }
 
 function query::getQueryTeachersWithGSuiteEmail {
-  local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
-  local ORDERING="${2:-${employeesQueryParam[ORDERING]}}"
 
-  query=$(query::getQueryEmployeesData "$FIELDS" "$ORDERING" "${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}" " 'docente' " "${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}" "${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}" "${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}" "${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}" " 'min' " " 'max' "  "${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}" " 'min' " " 'max' " "${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}" "${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}" )
+  # Dichiarazione di un array associativo per i parametri
+  declare cliParam=()
+
+  # Imposta i valori per le chiavi specifiche
+  cliParam[1]="${1:-${employeesQueryParam[FIELDS]}}"
+  cliParam[2]="${2:-${employeesQueryParam[ORDERING]}}"
+  cliParam[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}"
+  cliParam[4]="'docente'"
+  cliParam[5]="${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}"
+  cliParam[6]="${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}"
+  cliParam[7]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}"
+  cliParam[8]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
+  cliParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}"
+  cliParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}"
+  cliParam[11]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
+  cliParam[12]="'min'"
+  cliParam[13]="'max'"
+  cliParam[14]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
+  cliParam[15]="'min'"
+  cliParam[16]="'max'"
+  cliParam[17]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
+  cliParam[18]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
+  cliParam[19]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
+  cliParam[20]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
+  cliParam[21]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
+  cliParam[22]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
+  cliParam[23]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
+  cliParam[24]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
+
+  query=$(query::getQueryEmployeesData "${cliParam[@]}" )
   echo "$query"
 }
 
 # Esempio di come chiamare la funzione
-
 if log::level_is_active "DEBUG"; then
   query="$(query::getQueryTeachersWithGSuiteEmail )"
   echo "$query"
