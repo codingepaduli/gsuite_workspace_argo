@@ -151,26 +151,26 @@ function query::getQueryEmployeesData {
     local FILTER_EMAIL_GSUITE_EXISTS="${9:-${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}}"
     local FILTER_EMAIL_GSUITE_NOT_EXISTS="${10:-${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}}"
 
-    local FILTER_AGGIUNTO_IL_FLAG="${11:-${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}}"
-    local FILTER_AGGIUNTO_IL_MIN="${12:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MIN]}}"
-    local FILTER_AGGIUNTO_IL_MAX="${13:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MAX]}}"
+    local FILTER_EMAIL_GSUITE_PREFIX_FLAG="${11:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}}"
+    local FILTER_EMAIL_GSUITE_PREFIX="${12:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}}"
     
-    local FILTER_CANCELLATO_IL_FLAG="${14:-${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}}"
-    local FILTER_CANCELLATO_IL_MIN="${15:-${employeesQueryParam[FILTER_CANCELLATO_IL_MIN]}}"
-    local FILTER_CANCELLATO_IL_MAX="${16:-${employeesQueryParam[FILTER_CANCELLATO_IL_MAX]}}"
-    
-    local FILTER_CONTRATTO_EXISTS="${17:-${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}}"
-    local FILTER_CONTRATTO_NOT_EXISTS="${18:-${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}}"
-    
-    local FILTER_DIPARTIMENTO_EXISTS="${19:-${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}}"
-    local FILTER_DIPARTIMENTO_NOT_EXISTS="${20:-${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}}"
-    
-    local FILTER_NOTE_EXISTS="${21:-${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}}"
-    local FILTER_NOTE_NOT_EXISTS="${22:-${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}}"
 
-    local FILTER_EMAIL_GSUITE_PREFIX_FLAG="${23:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}}"
-    local FILTER_EMAIL_GSUITE_PREFIX="${24:-${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}}"
+    local FILTER_AGGIUNTO_IL_FLAG="${13:-${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}}"
+    local FILTER_AGGIUNTO_IL_MIN="${14:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MIN]}}"
+    local FILTER_AGGIUNTO_IL_MAX="${15:-${employeesQueryParam[FILTER_AGGIUNTO_IL_MAX]}}"
     
+    local FILTER_CANCELLATO_IL_FLAG="${16:-${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}}"
+    local FILTER_CANCELLATO_IL_MIN="${17:-${employeesQueryParam[FILTER_CANCELLATO_IL_MIN]}}"
+    local FILTER_CANCELLATO_IL_MAX="${18:-${employeesQueryParam[FILTER_CANCELLATO_IL_MAX]}}"
+    
+    local FILTER_CONTRATTO_EXISTS="${19:-${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}}"
+    local FILTER_CONTRATTO_NOT_EXISTS="${20:-${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}}"
+    
+    local FILTER_DIPARTIMENTO_EXISTS="${21:-${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}}"
+    local FILTER_DIPARTIMENTO_NOT_EXISTS="${22:-${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}}"
+    
+    local FILTER_NOTE_EXISTS="${23:-${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}}"
+    local FILTER_NOTE_NOT_EXISTS="${24:-${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}}"
     # Costruzione della query basata sui parametri
     echo "
           SELECT $FIELDS 
@@ -189,6 +189,8 @@ function query::getQueryEmployeesData {
                   (email_gsuite IS NOT NULL AND LOWER(email_gsuite) != ''))
             AND (1=$FILTER_EMAIL_GSUITE_NOT_EXISTS OR 
                   (email_gsuite IS NULL OR LOWER(email_gsuite) = ''))
+            AND (1=$FILTER_EMAIL_GSUITE_PREFIX_FLAG OR 
+                  LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ( $FILTER_EMAIL_GSUITE_PREFIX ))
             AND (1=$FILTER_AGGIUNTO_IL_FLAG OR 
                   (aggiunto_il BETWEEN $FILTER_AGGIUNTO_IL_MIN AND $FILTER_AGGIUNTO_IL_MAX ))
             AND (1=$FILTER_CANCELLATO_IL_FLAG OR 
@@ -205,8 +207,6 @@ function query::getQueryEmployeesData {
                   (note IS NOT NULL AND LOWER(note) != ''))
             AND (1=$FILTER_NOTE_NOT_EXISTS OR 
                   (note IS NULL OR LOWER(note) = ''))
-            AND (1=$FILTER_EMAIL_GSUITE_PREFIX_FLAG OR 
-                  LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) IN ( $FILTER_EMAIL_GSUITE_PREFIX ))
           ORDER BY $ORDERING ASC;
     "
 }
@@ -231,20 +231,20 @@ function query::getQueryTeachersWithGSuiteEmail {
   cliParam[8]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
   cliParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}"
   cliParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}"
-  cliParam[11]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
-  cliParam[12]="'min'"
-  cliParam[13]="'max'"
-  cliParam[14]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
-  cliParam[15]="'min'"
-  cliParam[16]="'max'"
-  cliParam[17]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
-  cliParam[18]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
-  cliParam[19]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
-  cliParam[20]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
-  cliParam[21]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
-  cliParam[22]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
-  cliParam[23]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
-  cliParam[24]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
+  cliParam[11]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
+  cliParam[12]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
+  cliParam[13]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
+  cliParam[14]="'min'"
+  cliParam[15]="'max'"
+  cliParam[16]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
+  cliParam[17]="'min'"
+  cliParam[18]="'max'"
+  cliParam[19]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
+  cliParam[20]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
+  cliParam[21]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
+  cliParam[22]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
+  cliParam[23]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
+  cliParam[24]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
 
   query=$(query::getQueryEmployeesData "${cliParam[@]}" )
   echo "$query"
