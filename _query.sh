@@ -4,11 +4,6 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
-# ./_query.sh "cl, addr_argo" "addr_argo" "$DISABLE_QUERY_FILTER" "1, 2, 3"  
-#       "$DISABLE_QUERY_FILTER" "'tr', 'en'"  "$DISABLE_QUERY_FILTER"  " "  
-#       "$DISABLE_QUERY_FILTER" " '1A_MEC' "  
-#        "$ENABLE_QUERY_FILTER"  "$ENABLE_QUERY_FILTER"
-
 # Mappa (array associativo)
 declare -A sectionQueryParam=(
   [FIELDS]=" * "
@@ -72,13 +67,7 @@ function query::getQuerySezioniDefaultValues {
 }
 
 function query::getQuerySezioniSupervisorNotEmpty {
-  local FIELDS="${1:-${sectionQueryParam[FIELDS]}}"
-  local ORDERING="${2:-${sectionQueryParam[ORDERING]}}"
-
-  # Dichiarazione di un array associativo per i parametri
   declare cliParam=()
-
-  # Imposta i valori per le chiavi specifiche
   cliParam[1]="${1:-${sectionQueryParam[FIELDS]}}"
   cliParam[2]="${2:-${sectionQueryParam[ORDERING]}}"
   cliParam[3]="${sectionQueryParam[FILTER_YEARS_OFF]}"
@@ -98,7 +87,7 @@ function query::getQuerySezioniSupervisorNotEmpty {
 
 declare -A employeesQueryParam=(
   [FIELDS]=" * "
-  [ORDERING]=" cognome "  # Esempio di ordinamento
+  [ORDERING]=" cognome "
   [FILTER_TIPO_PERSONALE_ON]=0
   [FILTER_TIPO_PERSONALE_OFF]=1
   [FILTER_TIPO_PERSONALE]=" '' "
@@ -231,11 +220,7 @@ function query::getQueryEmployeesDefaultValues {
 }
 
 function query::getQueryTeachersWithGSuiteEmail {
-
-  # Dichiarazione di un array associativo per i parametri
   declare cliParam=()
-
-  # Imposta i valori per le chiavi specifiche
   cliParam[1]="${1:-${employeesQueryParam[FIELDS]}}"
   cliParam[2]="${2:-${employeesQueryParam[ORDERING]}}"
   cliParam[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}"
