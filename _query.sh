@@ -26,6 +26,20 @@ declare -A sectionQueryParam=(
   [FILTER_SUPERVISORS_NOT_EXISTS_OFF]=1
 )
 
+declare sectionParam=()
+sectionParam[0]="${sectionQueryParam[FIELDS]}"
+sectionParam[1]="${sectionQueryParam[ORDERING]}"
+sectionParam[2]="${sectionQueryParam[FILTER_YEARS_OFF]}"
+sectionParam[3]=" "
+sectionParam[4]="${sectionQueryParam[FILTER_ADDRESS_ARGO_OFF]}"
+sectionParam[5]=" "
+sectionParam[6]="${sectionQueryParam[FILTER_ADDRESS_GSUITE_OFF]}"
+sectionParam[7]=" "
+sectionParam[8]="${sectionQueryParam[FILTER_CLASSES_OFF]}"
+sectionParam[9]=" "
+sectionParam[10]="${sectionQueryParam[FILTER_SUPERVISORS_EXISTS_OFF]}"
+sectionParam[11]="${sectionQueryParam[FILTER_SUPERVISORS_NOT_EXISTS_OFF]}"
+
 function query::getQuerySezioni {
     local FIELDS="${1:-${sectionQueryParam[FIELDS]}}"
     local ORDERING="${2:-${sectionQueryParam[ORDERING]}}"
@@ -59,35 +73,28 @@ function query::getQuerySezioni {
 }
 
 function query::getQuerySezioniDefaultValues {
-  local FIELDS="${1:-${sectionQueryParam[FIELDS]}}"
-  local ORDERING="${2:-${sectionQueryParam[ORDERING]}}"
+  local cli=("${sectionParam[@]}") # clone array
 
-  query=$(query::getQuerySezioni "$FIELDS" "$ORDERING")
+  cli[0]="${1:-${sectionQueryParam[FIELDS]}}"
+  cli[1]="${2:-${sectionQueryParam[ORDERING]}}"
+
+  query=$(query::getQuerySezioni "${cli[@]}")
   echo "$query"
 }
 
 function query::getQuerySezioniSupervisorNotEmpty {
-  declare cliParam=()
-  cliParam[1]="${1:-${sectionQueryParam[FIELDS]}}"
-  cliParam[2]="${2:-${sectionQueryParam[ORDERING]}}"
-  cliParam[3]="${sectionQueryParam[FILTER_YEARS_OFF]}"
-  cliParam[4]=" "
-  cliParam[5]="${sectionQueryParam[FILTER_ADDRESS_ARGO_OFF]}"
-  cliParam[6]=" "
-  cliParam[7]="${sectionQueryParam[FILTER_ADDRESS_GSUITE_OFF]}"
-  cliParam[8]=" "
-  cliParam[9]="${sectionQueryParam[FILTER_CLASSES_OFF]}"
-  cliParam[10]=" "
-  cliParam[11]="${sectionQueryParam[FILTER_SUPERVISORS_EXISTS_ON]}"
-  cliParam[12]="${sectionQueryParam[FILTER_SUPERVISORS_NOT_EXISTS_OFF]}"
+  local cli=("${sectionParam[@]}") # clone array
+  cli[0]="${1:-${sectionQueryParam[FIELDS]}}"
+  cli[1]="${2:-${sectionQueryParam[ORDERING]}}"
+  cli[10]="${sectionQueryParam[FILTER_SUPERVISORS_EXISTS_ON]}"
 
-  query=$(query::getQuerySezioni "${cliParam[@]}" )
+  query=$(query::getQuerySezioni "${cli[@]}" )
   echo "$query"
 }
 
 declare -A employeesQueryParam=(
   [FIELDS]=" * "
-  [ORDERING]=" cognome "
+  [ORDERING]=" email_gsuite "
   [FILTER_TIPO_PERSONALE_ON]=0
   [FILTER_TIPO_PERSONALE_OFF]=1
   [FILTER_TIPO_PERSONALE]=" '' "
@@ -136,6 +143,32 @@ declare -A employeesQueryParam=(
   [FILTER_NOTE_NOT_EXISTS_ON]=0
   [FILTER_NOTE_NOT_EXISTS_OFF]=1
 )
+
+declare employeesParam=()
+employeesParam[0]="${employeesQueryParam[FIELDS]}"
+employeesParam[1]="${employeesQueryParam[ORDERING]}"
+employeesParam[2]="${employeesQueryParam[FILTER_TIPO_PERSONALE_OFF]}"
+employeesParam[3]=" '' "
+employeesParam[4]="${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}"
+employeesParam[5]="${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}"
+employeesParam[6]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}"
+employeesParam[7]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
+employeesParam[8]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}"
+employeesParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}"
+employeesParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
+employeesParam[11]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
+employeesParam[12]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
+employeesParam[13]="'$PERIODO_PERSONALE_DA'"
+employeesParam[14]="'$PERIODO_PERSONALE_A'"
+employeesParam[15]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
+employeesParam[16]="'$PERIODO_PERSONALE_DA'"
+employeesParam[17]="'$PERIODO_PERSONALE_A'"
+employeesParam[18]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
+employeesParam[19]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
+employeesParam[20]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
+employeesParam[21]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
+employeesParam[22]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
+employeesParam[23]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
 
 function query::getQueryEmployeesData {
     local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
@@ -211,77 +244,61 @@ function query::getQueryEmployeesData {
 }
 
 function query::getQueryEmployeesDefaultValues {
-  local FIELDS="${1:-${employeesQueryParam[FIELDS]}}"
-  local ORDERING="${2:-${employeesQueryParam[ORDERING]}}"
+  local cli=("${employeesParam[@]}") # clone array
 
-  query=$(query::getQueryEmployeesData "$FIELDS" "$ORDERING")
+  cli[0]="${1:-${employeesParam[FIELDS]}}"
+  cli[1]="${2:-${employeesParam[ORDERING]}}"
+
+  query=$(query::getQueryEmployeesData "${cli[@]}" )
   echo "$query"
 }
 
-function query::getTeachersForCreatingEmail {
-  declare cliParam=()
-  cliParam[1]="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_personale) as email_personale, LOWER(email_gsuite) as email_gsuite"
-  cliParam[2]="${2:-${employeesQueryParam[ORDERING]}}"
-  cliParam[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_OFF]}"
-  cliParam[4]=" '' "
-  cliParam[5]="${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}"
-  cliParam[6]="${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}"
-  cliParam[7]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_ON]}"
-  cliParam[8]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
-  cliParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_OFF]}"
-  cliParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_ON]}"
-  cliParam[11]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
-  cliParam[12]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
-  cliParam[13]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
-  cliParam[14]="'$PERIODO_PERSONALE_DA'"
-  cliParam[15]="'$PERIODO_PERSONALE_A'"
-  cliParam[16]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
-  cliParam[17]="'min'"
-  cliParam[18]="'max'"
-  cliParam[19]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
-  cliParam[20]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
-  cliParam[21]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
-  cliParam[22]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
-  cliParam[23]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
-  cliParam[24]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
+function query::getTeachersWithoutEmailGSuite {
+  local cli=("${employeesParam[@]}") # clone array
 
-  query=$(query::getQueryEmployeesData "${cliParam[@]}" )
+  cli[0]="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+          UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
+          LOWER(email_gsuite) as email_gsuite"
+  cli[1]=" cognome "
+  cli[6]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_ON]}"
+  cli[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_ON]}"
+
+  query=$(query::getQueryEmployeesData "${cli[@]}" )
+  echo "$query"
+}
+
+function query::getTeachersAddedInPeriod {
+  local cli=("${employeesParam[@]}") # clone array
+  cli[0]="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
+                LOWER(email_gsuite) as email_gsuite, aggiunto_il"
+  cli[1]=" cognome "
+  cli[6]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_ON]}"
+  cli[8]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}"
+  cli[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_ON]}"
+  cli[11]=" 'd.' "
+  cli[12]="${employeesQueryParam[FILTER_AGGIUNTO_IL_ON]}"
+
+  query=$(query::getQueryEmployeesData "${cli[@]}" )
   echo "$query"
 }
 
 function query::getQueryTeachersWithGSuiteEmail {
-  declare cliParam=()
-  cliParam[1]="${1:-${employeesQueryParam[FIELDS]}}"
-  cliParam[2]="${2:-${employeesQueryParam[ORDERING]}}"
-  cliParam[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}"
-  cliParam[4]="'docente'"
-  cliParam[5]="${employeesQueryParam[FILTER_CODICE_FISCALE_EXISTS_OFF]}"
-  cliParam[6]="${employeesQueryParam[FILTER_CODICE_FISCALE_NOT_EXISTS_OFF]}"
-  cliParam[7]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_EXISTS_OFF]}"
-  cliParam[8]="${employeesQueryParam[FILTER_EMAIL_PERSONALE_NOT_EXISTS_OFF]}"
-  cliParam[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}"
-  cliParam[10]="${employeesQueryParam[FILTER_EMAIL_GSUITE_NOT_EXISTS_OFF]}"
-  cliParam[11]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX_OFF]}"
-  cliParam[12]="${employeesQueryParam[FILTER_EMAIL_GSUITE_PREFIX]}"
-  cliParam[13]="${employeesQueryParam[FILTER_AGGIUNTO_IL_OFF]}"
-  cliParam[14]="'min'"
-  cliParam[15]="'max'"
-  cliParam[16]="${employeesQueryParam[FILTER_CANCELLATO_IL_OFF]}"
-  cliParam[17]="'min'"
-  cliParam[18]="'max'"
-  cliParam[19]="${employeesQueryParam[FILTER_CONTRATTO_EXISTS_OFF]}"
-  cliParam[20]="${employeesQueryParam[FILTER_CONTRATTO_NOT_EXISTS_OFF]}"
-  cliParam[21]="${employeesQueryParam[FILTER_DIPARTIMENTO_EXISTS_OFF]}"
-  cliParam[22]="${employeesQueryParam[FILTER_DIPARTIMENTO_NOT_EXISTS_OFF]}"
-  cliParam[23]="${employeesQueryParam[FILTER_NOTE_EXISTS_OFF]}"
-  cliParam[24]="${employeesQueryParam[FILTER_NOTE_NOT_EXISTS_OFF]}"
+  local cli=("${employeesParam[@]}") # clone array
+  cli[0]="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
+                LOWER(email_gsuite) as email_gsuite, aggiunto_il"
+  cli[1]=" cognome "
+  cli[3]="${employeesQueryParam[FILTER_TIPO_PERSONALE_ON]}"
+  cli[4]="'docente'"
+  cli[9]="${employeesQueryParam[FILTER_EMAIL_GSUITE_EXISTS_ON]}"
 
-  query=$(query::getQueryEmployeesData "${cliParam[@]}" )
+  query=$(query::getQueryEmployeesData "${cli[@]}" )
   echo "$query"
 }
 
 # Esempio di come chiamare la funzione
 if log::level_is_active "DEBUG"; then
-  query="$(query::getTeachersForCreatingEmail )"
+  query="$(query::getTeachersAddedInPeriod )"
   echo "$query"
 fi
