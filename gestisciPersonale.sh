@@ -142,18 +142,9 @@ main() {
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Esporto il nuovo personale in file CSV ..."
                 
-                $SQLITE_CMD studenti.db -header -csv "SELECT LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale
-                FROM $TABELLA_PERSONALE 
-                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                      AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-                    ) OR (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                ORDER BY UPPER(cognome); " > "$EXPORT_DIR_DATE/nuovo_personale_old.csv"
-
                 local FIELDS="LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale"
                 query=$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS")
-                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale_new.csv"
+                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
                 ;;
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
@@ -187,45 +178,27 @@ main() {
                       FROM $TABELLA_PERSONALE );"
                 ;;
             9)
-                checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA"
+                checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA" "$PASSWORD_CLASSROOM"
                 
                 echo "Crea il nuovo personale su GSuite ..."
 
-                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query " 
-                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare,
-                '$PASSWORD_CLASSROOM'
-                FROM $TABELLA_PERSONALE
-                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                      AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-                    ) AND UPPER(tipo_personale) = UPPER('docente');"
+                local FIELDS="LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare, '$PASSWORD_CLASSROOM'"
 
-                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "
-                SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare,
-                '$PASSWORD_CLASSROOM'
-                FROM $TABELLA_PERSONALE
-                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                      AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-                    ) AND UPPER(tipo_personale) = UPPER('ata');"
+                query=$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")
+                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query "$query"
+
+                query=$(query::getAtaNotDeletedAddedInPeriod "$FIELDS")
+                $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "$query"
                 ;;
             10)
                 checkAllVarsNotEmpty "GRUPPO_CLASSROOM"
                 
                 echo "Aggiungo i nuovi docenti su Classroom ..."
                 
-                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "SELECT LOWER(email_gsuite)
-                FROM $TABELLA_PERSONALE 
-                WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                      AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-                    ) AND UPPER(tipo_personale) = UPPER('docente');"
+                local FIELDS="LOWER(email_gsuite)"
+                
+                query=$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "$query"
                 ;;
             11)
                 checkAllVarsNotEmpty "DOMAIN" "WORDPRESS_ROLE_TEACHER" "WORDPRESS_ROLE_ATA"
@@ -255,6 +228,11 @@ main() {
             12)
                 checkAllVarsNotEmpty "CURRENT_DATE"
 
+                local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
+                local ORDERING="UPPER(codice_fiscale)"
+                
+                query=$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING")
+
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Crea script personale_CF_$CURRENT_DATE.sh ..."
                 
@@ -267,7 +245,7 @@ main() {
                     # Aggiungo il CF negli script
                     echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE ORDER BY UPPER(codice_fiscale)" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
                 ;;
             13)
                 echo "Sospendi (disabilita) personale ..."

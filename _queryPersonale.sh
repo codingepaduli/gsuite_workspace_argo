@@ -28,13 +28,13 @@ function query::defaultEmployeesParam() {
   employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" '' "
 
   employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_OFF"
-  employeesParam[FILTER_AGGIUNTO_IL_MIN]=" '2020-01-01' "
-  employeesParam[FILTER_AGGIUNTO_IL_MAX]=" '2030-01-01' "
+  employeesParam[FILTER_AGGIUNTO_IL_MIN]=" '$PERIODO_PERSONALE_DA' "
+  employeesParam[FILTER_AGGIUNTO_IL_MAX]=" '$PERIODO_PERSONALE_A' "
 
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_OFF"
   employeesParam[FLAG_CANCELLATO_IL]="$FLAG_OFF"
-  employeesParam[FILTER_CANCELLATO_IL_MIN]=" '2020-01-01' "
-  employeesParam[FILTER_CANCELLATO_IL_MAX]=" '2030-01-01' "
+  employeesParam[FILTER_CANCELLATO_IL_MIN]=" '$PERIODO_PERSONALE_DA' "
+  employeesParam[FILTER_CANCELLATO_IL_MAX]=" '$PERIODO_PERSONALE_A' "
 
   employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_CONTRATTO_NOT_EXISTS]="$FLAG_OFF"
@@ -161,6 +161,59 @@ function query::getEmployeesNotDeletedAddedInPeriod {
   employeesParam[ORDERING]="${2:-cognome}"
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+
+  # clona mappa modificata
+  employeesParam="$(declare -p employeesParam)"
+
+  query=$(query::getQueryEmployees "$employeesParam" )
+  echo "$query"
+}
+
+function query::getTeachersNotDeletedAddedInPeriod {
+  local employeesParam
+
+  # clona mappa
+  employeesParam="$(query::defaultEmployeesParam)"
+  eval "${employeesParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
+  employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "
+  employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_PREFIX]="$FLAG_ON"
+  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
+  employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+
+  # clona mappa modificata
+  employeesParam="$(declare -p employeesParam)"
+
+  query=$(query::getQueryEmployees "$employeesParam" )
+  echo "$query"
+}
+
+
+function query::getAtaNotDeletedAddedInPeriod {
+  local employeesParam
+
+  # clona mappa
+  employeesParam="$(query::defaultEmployeesParam)"
+  eval "${employeesParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
+  employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'ata' "
+  employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_PREFIX]="$FLAG_ON"
+  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'a.' "
   employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
 
