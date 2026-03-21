@@ -4,7 +4,7 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
-source "./_query.sh"
+source "./_queryPersonale.sh"
 
 # Aggiunge gli insegnanti a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
@@ -98,19 +98,12 @@ main() {
                 WHERE cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '';"
                 ;;
             3)
-                echo "Visualizza personale neo-assunto ..."
-                
-                # $SQLITE_CMD studenti.db -header -table "SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_personale) as email_personale, LOWER(email_gsuite) as email_gsuite
-                # FROM $TABELLA_PERSONALE 
-                # WHERE email_gsuite is NULL OR TRIM(email_gsuite) = ''
-                #     OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                #         AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A');"
+                echo "Personale neo-assunto ancora senza email:"
+                query=$(query::getEmployeesNonDeletedWithoutEmailGSuite )
+                $SQLITE_CMD studenti.db -header -table "$query"
 
-                echo "Without email:"
-                query=$(query::getTeachersWithoutEmailGSuite )
-
-                echo "Added email:"
-                query=$(query::getTeachersAddedInPeriod )
+                echo "Personale neo-assunto con email creata:"
+                query=$(query::getEmployeesNotDeletedAddedInPeriod )
                 $SQLITE_CMD studenti.db -header -table "$query"
                 ;;
             4)
@@ -156,7 +149,11 @@ main() {
                     AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
                       AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
                     ) OR (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                ORDER BY UPPER(cognome); " > "$EXPORT_DIR_DATE/nuovo_personale.csv"
+                ORDER BY UPPER(cognome); " > "$EXPORT_DIR_DATE/nuovo_personale_old.csv"
+
+                local FIELDS="LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale"
+                query=$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS")
+                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale_new.csv"
                 ;;
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
