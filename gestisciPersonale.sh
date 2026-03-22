@@ -32,6 +32,7 @@ show_menu() {
     echo "14. Elimina personale"
     echo "15. Visualizza personale su WordPress"
     echo "16. Elimina personale su WordPress"
+    echo "17. Sposta script personale_CF.sh relativo alla tabella precedente in root"
     echo "19. Controllo i dati"
     echo "20. Esci"
 }
@@ -44,9 +45,7 @@ main() {
         exit 1  # Termina lo script con codice di stato 1
     fi
 
-    while true; do
-        show_menu
-        read -p "Scegli un'opzione (1-20): " -r choice
+    local choice="$1"
         
         case $choice in
             1)
@@ -87,14 +86,20 @@ main() {
                     cognome = TRIM(UPPER(cognome)),
                     nome = TRIM(UPPER(nome)) ;"
                 
-                # Normalizza date
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE 
-                SET aggiunto_il = date(substr(aggiunto_il, 7, 4) || '-' || substr(aggiunto_il, 4, 2) || '-' || substr(aggiunto_il, 1, 2))
-                WHERE aggiunto_il is NOT NULL AND TRIM(aggiunto_il) != '';"
+                local addedDateFormat
+                addedDateFormat=$(getDateFormat 'aggiunto_il')
 
                 # Normalizza date
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE 
-                SET cancellato_il = date(substr(cancellato_il, 7, 4) || '-' || substr(cancellato_il, 4, 2) || '-' || substr(cancellato_il, 1, 2))
+                SET aggiunto_il = date($addedDateFormat)
+                WHERE aggiunto_il is NOT NULL AND TRIM(aggiunto_il) != '';"
+
+                local cancelledDateFormat
+                cancelledDateFormat=$(getDateFormat 'cancellato_il')
+                
+                # Normalizza date
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE 
+                SET cancellato_il = date($cancelledDateFormat)
                 WHERE cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '';"
                 ;;
             3)
@@ -228,24 +233,34 @@ main() {
             12)
                 checkAllVarsNotEmpty "CURRENT_DATE"
 
+                # Preparo query estrazione del personale
                 local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
                 local ORDERING="UPPER(codice_fiscale)"
                 
                 query=$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING")
+                echo "$query"
 
+                # Creo lo script con i dati della query
                 mkdir -p "$EXPORT_DIR_DATE"
-                echo "Crea script personale_CF_$CURRENT_DATE.sh ..."
+                echo "Crea script $TABELLA_PERSONALE.sh e $TABELLA_PERSONALE_PRECEDENTE.sh ..."
                 
-                echo "#!/bin/bash" > "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
-                echo 'source "_environment.sh"' >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
-                echo 'source "./_environment_working_tables.sh"' >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
+                echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
+                echo 'source "./_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
 
                 while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
-                    # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/personale_CF_$CURRENT_DATE.sh"
+                  # Aggiungo il CF negli script
+                  echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh"
 
                 done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
+
+                while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
+
+                  # Aggiungo il CF negli script
+                  echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
+
+                done < <($SQLITE_CMD -csv studenti.db "SELECT LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE_PRECEDENTE ORDER BY UPPER(codice_fiscale)" | sed "s/\"//g")
                 ;;
             13)
                 echo "Sospendi (disabilita) personale ..."
@@ -271,6 +286,14 @@ main() {
                 echo "Visualizza personale su wordpress ..."
 
                 $RUN_CMD_WITH_QUERY --command showUsersOnWordPress --group " NO " --query "select LOWER(email_gsuite) from $TABELLA_PERSONALE WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
+                ;;
+            17)
+                cp "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_PERSONALE.sh" 
+                chmod +x "$BASE_DIR/$TABELLA_PERSONALE.sh"
+
+                # run the script
+                echo "Eseguo script aggiornamento email" 
+                "$BASE_DIR/$TABELLA_PERSONALE.sh"
                 ;;
             16)
                 checkAllVarsNotEmpty "CURRENT_DATE"
@@ -313,10 +336,6 @@ main() {
                 sleep 1
                 ;;
         esac
-        
-        # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." -r _
-    done
 }
 
 showConfig() {
@@ -338,8 +357,15 @@ showConfig() {
   fi
 }
 
-# Show config vars
-showConfig
+if [ "$#" -eq 1 ]; then
+  scelta="$1"
+else
+  # Show config vars
+  showConfig
+
+  show_menu
+  read -p "Scegli un'opzione (1-20): " -r scelta
+fi
 
 # Avvia la funzione principale
-main
+main "$scelta"

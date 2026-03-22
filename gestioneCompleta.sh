@@ -24,11 +24,15 @@ show_menu() {
     echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
     echo "0. Creo le tabelle, importo gli studenti"
-    echo "1. Eseguo script aggiornamento email"
-    echo "2. Creo le email e i relativi account su GSuite, li esporto in CSV"
+    echo "1. Eseguo script aggiornamento email studenti"
+    echo "2. Creo le email studenti e i relativi account su GSuite, li esporto in CSV"
     echo "3. Aggiungi i nuovi studenti alle classi, effettua gli spostamenti, toglie i ritirati"
 
     echo "5. Invio singola email ad ogni coordinatore con elenco studenti per classe"
+
+    echo "6. Creo le tabelle, importo il personale"
+    echo "7. Eseguo script aggiornamento email personale"
+    
 
     echo "20. Esci"
 }
@@ -51,11 +55,9 @@ main() {
         local COPY_STUDENTS_FROM_SIRIO=14
 
         ./gestisciStudenti.sh "$CREATE_TABLE_STUDENTS"
-        read -p "Premi per continuare " -r _
         ./gestisciStudenti.sh "$IMPORT_STUDENTS"
         read -p "Premi per continuare " -r _
         ./gestisciStudenti.sh "$CREATE_TABLE_STUDENTS_SIRIO"
-        read -p "Premi per continuare " -r _
         ./gestisciStudenti.sh "$IMPORT_STUDENTS_SIRIO"
         read -p "Premi per continuare " -r _
         ./gestisciStudenti.sh "$COPY_STUDENTS_FROM_SIRIO"
@@ -67,13 +69,8 @@ main() {
         local CHECK_STUDENTS=16
 
         ./gestisciStudenti.sh "$CREATE_SCRIPT_CF_STUDENTS"
-        read -p "Premi per continuare " -r _
-
         ./gestisciStudenti.sh "$MOVE_SCRIPT_OLD_STUDENTS"
-        read -p "Premi per continuare " -r _
-
         ./gestisciStudenti.sh "$CHECK_STUDENTS"
-        read -p "Premi per continuare " -r _
       ;;
       2)
         echo "Creo le email e i relativi account su GSuite, li esporto in CSV"
@@ -108,7 +105,25 @@ main() {
         
         ./gestisciGruppiClasse.sh "$EXPORT_CLASSES"
         ./gestisciSezioni.sh "$SEND_MAIL_TO_SUPERVISORS"
+      ;;
+      6)
+        echo "Creo la tabella, importo il personale"
+
+        local CREATE_TABLE_EMPLOYEES=1
+        local IMPORT_EMPLOYEES=2
+
+        ./gestisciPersonale.sh "$CREATE_TABLE_EMPLOYEES"
+        ./gestisciPersonale.sh "$IMPORT_EMPLOYEES"
         read -p "Premi per continuare " -r _
+      ;;
+      7)
+        local CREATE_SCRIPT_CF_EMPLOYEES=12
+        local MOVE_SCRIPT_OLD_EMPLOYEES=17
+        # local CHECK_EMPLOYEES=16
+
+        ./gestisciPersonale.sh "$CREATE_SCRIPT_CF_EMPLOYEES"
+        ./gestisciPersonale.sh "$MOVE_SCRIPT_OLD_EMPLOYEES"
+        # ./gestisciPersonale.sh "$CHECK_EMPLOYEES"
       ;;
       20)
         echo "Arrivederci!"

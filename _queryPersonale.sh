@@ -99,6 +99,7 @@ function query::getQueryEmployees {
         (note IS NULL OR LOWER(note) = '' ))
     ORDER BY ${employeesParam[ORDERING]} ASC;
   "
+  echo " -- $1 " 
 }
 
 function query::getQueryEmployeesDefaultValues {
@@ -254,7 +255,7 @@ function query::getQueryTeachersWithGSuiteEmail {
 }
 
 # Esempio di come chiamare la funzione
-if log::level_is_active "DEBUG"; then
-  query="$(query::getEmployeesNotDeletedAddedInPeriod )"
-  echo "$query"
-fi
+# if log::level_is_active "DEBUG"; then
+#   query="$(query::getEmployeesNotDeletedAddedInPeriod )"
+#   echo "$query"
+# fi
