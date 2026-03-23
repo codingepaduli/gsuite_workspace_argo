@@ -39,6 +39,7 @@ show_menu() {
 
 # Funzione principale
 main() {
+    local query
 
     if ! checkAllVarsNotEmpty "TABELLA_PERSONALE" "PERIODO_PERSONALE_DA" "PERIODO_PERSONALE_A" ; then
         echo "Errore: Definisci le variabili nel file di configurazione." >&2
@@ -154,33 +155,58 @@ main() {
             7)
                 echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
 
-                $SQLITE_CMD studenti.db -header -table "
-                SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                # Creo la query di tutti i codici fiscali
+                local FIELDS="LOWER(codice_fiscale)"
+                query=$(query::getQueryEmployeesDefaultValues "$FIELDS")
+
+                ## Salvo in un array i CF risultanti della query
+                local -a cfArray
+                readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
+
+                ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
+                local cfArrayString
+                printf -v cfArrayString "'%s', " "${cfArray[@]}"
+
+                ## Tolgo l'ultima virgola e l'ultimo spazio ", "
+                cfArrayString=${cfArrayString%, }
+
+                ## Creo la query del personale della vecchia tabella
+                ## i cui codici fiscali non si trovano nella nuova tabella
+                local FIELDS="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
                     UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, 
-                    LOWER(email_gsuite) as email_gsuite, cancellato_il 
-                FROM $TABELLA_PERSONALE_PRECEDENTE 
-                WHERE 1=1
-                    -- seleziono non cancellati (cancellato_il NULL o vuoto)
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
-                    AND UPPER(codice_fiscale) NOT IN (
-                      SELECT UPPER(codice_fiscale)
-                      FROM $TABELLA_PERSONALE )
-                ORDER BY UPPER(cognome);"
+                    LOWER(email_gsuite) as email_gsuite, cancellato_il "
+                local ORDERING=" UPPER(codice_fiscale) "
+
+                query=$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")
+
+                $SQLITE_CMD studenti.db -header -table  "$query"
                 ;;
             8)
                 echo "8. Importa nella tabella attuale il personale della tabella precedente NON CANCELLATO E non incluso in quella attuale"
-                
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_PERSONALE 
-                SELECT *
-                FROM $TABELLA_PERSONALE_PRECEDENTE
-                WHERE 1=1
-                    -- seleziono non cancellati (cancellato_il NULL o vuoto)
-                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-                    AND codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != ''
-                    AND UPPER(codice_fiscale) NOT IN (
-                      SELECT UPPER(codice_fiscale)
-                      FROM $TABELLA_PERSONALE );"
+
+                # Creo la query di tutti i codici fiscali
+                local FIELDS="LOWER(codice_fiscale)"
+                query=$(query::getQueryEmployeesDefaultValues "$FIELDS")
+
+                ## Salvo in un array i CF risultanti della query
+                local -a cfArray
+                readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
+
+                ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
+                local cfArrayString
+                printf -v cfArrayString "'%s', " "${cfArray[@]}"
+
+                ## Tolgo l'ultima virgola e l'ultimo spazio ", "
+                cfArrayString=${cfArrayString%, }
+
+                ## Creo la query del personale della vecchia tabella
+                ## i cui codici fiscali non si trovano nella nuova tabella
+                local FIELDS=" * "
+                local ORDERING=" UPPER(codice_fiscale) "
+                query=$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")
+
+                ## Eseguo l'import a partire dalla query
+                $SQLITE_CMD studenti.db -header -table  "INSERT INTO $TABELLA_PERSONALE $query"
                 ;;
             9)
                 checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA" "$PASSWORD_CLASSROOM"
