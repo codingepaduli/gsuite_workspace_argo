@@ -32,7 +32,7 @@ show_menu() {
 
     echo "6. Creo le tabelle, importo il personale"
     echo "7. Eseguo script aggiornamento email personale"
-    
+    echo "8. Importo personale 'precedente' "
 
     echo "20. Esci"
 }
@@ -117,13 +117,20 @@ main() {
         read -p "Premi per continuare " -r _
       ;;
       7)
+        echo "Eseguo lo script di inserimento email"
         local CREATE_SCRIPT_CF_EMPLOYEES=12
         local MOVE_SCRIPT_OLD_EMPLOYEES=17
-        # local CHECK_EMPLOYEES=16
-
+        
         ./gestisciPersonale.sh "$CREATE_SCRIPT_CF_EMPLOYEES"
         ./gestisciPersonale.sh "$MOVE_SCRIPT_OLD_EMPLOYEES"
-        # ./gestisciPersonale.sh "$CHECK_EMPLOYEES"
+      ;;
+      8)
+        echo "Importo personale 'precedente' "
+        local IMPORT_OLD_EMPLOYEES=8
+        local CHECK_EMPLOYEES=19
+
+        ./gestisciPersonale.sh "$IMPORT_OLD_EMPLOYEES"
+        ./gestisciPersonale.sh "$CHECK_EMPLOYEES"
       ;;
       20)
         echo "Arrivederci!"
