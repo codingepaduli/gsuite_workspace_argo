@@ -127,6 +127,68 @@ function query::queryStudentiTutti {
   echo "$query"
 }
 
+function query::queryStudentiSenzaEmail {
+  local queryParam
+  
+  # clona mappa
+  queryParam="$(query::defaultStudentsParam)"
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]="$FLAG_ON"
+
+  # clona mappa modificata
+  queryParam="$(declare -p studentsParam)"
+
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+
+function query::queryStudentiNonCancellatiIscrittiInPeriodo {
+  local queryParam
+  
+  # clona mappa
+  queryParam="$(query::defaultStudentsParam)"
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+
+  # clona mappa modificata
+  queryParam="$(declare -p studentsParam)"
+
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
+  local queryParam
+  
+  # clona mappa
+  queryParam="$(query::defaultStudentsParam)"
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_YEARS_IN]="$FLAG_ON"
+  studentsParam[FILTER_YEARS_IN]=" '$3' "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
 # Esempio di come chiamare la funzione
 function execDebug {
   if log::level_is_active "DEBUG"; then

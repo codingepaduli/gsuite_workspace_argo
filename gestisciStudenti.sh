@@ -4,6 +4,7 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
+source "./_queryStudenti.sh"
 
 # File CSV 
 FILE_CSV_STUDENTI="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.csv"
@@ -37,6 +38,7 @@ show_menu() {
 
 # Funzione principale
 main() {
+    local query
 
     if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "CURRENT_DATE"; then
         echo "Errore: Definisci le variabili nel file di configurazione." >&2
@@ -92,21 +94,28 @@ main() {
                 WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
                 ;;
             2)
-                echo "Visualizza dati in tabella ..."
+              echo "Visualizza dati in tabella ..."
 
-                $SQLITE_CMD -header -table studenti.db "SELECT cl, sez, cognome, nome, cod_fisc, email_gsuite FROM $TABELLA_STUDENTI ORDER BY cl, sez;"
-                ;;
+              local FIELDS="sz.sezione_gsuite, cognome || ' ' || nome AS nome, email_gsuite"
+              local ORDERING="sz.sezione_gsuite"
+              local query
+              query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
+
+              $SQLITE_CMD -header -table studenti.db " $query"
+            ;;
             3)
-                echo "Visualizza nuovi studenti ..."
-                
-                $SQLITE_CMD studenti.db -header -table "SELECT cl || sez, cognome || ' ' || nome AS NOME, aggiunto_il, datar, email_gsuite
-                FROM $TABELLA_STUDENTI 
-                WHERE (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
-                  OR (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                  )
-                ORDER BY cl, sez, cognome, nome;"
-                ;;
+              local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, aggiunto_il, datar AS data_ritiro, matricola, email_gsuite"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              local query
+              query="$(query::queryStudentiSenzaEmail "$FIELDS" "$ORDERING" )"
+              $SQLITE_CMD studenti.db -header -table "$query"
+
+              echo "Studenti iscritti nel periodo"
+
+              query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+              $SQLITE_CMD studenti.db -header -table "$query"
+            ;;
             4)
                 echo "Creo la mail ai nuovi studenti ..."
                 
@@ -150,36 +159,27 @@ main() {
                         AND (datar IS NULL OR TRIM(datar) = '');"
                 ;;
             5)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Esporto i nuovi studenti in file CSV ..."
+              mkdir -p "$EXPORT_DIR_DATE"
+              echo "Esporto i nuovi studenti in file CSV ..."
 
-                local NEW_STUDENTS_REPORT="
-                FROM $TABELLA_STUDENTI 
-                WHERE 1=1
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    )
-                "
+              local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, email_gsuite, '$PASSWORD_STUDENTI' as password"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              local query
+              query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+              $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+
+              $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+
+              for classe in {1..5}
+              do
+                query="$(query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" "$classe" )"
                 
-                $SQLITE_CMD studenti.db -header -csv " 
-                SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password
-                $NEW_STUDENTS_REPORT 
-                ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
 
-                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
-
-
-                for classe in {1..5}
-                do
-                    $SQLITE_CMD studenti.db -header -csv " 
-                    SELECT cl, sez,  cod_fisc, cognome, nome, email_gsuite, '$PASSWORD_STUDENTI' as password
-                    $NEW_STUDENTS_REPORT
-                        AND cl = $classe
-                    ORDER BY cl, sez, cognome, nome" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
-
-                    $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
-                done
-                ;;
+                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
+              done
+            ;;
             6)
                 echo "Creo i nuovi studenti su GSuite ..."
                 
