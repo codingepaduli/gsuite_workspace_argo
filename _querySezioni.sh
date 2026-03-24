@@ -8,7 +8,7 @@ FLAG_ON=0
 FLAG_OFF=1
 
 function query::defaultSectionParam() {
-  declare -A sectionParam=()
+  local -A sectionParam=()
   sectionParam[FIELDS]=" * "
   sectionParam[ORDERING]=" sezione_gsuite "
   sectionParam[FLAG_YEARS]="$FLAG_ON"
@@ -28,6 +28,9 @@ function query::defaultSectionParam() {
 function query::getQuerySezioni {
   local queryParam
   queryParam="${1}"
+
+  # clona mappa
+  local -A sectionParam=()
   eval "${queryParam}"
   
   echo "
@@ -53,7 +56,9 @@ function query::getQuerySezioni {
 function query::querySezioniTutte {
   local queryParam
   queryParam="$(query::defaultSectionParam)"
+
   # clona mappa
+  local -A sectionParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -61,16 +66,20 @@ function query::querySezioniTutte {
   sectionParam[ORDERING]="${2:-${sectionParam[ORDERING]}}"
 
   # clona mappa modificata
-  queryParam="$(declare -p sectionParam)"
+  local queryParamString
+  queryParamString="$(declare -p sectionParam)"
 
-  query=$(query::getQuerySezioni "$queryParam")
+  local query
+  query=$(query::getQuerySezioni "$queryParamString")
   echo "$query"
 }
 
 function query::querySezioniSupervisorNotEmpty {
   local queryParam
   queryParam="$(query::defaultSectionParam)"
+
   # clona mappa
+  local -A sectionParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -79,14 +88,21 @@ function query::querySezioniSupervisorNotEmpty {
   sectionParam[FLAG_SUPERVISORS_EXISTS]="$FLAG_ON"
 
   # clona mappa modificata
-  queryParam="$(declare -p sectionParam)"
+  local queryParamString
+  queryParamString="$(declare -p sectionParam)"
 
-  query=$(query::getQuerySezioni "$queryParam" )
+  local query
+  query=$(query::getQuerySezioni "$queryParamString" )
   echo "$query"
 }
 
 # Esempio di come chiamare la funzione
-if log::level_is_active "DEBUG"; then
-  query="$(query::querySezioniSupervisorNotEmpty)"
-  echo "$query"
-fi
+function execDebug {
+  if log::level_is_active "DEBUG"; then
+    local query
+    query="$(query::querySezioniSupervisorNotEmpty)"
+    echo "$query"
+  fi
+}
+
+execDebug
