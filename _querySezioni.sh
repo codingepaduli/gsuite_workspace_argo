@@ -96,9 +96,43 @@ function query::querySezioniSupervisorNotEmpty {
   echo "$query"
 }
 
+function query::queryCreaSezioniDaStudenti {
+  local query
+  query="
+    SELECT cl, sez_argo, letter, addr_argo, 
+      UPPER(addr_gsuite), 
+      UPPER(letter || '_' || addr_gsuite) AS sez_gsuite,
+      UPPER(cl || letter || '_' || addr_gsuite) AS sezione_gsuite
+    FROM (
+      SELECT DISTINCT 
+        TRIM(sa.cl) AS cl,
+        TRIM(sa.sez) AS sez_argo,
+        TRIM(SUBSTR(sa.sez,1,1)) AS letter,
+        TRIM(SUBSTR(sa.sez,2)) AS addr_argo,
+        CASE
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'in' THEN 'INF' 
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'm' THEN 'MEC' 
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'mDD' THEN 'MDD' 
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'me_sirio' THEN 'MEC_SIRIO'
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'm_sirio' THEN 'MEC_SIRIO' 
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'tlt' THEN 'TLC' 
+              WHEN TRIM(SUBSTR(sa.sez,2)) = 'tr' THEN 'AER' 
+              ELSE TRIM(SUBSTR(sa.sez,2))
+        END AS addr_gsuite
+      FROM $TABELLA_STUDENTI sa 
+      ORDER BY sa.cl, sa.sez
+    )
+  "
+  echo "$query"
+}
+
 # Esempio di come chiamare la funzione
 function execDebug {
   if log::level_is_active "DEBUG"; then
+    local param
+    param="$(query::defaultStudentsParam)"
+    echo "$param"
+    
     local query
     query="$(query::querySezioniSupervisorNotEmpty)"
     echo "$query"

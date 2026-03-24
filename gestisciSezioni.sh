@@ -26,70 +26,55 @@ show_menu() {
 main() {
 
     if ! checkAllVarsNotEmpty "TABELLA_STUDENTI" "TABELLA_SEZIONI"; then
-        echo "Errore: Definisci le variabili nel file di configurazione." >&2
-        exit 1  # Termina lo script con codice di stato 1
+      echo "Errore: Definisci le variabili nel file di configurazione." >&2
+      exit 1  # Termina lo script con codice di stato 1
     fi
 
     choice="$1"
         
         case $choice in
             1)
-                echo "Crea tabella sezioni a partire dai dati degli studenti ..."
-                
-                # Cancello la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_SEZIONI';"
+              echo "Crea tabella sezioni a partire dai dati degli studenti ..."
+              
+              # Cancello la tabella
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_SEZIONI';"
 
-                # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' ( cl NUMERIC, letter VARCHAR(200), addr_argo VARCHAR(200), sez_argo NUMERIC, addr_gsuite VARCHAR(200), sez_gsuite VARCHAR(200), sezione_gsuite VARCHAR(200), email_coordinatore VARCHAR(200));"
-                ;;
+              # Creo la tabella
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' ( cl NUMERIC, letter VARCHAR(200), addr_argo VARCHAR(200), sez_argo NUMERIC, addr_gsuite VARCHAR(200), sez_gsuite VARCHAR(200), sezione_gsuite VARCHAR(200), email_coordinatore VARCHAR(200));"
+            ;;
             2)
-                echo "Crea dati delle sezioni ..."
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
-                INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
-                SELECT cl, sez_argo, letter, addr_argo, 
-                  UPPER(addr_gsuite), 
-                  UPPER(letter || '_' || addr_gsuite) AS sez_gsuite,
-                  UPPER(cl || letter || '_' || addr_gsuite) AS sezione_gsuite
-                FROM (
-                  SELECT DISTINCT 
-                    TRIM(sa.cl) AS cl,
-                    TRIM(sa.sez) AS sez_argo,
-                    TRIM(SUBSTR(sa.sez,1,1)) AS letter,
-                    TRIM(SUBSTR(sa.sez,2)) AS addr_argo,
-                    CASE
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'in' THEN 'INF' 
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'm' THEN 'MEC' 
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'mDD' THEN 'MDD' 
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'me_sirio' THEN 'MEC_SIRIO'
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'm_sirio' THEN 'MEC_SIRIO' 
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'tlt' THEN 'TLC' 
-                          WHEN TRIM(SUBSTR(sa.sez,2)) = 'tr' THEN 'AER' 
-                          ELSE TRIM(SUBSTR(sa.sez,2))
-                    END AS addr_gsuite
-                  FROM $TABELLA_STUDENTI sa 
-                  ORDER BY sa.cl, sa.sez
-                )"
-                ;;
+              echo "Crea dati delle sezioni ..."
+
+              local query
+              query="$(query::queryCreaSezioniDaStudenti)"
+
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+              INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
+              $query "
+            ;;
             3)
-                echo "Visualizza dati delle sezioni ..."
+              echo "Visualizza dati delle sezioni ..."
 
-                query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
+              local query
+              query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
 
-                $SQLITE_CMD -header -table studenti.db " $query"
-                ;;
+              $SQLITE_CMD -header -table studenti.db " $query"
+            ;;
             4)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Esporto le sezioni in file CSV ..."
+              mkdir -p "$EXPORT_DIR_DATE"
+              echo "Esporto le sezioni in file CSV ..."
 
-                query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
-                
-                $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
-                ;;
+              local query
+              query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
+              
+              $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
+            ;;
             6)
               echo "Invia elenco classi ai coordinatori"
 
               echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
 
+              local query
               query=$(query::querySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )
 
                 while IFS="," read -r sezione_gsuite email_coordinatore; do
