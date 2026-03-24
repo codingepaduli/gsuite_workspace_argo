@@ -47,6 +47,10 @@ function query::defaultStudentsParam() {
   studentsParam[FILTER_ADDRESS_GSUITE_IN]=" '' "
   studentsParam[FLAG_CLASSES_IN]="$FLAG_OFF"
   studentsParam[FILTER_CLASSES_IN]=" '' "
+  studentsParam[FLAG_CLASSES_LIKE]="$FLAG_OFF"
+  studentsParam[FILTER_CLASSES_LIKE]=" "
+  studentsParam[FLAG_CLASSES_NOT_LIKE]="$FLAG_OFF"
+  studentsParam[FILTER_CLASSES_NOT_LIKE]=" "
   studentsParam[FLAG_SUPERVISORS_EXISTS]="$FLAG_OFF"
   studentsParam[FLAG_SUPERVISORS_NOT_EXISTS]="$FLAG_OFF"
 
@@ -101,6 +105,10 @@ function query::getQueryStudenti {
         addr_gsuite IN ( ${studentsParam[FILTER_ADDRESS_GSUITE_IN]} ) )
       AND (1=${studentsParam[FLAG_CLASSES_IN]} OR 
         sz.sezione_gsuite IN ( ${studentsParam[FILTER_CLASSES_IN]} ) )
+      AND (1=${studentsParam[FLAG_CLASSES_LIKE]} OR 
+        sz.sezione_gsuite LIKE '${studentsParam[FILTER_CLASSES_LIKE]}' )
+      AND (1=${studentsParam[FLAG_CLASSES_NOT_LIKE]} OR 
+        sz.sezione_gsuite NOT LIKE '${studentsParam[FILTER_CLASSES_NOT_LIKE]}' )
       AND (1=${studentsParam[FLAG_SUPERVISORS_EXISTS]} OR 
         ( sz.email_coordinatore IS NOT NULL AND LOWER( email_coordinatore) != '' ) )
       AND (1=${studentsParam[FLAG_SUPERVISORS_NOT_EXISTS]} OR 
@@ -146,7 +154,6 @@ function query::queryStudentiSenzaEmail {
   echo "$query"
 }
 
-
 function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   local queryParam
   
@@ -159,6 +166,50 @@ function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
   studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+
+  # clona mappa modificata
+  queryParam="$(declare -p studentsParam)"
+
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo {
+  local queryParam
+  
+  # clona mappa
+  queryParam="$(query::defaultStudentsParam)"
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_CLASSES_NOT_LIKE]="$FLAG_ON"
+  studentsParam[FILTER_CLASSES_NOT_LIKE]="%_sirio"
+
+  # clona mappa modificata
+  queryParam="$(declare -p studentsParam)"
+
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo {
+  local queryParam
+  
+  # clona mappa
+  queryParam="$(query::defaultStudentsParam)"
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_CLASSES_LIKE]="$FLAG_ON"
+  studentsParam[FILTER_CLASSES_LIKE]="%_sirio"
 
   # clona mappa modificata
   queryParam="$(declare -p studentsParam)"
@@ -197,7 +248,7 @@ function execDebug {
     echo "$param"
 
     local query
-    query="$(query::queryStudentiTutti )"
+    query="$(query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo )"
     echo "$query"
 
     $SQLITE_CMD -header -table studenti.db " $query"

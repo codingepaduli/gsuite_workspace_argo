@@ -181,28 +181,39 @@ main() {
               done
             ;;
             6)
-                echo "Creo i nuovi studenti su GSuite ..."
-                
-                # creo le mail del diurno
-                $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
-                FROM $TABELLA_STUDENTI 
-                WHERE sez NOT LIKE '%_sirio' 
-                    AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    ) 
-                ORDER BY cl, sez, cognome, nome;"
+              echo "Creo i nuovi studenti su GSuite ..."
 
-                # creo le mail del serale
-                $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
-                FROM $TABELLA_STUDENTI 
-                WHERE sez LIKE '%_sirio' 
-                    AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-                        AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    ) 
-                ORDER BY cl, sez, cognome, nome;"
-                ;;
+              local FIELDS="email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              local query
+              query="$(query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+              $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "$query"
+                
+              # creo le mail del diurno
+              # $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
+              # FROM $TABELLA_STUDENTI 
+              # WHERE sez NOT LIKE '%_sirio' 
+              #     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
+              #     AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+              #         AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+              #     ) 
+              # ORDER BY cl, sez, cognome, nome;"
+
+              local query
+              query="$(query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+              $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "$query"
+
+              # creo le mail del serale
+              # $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
+              # FROM $TABELLA_STUDENTI 
+              # WHERE sez LIKE '%_sirio' 
+              #     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
+              #     AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+              #         AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
+              #     ) 
+              # ORDER BY cl, sez, cognome, nome;"
+            ;;
             7)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
