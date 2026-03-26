@@ -8,9 +8,10 @@ FLAG_ON=0
 FLAG_OFF=1
 
 function query::defaultStudentsParam() {
-  declare -A studentsParam=()
+  local -A studentsParam=()
   studentsParam[FIELDS]=" * "
   studentsParam[ORDERING]=" UPPER(cod_fisc) "
+  studentsParam[TABLE]=" $TABELLA_STUDENTI "
   studentsParam[FLAG_COD_FISC_EXISTS]="$FLAG_OFF"
   studentsParam[FLAG_COD_FISC_NOT_EXISTS]="$FLAG_OFF"
 
@@ -64,7 +65,7 @@ function query::getQueryStudenti {
   
   echo "
     SELECT ${studentsParam[FIELDS]}
-    FROM $TABELLA_STUDENTI st 
+    FROM ${studentsParam[TABLE]} st 
       INNER JOIN $TABELLA_SEZIONI sz  
       ON st.sez = sz.sez_argo AND st.cl =sz.cl 
     WHERE 1=1 
@@ -119,9 +120,10 @@ function query::getQueryStudenti {
 
 function query::queryStudentiTutti {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -129,17 +131,61 @@ function query::queryStudentiTutti {
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
 
   # clona mappa modificata
-  queryParam="$(declare -p studentsParam)"
+  queryParam="$(declare -p "studentsParam")"
 
+  local query
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiPrecedentiTutti {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[TABLE]=" $TABELLA_STUDENTI_PRECEDENTE "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiTabellaSeraleTutti {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[TABLE]=" $TABELLA_STUDENTI_SERALE "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
 
 function query::queryStudentiSenzaEmail {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -148,17 +194,19 @@ function query::queryStudentiSenzaEmail {
   studentsParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]="$FLAG_ON"
 
   # clona mappa modificata
-  queryParam="$(declare -p studentsParam)"
+  queryParam="$(declare -p "studentsParam")"
 
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
 
 function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -166,19 +214,23 @@ function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
   studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
   # clona mappa modificata
-  queryParam="$(declare -p studentsParam)"
+  queryParam="$(declare -p "studentsParam")"
 
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
 
 function query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -188,19 +240,23 @@ function query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo {
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_CLASSES_NOT_LIKE]="$FLAG_ON"
   studentsParam[FILTER_CLASSES_NOT_LIKE]="%_sirio"
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
   # clona mappa modificata
-  queryParam="$(declare -p studentsParam)"
+  queryParam="$(declare -p "studentsParam")"
 
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
 
 function query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -210,19 +266,23 @@ function query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo {
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_CLASSES_LIKE]="$FLAG_ON"
   studentsParam[FILTER_CLASSES_LIKE]="%_sirio"
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
   # clona mappa modificata
-  queryParam="$(declare -p studentsParam)"
+  queryParam="$(declare -p "studentsParam")"
 
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
 
 function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
   local queryParam
+  queryParam="$(query::defaultStudentsParam)"
   
   # clona mappa
-  queryParam="$(query::defaultStudentsParam)"
+  local -A studentsParam=()
   eval "$queryParam"
 
   # modifica mappa
@@ -232,10 +292,36 @@ function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_YEARS_IN]="$FLAG_ON"
   studentsParam[FILTER_YEARS_IN]=" '$3' "
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]="s."
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
 
+  local query
+  query=$(query::getQueryStudenti "$queryParam")
+  echo "$query"
+}
+
+function query::queryStudentiCancellatiInPeriodo {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_CANCELLATO_IL]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
   query=$(query::getQueryStudenti "$queryParam")
   echo "$query"
 }
@@ -243,12 +329,10 @@ function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
 # Esempio di come chiamare la funzione
 function execDebug {
   if log::level_is_active "DEBUG"; then
-    local param
-    param="$(query::defaultStudentsParam)"
-    echo "$param"
+    _="$(query::defaultStudentsParam)"
 
     local query
-    query="$(query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo )"
+    query="$(query::queryStudentiCancellatiInPeriodo )"
     echo "$query"
 
     $SQLITE_CMD -header -table studenti.db " $query"

@@ -217,18 +217,26 @@ main() {
             7)
                 mkdir -p "$EXPORT_DIR_DATE"
                 echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
+
+              local FIELDS="LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, sz.cl, sz.sez_argo"
+              local ORDERING=" UPPER(cod_fisc) "
+              local query
+              query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
+              
+              local queryStudentiPrecedenti
+              queryStudentiPrecedenti="$(query::queryStudentiPrecedentiTutti "$FIELDS" "$ORDERING" )"
                 
                 echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
                 echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
                 echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
                 # Tabella CF corrente
-                while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+              while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
 
                     # Aggiungo il CF negli script
                     echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, cl, sez FROM $TABELLA_STUDENTI ORDER BY UPPER(cod_fisc)" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
                 # Tabella CF precedente
                 while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
@@ -236,34 +244,28 @@ main() {
                     # Aggiungo il CF negli script
                     echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "select LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, cl, sez FROM $TABELLA_STUDENTI_PRECEDENTE ORDER BY UPPER(cod_fisc)" | sed "s/\"//g")
-                ;;
+              done < <($SQLITE_CMD -csv studenti.db "$queryStudentiPrecedenti" | sed "s/\"//g")
+            ;;
             8)
-                echo "Sospendi account studenti ..."
+              echo "Sospendi account studenti ..."
 
-                $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "
-                SELECT s.email_gsuite 
-                FROM $TABELLA_STUDENTI s 
-                WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != '')
-                    AND (datar IS NOT NULL AND TRIM(datar) != ''
-                        AND datar BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    )
-                ORDER BY s.cl, s.sez, s.cognome, s.nome;"
-                ;;
+              local FIELDS="LOWER(email_gsuite)"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+              local query
+              query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+
+              $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$query"
+            ;;
             9)
-                echo "Cancella account studenti ..."
+              echo "Cancella account studenti ..."
 
-                $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
-                SELECT s.email_gsuite 
-                FROM $TABELLA_STUDENTI s 
-                WHERE (s.email_gsuite is NOT NULL OR TRIM(s.email_gsuite) != '')
-                    AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != '')
-                    AND (datar IS NOT NULL AND TRIM(datar) != ''
-                        AND datar BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    )
-                ORDER BY s.cl, s.sez, s.cognome, s.nome;"
-                ;;
+              local FIELDS="LOWER(email_gsuite)"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+              local query
+              query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+
+              $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
+            ;;
             10)
               echo "Sposta script studenti_CF.sh relativo alla tabella precedente in root"
               cp "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_STUDENTI.sh" 
@@ -319,18 +321,18 @@ main() {
                 WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
                 ;;
             14)
-                echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
-                
-                # Copio i dati del serale nella tabella del diurno
-                # unificando i dati ed il processo di gestione
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI (cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il)
-                  SELECT cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il
-                  FROM $TABELLA_STUDENTI_SERALE AS ss
-                  WHERE UPPER(ss.cod_fisc) NOT IN (
-                    SELECT UPPER(s.cod_fisc) FROM $TABELLA_STUDENTI AS s
-                  );"
+              echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
 
-                ;;
+              local FIELDS="cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              local query
+              query="$(query::queryStudentiTabellaSeraleTutti "$FIELDS" "$ORDERING" )"
+                
+              # Copio i dati del serale nella tabella del diurno
+              # unificando i dati ed il processo di gestione
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS ) $query"
+            ;;
             16)
                 echo "Controllo i dati"
                 
