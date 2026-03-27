@@ -32,7 +32,8 @@ show_menu() {
     echo "13. Importo e normalizzo i dati del SERALE"
     echo "14. Copio i dati del SERALE nella tabella del DIURNO, unificando la gestione"
     echo "15. "
-    echo "16. Controlla dati (codice fiscale ed email gSuite duplicate)"
+    echo "16. Controlla codici fiscali duplicati"
+    echo "17. Controlla email gsuite duplicate"
     echo "20. Esci"
 }
 
@@ -334,44 +335,53 @@ main() {
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS ) $query"
             ;;
             16)
-                echo "Controllo i dati"
-                
-                echo "codici fiscali duplicati:"
-                
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
-                  SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
-                  FROM $TABELLA_STUDENTI
-                  WHERE UPPER(cod_fisc) IN (
-                      SELECT UPPER(cod_fisc)
-                      FROM $TABELLA_STUDENTI
-                      GROUP BY UPPER(cod_fisc)
-                      HAVING COUNT(*) > 1
-                  );"
-                
-                echo "codici fiscali duplicati col serale:"
+              echo "Controllo eventuali codici fiscali duplicati:"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
-                  SELECT ss.cod_fisc, ss.cognome, ss.nome, ss.cl, ss.sez, s.cl, s.sez 
-                  FROM $TABELLA_STUDENTI_SERALE ss 
-                  INNER JOIN $TABELLA_STUDENTI s 
-                    ON UPPER(ss.cod_fisc) = UPPER(s.cod_fisc)
-                  WHERE ss.sez != s.sez;"
+              local query
+              query="$(query::cfStudentiDuplicati )"
 
-                echo "email GSuite duplicate:"
-                
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
-                  SELECT cod_fisc, cognome, nome, cl, sez, datan, matricola, codicesidi, ritira, datar, email_gsuite
-                  FROM $TABELLA_STUDENTI
-                  WHERE (email_gsuite is NOT NULL AND TRIM(email_gsuite) != '')
-                      AND LOWER(email_gsuite) IN (
-                          SELECT LOWER(email_gsuite)
-                          FROM $TABELLA_STUDENTI
-                          WHERE (email_gsuite is NOT NULL AND TRIM(email_gsuite) != '')
-                          GROUP BY LOWER(email_gsuite)
-                          HAVING COUNT(*) > 1
-                  );"
-                ;;
+              ## Salvo in un array i CF risultanti della query
+              local -a cfArray
+              readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
 
+              ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
+              local COD_FISC_IN
+              printf -v COD_FISC_IN "'%s', " "${cfArray[@]}"
+
+              ## Tolgo l'ultima virgola e l'ultimo spazio ", "
+              COD_FISC_IN=${COD_FISC_IN%, }
+
+              local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              query="$(query::studentiByCF "$FIELDS" "$ORDERING" "$COD_FISC_IN")"
+              $SQLITE_CMD studenti.db -header -table "$query"
+            ;;
+            17)
+              echo "Controllo eventuali email GSuite duplicate:"
+              
+              local query
+              query="$(query::emailStudentiDuplicati )"
+
+              ## Salvo in un array le email risultanti della query
+              local -a emailArray
+              readarray -t emailArray < <($SQLITE_CMD studenti.db -csv "$query" )
+
+              ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
+              local EMAIL_GSUITE_IN
+              printf -v EMAIL_GSUITE_IN "'%s', " "${emailArray[@]}"
+
+              ## Tolgo l'ultima virgola e l'ultimo spazio ", "
+              EMAIL_GSUITE_IN=${EMAIL_GSUITE_IN%, }
+
+              local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar, email_gsuite"
+              local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+              query="$(query::studentiByEmailGSuite "$FIELDS" "$ORDERING" "$EMAIL_GSUITE_IN")"
+
+              echo "$query"
+              $SQLITE_CMD studenti.db -header -table "$query"
+            ;;
             20)
                 echo "Arrivederci!"
                 exit 0

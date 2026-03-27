@@ -12,8 +12,11 @@ function query::defaultStudentsParam() {
   studentsParam[FIELDS]=" * "
   studentsParam[ORDERING]=" UPPER(cod_fisc) "
   studentsParam[TABLE]=" $TABELLA_STUDENTI "
+
   studentsParam[FLAG_COD_FISC_EXISTS]="$FLAG_OFF"
   studentsParam[FLAG_COD_FISC_NOT_EXISTS]="$FLAG_OFF"
+  studentsParam[FLAG_COD_FISC_IN]="$FLAG_OFF"
+  studentsParam[FILTER_COD_FISC_IN]=" '' "
 
   studentsParam[FLAG_MATRICOLA_EXISTS]="$FLAG_OFF"
   studentsParam[FLAG_MATRICOLA_NOT_EXISTS]="$FLAG_OFF"
@@ -35,6 +38,8 @@ function query::defaultStudentsParam() {
 
   studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_OFF"
   studentsParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]="$FLAG_OFF"
+  studentsParam[FLAG_EMAIL_GSUITE_IN]="$FLAG_OFF"
+  studentsParam[FILTER_EMAIL_GSUITE_IN]=" '' "
 
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_OFF"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" '' "
@@ -73,6 +78,8 @@ function query::getQueryStudenti {
         ( cod_fisc IS NOT NULL AND LOWER(cod_fisc) != '' ) )
       AND (1=${studentsParam[FLAG_COD_FISC_NOT_EXISTS]} OR 
         ( cod_fisc IS NULL OR LOWER(cod_fisc) = '' ) )
+      AND (1=${studentsParam[FLAG_COD_FISC_IN]} OR 
+        UPPER(cod_fisc) IN ( ${studentsParam[FILTER_COD_FISC_IN]} ) )
       AND (1=${studentsParam[FLAG_MATRICOLA_EXISTS]} OR 
         ( matricola IS NOT NULL AND LOWER(matricola) != '' ) )
       AND (1=${studentsParam[FLAG_MATRICOLA_NOT_EXISTS]} OR 
@@ -85,6 +92,8 @@ function query::getQueryStudenti {
         ( email_gsuite IS NOT NULL AND LOWER(email_gsuite) != '' ) )
       AND (1=${studentsParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]} OR 
         ( email_gsuite IS NULL OR LOWER(email_gsuite) = '' ) )
+      AND (1=${studentsParam[FLAG_EMAIL_GSUITE_IN]} OR 
+        LOWER(email_gsuite) IN ( ${studentsParam[FILTER_EMAIL_GSUITE_IN]} ) )
       AND (1=${studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]} OR 
         LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) 
           IN ( ${studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]} ))
@@ -114,8 +123,9 @@ function query::getQueryStudenti {
         ( sz.email_coordinatore IS NOT NULL AND LOWER( email_coordinatore) != '' ) )
       AND (1=${studentsParam[FLAG_SUPERVISORS_NOT_EXISTS]} OR 
         ( sz.email_coordinatore IS NULL OR LOWER(email_coordinatore) = '' ) )
-    ORDER BY ${studentsParam[ORDERING]} ASC;
+    ORDER BY ${studentsParam[ORDERING]} ASC
   " 
+  # echo "-- $queryParam"
 }
 
 function query::queryStudentiTutti {
@@ -317,6 +327,111 @@ function query::queryStudentiCancellatiInPeriodo {
   studentsParam[FLAG_CANCELLATO_IL]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
+function query::cfStudentiDuplicati {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="UPPER(cod_fisc) AS cod_fisc"
+  studentsParam[ORDERING]="UPPER(cod_fisc)"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+
+  query="
+  SELECT DISTINCT UPPER(cod_fisc)
+  FROM (
+    $query
+  ) 
+  GROUP BY UPPER(cod_fisc)
+  HAVING COUNT(*) > 1
+  "
+
+  echo "$query"
+}
+
+function query::emailStudentiDuplicati {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="LOWER(email_gsuite) AS email_gsuite"
+  studentsParam[ORDERING]="LOWER(email_gsuite)"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+
+  query="
+  SELECT DISTINCT LOWER(email_gsuite)
+  FROM (
+    $query
+  ) 
+  GROUP BY LOWER(email_gsuite)
+  HAVING COUNT(*) > 1
+  "
+
+  echo "$query"
+}
+
+function query::studentiByCF {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_COD_FISC_IN]="$FLAG_ON"
+  studentsParam[FILTER_COD_FISC_IN]=" $3 "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
+function query::studentiByEmailGSuite {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_EMAIL_GSUITE_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_IN]=" $3 "
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
