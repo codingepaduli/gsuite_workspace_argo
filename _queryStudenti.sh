@@ -134,7 +134,7 @@ function query::queryStudentiTutti {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -155,7 +155,7 @@ function query::queryStudentiPrecedentiTutti {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -176,7 +176,7 @@ function query::queryStudentiTabellaSeraleTutti {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -197,7 +197,7 @@ function query::queryStudentiSenzaEmail {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -221,7 +221,7 @@ function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -247,7 +247,7 @@ function query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -273,7 +273,7 @@ function query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -299,7 +299,7 @@ function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 
@@ -322,7 +322,7 @@ function query::queryStudentiCancellatiInPeriodo {
   queryParam="$(declare -p "studentsParam")"
 
   local query
-  query=$(query::getQueryStudenti "$queryParam")
+  query="$(query::getQueryStudenti "$queryParam")"
   echo "$query"
 }
 

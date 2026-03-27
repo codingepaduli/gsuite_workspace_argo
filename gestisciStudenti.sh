@@ -66,8 +66,8 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
 
-                birthdayDateFormat=$(getDateFormat 'datan')
-                cancelledDateFormat=$(getDateFormat 'datar')
+                birthdayDateFormat="$(getDateFormat 'datan')"
+                cancelledDateFormat="$(getDateFormat 'datar')"
 
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
@@ -293,8 +293,8 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
-                birthdayDateFormat=$(getDateFormat 'datan')
-                cancelledDateFormat=$(getDateFormat 'datar')
+                birthdayDateFormat="$(getDateFormat 'datan')"
+                cancelledDateFormat="$(getDateFormat 'datar')"
 
                 # Normalizza dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
