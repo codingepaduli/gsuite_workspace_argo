@@ -146,34 +146,14 @@ main() {
               local query
               query="$(query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
               $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "$query"
-                
-              # creo le mail del diurno
-              # $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
-              # FROM $TABELLA_STUDENTI 
-              # WHERE sez NOT LIKE '%_sirio' 
-              #     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
-              #     AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-              #         AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-              #     ) 
-              # ORDER BY cl, sez, cognome, nome;"
-
+              
               local query
               query="$(query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
               $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "$query"
-
-              # creo le mail del serale
-              # $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "SELECT email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'
-              # FROM $TABELLA_STUDENTI 
-              # WHERE sez LIKE '%_sirio' 
-              #     AND (email_gsuite is NOT NULL OR TRIM(email_gsuite) != '')
-              #     AND (aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-              #         AND aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-              #     ) 
-              # ORDER BY cl, sez, cognome, nome;"
             ;;
             7)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
+              mkdir -p "$EXPORT_DIR_DATE"
+              echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
 
               local FIELDS="LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, sz.cl, sz.sez_argo"
               local ORDERING=" UPPER(cod_fisc) "
@@ -183,24 +163,20 @@ main() {
               local queryStudentiPrecedenti
               queryStudentiPrecedenti="$(query::queryStudentiPrecedentiTutti "$FIELDS" "$ORDERING" )"
                 
-                echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
-                echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
-                echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+              echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+              echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+              echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
-                # Tabella CF corrente
+              # Tabella CF corrente
               while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+                # Aggiungo il CF negli script
+                echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
+              done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
-                    # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
-
-                done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
-
-                # Tabella CF precedente
-                while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
-
-                    # Aggiungo il CF negli script
-                    echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
-
+              # Tabella CF precedente
+              while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+                # Aggiungo il CF negli script
+                echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
               done < <($SQLITE_CMD -csv studenti.db "$queryStudentiPrecedenti" | sed "s/\"//g")
             ;;
             8)
@@ -328,19 +304,16 @@ main() {
 
               query="$(query::studentiByEmailGSuite "$FIELDS" "$ORDERING" "$EMAIL_GSUITE_IN")"
 
-
-              echo "$query"
-
               $SQLITE_CMD studenti.db -header -table "$query"
             ;;
             20)
-                echo "Arrivederci!"
-                exit 0
-                ;;
+              echo "Arrivederci!"
+              exit 0
+            ;;
             *)
-                echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
-                sleep 1
-                ;;
+              echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
+              sleep 1
+            ;;
         esac
 }
 
