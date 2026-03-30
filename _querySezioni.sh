@@ -22,7 +22,7 @@ function query::defaultSectionParam() {
   sectionParam[FLAG_SUPERVISORS_EXISTS]="$FLAG_OFF"
   sectionParam[FLAG_SUPERVISORS_NOT_EXISTS]="$FLAG_OFF"
 
-  declare -p sectionParam
+  declare -p "sectionParam"
 }
 
 function query::getQuerySezioni {

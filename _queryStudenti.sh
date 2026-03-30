@@ -215,6 +215,9 @@ function query::defaultStudentsParam() {
 function query::getQueryStudenti {
   local queryParam
   queryParam="${1}"
+
+  # clona mappa
+  local -A studentsParam=()
   eval "${queryParam}"
   
   echo "
