@@ -66,11 +66,13 @@ main() {
       1)
         local CREATE_SCRIPT_CF_STUDENTS=7
         local MOVE_SCRIPT_OLD_STUDENTS=10
-        local CHECK_STUDENTS=16
+        local CHECK_STUDENTS_CF=16
+        local CHECK_STUDENTS_GSUITE=17
 
         ./gestisciStudenti.sh "$CREATE_SCRIPT_CF_STUDENTS"
         ./gestisciStudenti.sh "$MOVE_SCRIPT_OLD_STUDENTS"
-        ./gestisciStudenti.sh "$CHECK_STUDENTS"
+        ./gestisciStudenti.sh "$CHECK_STUDENTS_CF"
+        ./gestisciStudenti.sh "$CHECK_STUDENTS_GSUITE"
       ;;
       2)
         echo "Creo le email e i relativi account su GSuite, li esporto in CSV"

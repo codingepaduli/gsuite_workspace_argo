@@ -7,6 +7,155 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
+function query::dropTableIfExists() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    DROP TABLE IF EXISTS '$TABLE';
+  "
+}
+
+function query::createTableIfNotExists() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    CREATE TABLE IF NOT EXISTS '$TABLE' ( 
+      cognome VARCHAR(200) NOT NULL, 
+      nome VARCHAR(200) NOT NULL, 
+      cod_fisc VARCHAR(200) NOT NULL, 
+      cl NUMERIC NOT NULL, 
+      sez VARCHAR(200) NOT NULL, 
+      e_mail VARCHAR(200),
+      email_pa VARCHAR(200),
+      email_ma VARCHAR(200),
+      email_gen VARCHAR(200),
+      matricola VARCHAR(200),
+      codicesidi VARCHAR(200),
+      datan TEXT,
+      ritira VARCHAR(200),
+      datar TEXT,
+      email_gsuite VARCHAR(200) DEFAULT NULL,
+      aggiunto_il TEXT DEFAULT NULL,
+      CHECK (
+        length(datan)=10
+        AND substr(datan,3,1)='/'
+        AND substr(datan,6,1)='/'
+        AND substr(datan,1,2) GLOB '[0-9][0-9]'
+        AND substr(datan,4,2) GLOB '[0-9][0-9]'
+        AND substr(datan,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+      ),
+      CHECK (
+        datar IS NULL
+        OR datar = ''
+        OR (
+          length(datar)=10
+          AND substr(datar,3,1)='/'
+          AND substr(datar,6,1)='/'
+          AND substr(datar,1,2) GLOB '[0-9][0-9]'
+          AND substr(datar,4,2) GLOB '[0-9][0-9]'
+          AND substr(datar,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        )
+      )
+    );
+  "
+}
+
+function query::normalizeFields() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  local birthdayDateFormat
+  birthdayDateFormat="$(getDateFormat 'datan')"
+  echo "
+    UPDATE $TABLE 
+    SET cod_fisc = TRIM(UPPER(cod_fisc)),
+      email_gsuite = TRIM(LOWER(email_gsuite)),
+      cognome = TRIM(UPPER(cognome)),
+      nome = TRIM(UPPER(nome)),
+      sez = TRIM(sez),
+      datan = date($birthdayDateFormat);
+  "
+}
+
+function query::normalizeRetiredDate() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  local cancelledDateFormat
+  cancelledDateFormat="$(getDateFormat 'datar')"
+  echo "
+    UPDATE $TABLE 
+    SET datar = date($cancelledDateFormat)
+    WHERE datar IS NOT NULL AND TRIM(datar) != '';
+  "
+}
+
+function query::normalizeEmailGSuite() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    UPDATE $TABLE 
+    SET email_gsuite=''
+    WHERE email_gsuite IS NULL OR TRIM(email_gsuite) = '';
+  "
+}
+
+function query::normalizeInsertDate() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    UPDATE $TABLE 
+    SET aggiunto_il=''
+    WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';
+  "
+}
+
+function query::normalizeSirioSection() {
+  echo "
+    UPDATE $TABELLA_STUDENTI_SERALE 
+    SET sez = TRIM(sez) || '_sirio';
+  "
+}
+
+function query::createEmailDiurno() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    UPDATE $TABLE 
+    SET email_gsuite = 
+    CASE
+      WHEN cl = 1 THEN 's.' 
+      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+      || '.' || matricola || '@$DOMAIN'
+      WHEN cl = 2 THEN 's.' 
+      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+      || '.' || matricola || '@$DOMAIN'
+      WHEN cl = 3 THEN 's.' 
+      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+      || '@$DOMAIN'
+      ELSE 's.' 
+      || REPLACE(REPLACE(nome, '''',''), ' ', '') 
+      || '.' || REPLACE(REPLACE(cognome, '''', ''), ' ', '') 
+      || '@$DOMAIN'
+    END,
+        aggiunto_il = '$CURRENT_DATE'
+    WHERE sez NOT LIKE '%_sirio' 
+        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
+        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+        AND (datar IS NULL OR TRIM(datar) = '');
+  "
+}
+
+function query::createEmailSirio() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    UPDATE $TABLE
+    SET email_gsuite = 's.' 
+        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+        || '.' || matricola || '@$DOMAIN',
+      aggiunto_il = '$CURRENT_DATE'
+    WHERE sez LIKE '%_sirio' 
+        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+        AND (datar IS NULL OR TRIM(datar) = '');
+  "
+}
+
 function query::defaultStudentsParam() {
   local -A studentsParam=()
   studentsParam[FIELDS]=" * "
@@ -447,7 +596,7 @@ function execDebug {
     _="$(query::defaultStudentsParam)"
 
     local query
-    query="$(query::queryStudentiCancellatiInPeriodo )"
+    query="$(query::dropTableIfExists )"
     echo "$query"
 
     $SQLITE_CMD -header -table studenti.db " $query"

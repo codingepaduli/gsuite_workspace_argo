@@ -50,65 +50,52 @@ main() {
         
         case $choice in
             0)
-                echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI ..."
+              echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI ..."
                 
-                # Cancello la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI';"
+              # Cancello la tabella
+              query="$(query::dropTableIfExists )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar TEXT, email_gsuite VARCHAR(200) DEFAULT NULL, aggiunto_il TEXT DEFAULT NULL);"
-                ;;
+              # Creo la tabella
+              query="$(query::createTableIfNotExists )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             1)
-                echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
-                # Importa CSV dati
-                # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI" "$FILE_CSV_STUDENTI" --csv --empty-null
+              echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
 
-                $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
+              $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
-
-                birthdayDateFormat="$(getDateFormat 'datan')"
-                cancelledDateFormat="$(getDateFormat 'datar')"
-
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
-                SET cod_fisc = TRIM(UPPER(cod_fisc)),
-                    email_gsuite = TRIM(LOWER(email_gsuite)),
-                    cognome = TRIM(UPPER(cognome)),
-                    nome = TRIM(UPPER(nome)),
-                    sez = TRIM(sez),
-                    datan = date($birthdayDateFormat);"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
+              
+              # Normalizza dati
+              query="$(query::normalizeFields )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
                 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
-                SET datar = date($cancelledDateFormat)
-                WHERE datar IS NOT NULL AND TRIM(datar) != '';"
+              # # Normalizza dati
+              query="$(query::normalizeRetiredDate )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
-                SET email_gsuite=''
-                WHERE email_gsuite IS NULL OR TRIM(email_gsuite) = '';"
+              # # Normalizza dati
+              query="$(query::normalizeEmailGSuite )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI 
-                SET aggiunto_il=''
-                WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
-                ;;
+              # # Normalizza dati
+              query="$(query::normalizeInsertDate )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             2)
               echo "Visualizza dati in tabella ..."
 
               local FIELDS="sz.sezione_gsuite, cognome || ' ' || nome AS nome, email_gsuite"
               local ORDERING="sz.sezione_gsuite"
-              local query
               query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
 
-              $SQLITE_CMD -header -table studenti.db " $query"
+              $SQLITE_CMD -header -table studenti.db "$query"
             ;;
             3)
               local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, aggiunto_il, datar AS data_ritiro, matricola, email_gsuite"
               local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-              local query
               query="$(query::queryStudentiSenzaEmail "$FIELDS" "$ORDERING" )"
               $SQLITE_CMD studenti.db -header -table "$query"
 
@@ -118,47 +105,16 @@ main() {
               $SQLITE_CMD studenti.db -header -table "$query"
             ;;
             4)
-                echo "Creo la mail ai nuovi studenti ..."
+              echo "Creo la mail ai nuovi studenti ..."
                 
-                # creo le mail del diurno
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
-                    SET email_gsuite = 
-                    CASE
-                        WHEN cl = 1 THEN 's.' 
-                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-                        || '.' || matricola || '@$DOMAIN'
-                        WHEN cl = 2 THEN 's.' 
-                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-                        || '.' || matricola || '@$DOMAIN'
-                        WHEN cl = 3 THEN 's.' 
-                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-                        || '@$DOMAIN'
-                        ELSE 's.' 
-                        || REPLACE(REPLACE(nome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(cognome, '''', ''), ' ', '') 
-                        || '@$DOMAIN'
-                    END,
-                        aggiunto_il = '$CURRENT_DATE'
-                    WHERE sez NOT LIKE '%_sirio' 
-                        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
-                        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
-                        AND (datar IS NULL OR TRIM(datar) = '');"
+              # creo le mail del diurno
+              query="$(query::createEmailDiurno )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # creo le mail del serale
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI
-                    SET email_gsuite = 's.' 
-                        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-                        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-                        || '.' || matricola || '@$DOMAIN',
-                      aggiunto_il = '$CURRENT_DATE'
-                    WHERE sez LIKE '%_sirio' 
-                        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-                        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
-                        AND (datar IS NULL OR TRIM(datar) = '');"
-                ;;
+              # creo le mail del serale
+              query="$(query::createEmailSirio )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             5)
               mkdir -p "$EXPORT_DIR_DATE"
               echo "Esporto i nuovi studenti in file CSV ..."
@@ -277,62 +233,55 @@ main() {
               "$BASE_DIR/$TABELLA_STUDENTI.sh"
             ;;
             12)
-                echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
+              echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
                 
-                # Cancello la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_STUDENTI_SERALE';"
+              # Cancello la tabella
+              query="$(query::dropTableIfExists "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Creo la tabella
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_STUDENTI_SERALE' ( cognome VARCHAR(200) NOT NULL, nome VARCHAR(200) NOT NULL, cod_fisc VARCHAR(200) NOT NULL, cl NUMERIC NOT NULL, sez VARCHAR(200) NOT NULL, e_mail VARCHAR(200), email_pa VARCHAR(200), email_ma VARCHAR(200), email_gen VARCHAR(200), matricola VARCHAR(200), codicesidi VARCHAR(200), datan TEXT, ritira VARCHAR(200), datar VARCHAR(200), email_gsuite VARCHAR(200) DEFAULT NULL, aggiunto_il TEXT DEFAULT NULL);"
-                ;;
+              # Creo la tabella
+              query="$(query::createTableIfNotExists "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             13)
-                echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI_SERALE ..."
-                # Importa CSV dati
-                # $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_STUDENTI_SERALE" "$FILE_CSV_STUDENTI_SERALE" --csv --empty-null
+              echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI_SERALE ..."
 
-                $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
+              $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
-                birthdayDateFormat="$(getDateFormat 'datan')"
-                cancelledDateFormat="$(getDateFormat 'datar')"
+              # Normalizza dati
+              query="$(query::normalizeFields "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
-                SET cod_fisc = TRIM(UPPER(cod_fisc)),
-                    email_gsuite = TRIM(LOWER(email_gsuite)),
-                    cognome = TRIM(UPPER(cognome)),
-                    nome = TRIM(UPPER(nome)),
-                    sez = TRIM(sez) || '_sirio',
-                    datan = date($birthdayDateFormat);"
+              # sezione = '%_sirio'
+              query="$(query::normalizeSirioSection )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
-                SET datar = date($cancelledDateFormat)
-                WHERE datar is NOT NULL AND TRIM(datar) != '';"
+              # Normalizza data ritiro
+              query="$(query::normalizeRetiredDate "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
-                SET email_gsuite=''
-                WHERE email_gsuite IS NULL OR TRIM(email_gsuite) = '';"
-
-                # Normalizza dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_STUDENTI_SERALE 
-                SET aggiunto_il=''
-                WHERE aggiunto_il IS NULL OR TRIM(aggiunto_il) = '';"
-                ;;
+              # Normalizza email gsuite
+              query="$(query::normalizeEmailGSuite "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            
+              # Normalizza data inserimento
+              query="$(query::normalizeInsertDate "$TABELLA_STUDENTI_SERALE" )"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             14)
               echo "Copio i dati dalla tabella $TABELLA_STUDENTI_SERALE nella tabella $TABELLA_STUDENTI ..."
 
-              local FIELDS="cognome, nome, cod_fisc, cl, sez, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
+              local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
               local ORDERING="sz.sezione_gsuite, cognome, nome"
 
               local query
-              query="$(query::queryStudentiTabellaSeraleTutti "$FIELDS" "$ORDERING" )"
+              query="$(query::queryStudentiTabellaSeraleTutti "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" )"
                 
               # Copio i dati del serale nella tabella del diurno
               # unificando i dati ed il processo di gestione
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS ) $query"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query"
             ;;
             16)
               echo "Controllo eventuali codici fiscali duplicati:"
@@ -372,14 +321,16 @@ main() {
               printf -v EMAIL_GSUITE_IN "'%s', " "${emailArray[@]}"
 
               ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-              EMAIL_GSUITE_IN=${EMAIL_GSUITE_IN%, }
+              EMAIL_GSUITE_IN="${EMAIL_GSUITE_IN%, }"
 
               local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar, email_gsuite"
               local ORDERING="sz.sezione_gsuite, cognome, nome"
 
               query="$(query::studentiByEmailGSuite "$FIELDS" "$ORDERING" "$EMAIL_GSUITE_IN")"
 
+
               echo "$query"
+
               $SQLITE_CMD studenti.db -header -table "$query"
             ;;
             20)
