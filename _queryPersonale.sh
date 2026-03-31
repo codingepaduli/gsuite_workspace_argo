@@ -12,11 +12,14 @@ function query::defaultEmployeesParam() {
 
   employeesParam[FIELDS]=" * "
   employeesParam[ORDERING]=" email_gsuite "
+  employeesParam[TABLE]=" $TABELLA_PERSONALE "
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_OFF"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" '' "
 
   employeesParam[FLAG_CODICE_FISCALE_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_CODICE_FISCALE_NOT_EXISTS]="$FLAG_OFF"
+  employeesParam[FLAG_CODICE_FISCALE_NOT_IN]="$FLAG_OFF"
+  employeesParam[FILTER_CODICE_FISCALE_NOT_IN]="$FLAG_OFF"
 
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_EMAIL_PERSONALE_NOT_EXISTS]="$FLAG_OFF"
@@ -48,23 +51,6 @@ function query::defaultEmployeesParam() {
   declare -p "employeesParam"
 }
 
-function query::defaultOldEmployeesParam() {
-  local -A oldEmployeesParam=()
-
-  oldEmployeesParam[FIELDS]=" * "
-  oldEmployeesParam[ORDERING]=" email_gsuite "
-  oldEmployeesParam[FLAG_CODICE_FISCALE_EXISTS]="$FLAG_OFF"
-  oldEmployeesParam[FLAG_CODICE_FISCALE_NOT_EXISTS]="$FLAG_OFF"
-  oldEmployeesParam[FLAG_CODICE_FISCALE_NOT_IN]="$FLAG_OFF"
-  oldEmployeesParam[FILTER_CODICE_FISCALE_NOT_IN]=" '' "
-  oldEmployeesParam[FLAG_NON_CANCELLATO]="$FLAG_OFF"
-  oldEmployeesParam[FLAG_CANCELLATO_IL]="$FLAG_OFF"
-  oldEmployeesParam[FILTER_CANCELLATO_IL_MIN]=" '$PERIODO_PERSONALE_DA' "
-  oldEmployeesParam[FILTER_CANCELLATO_IL_MAX]=" '$PERIODO_PERSONALE_A' "
-
-  declare -p oldEmployeesParam
-}
-
 function query::getQueryEmployees {
   local queryParam
   queryParam="$1"
@@ -83,6 +69,8 @@ function query::getQueryEmployees {
         (codice_fiscale IS NOT NULL AND LOWER(codice_fiscale) != '' ))
       AND (1=${employeesParam[FLAG_CODICE_FISCALE_NOT_EXISTS]} OR 
         (codice_fiscale IS NULL OR LOWER(codice_fiscale) = '' ))
+      AND (1=${employeesParam[FLAG_CODICE_FISCALE_NOT_IN]} OR 
+        (LOWER(codice_fiscale) NOT IN ( ${employeesParam[FILTER_CODICE_FISCALE_NOT_IN]} )))
       AND (1=${employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]} OR 
         (email_personale IS NOT NULL AND LOWER(email_personale) != '' ))
       AND (1=${employeesParam[FLAG_EMAIL_PERSONALE_NOT_EXISTS]} OR 
@@ -119,47 +107,29 @@ function query::getQueryEmployees {
   "
 }
 
-function query::getQueryOldEmployees {
-  local oldEmployeesParam
-
-  # clona mappa modificata
-  oldEmployeesParam="$1"
-  eval "${oldEmployeesParam}"
-
-  echo "
-    SELECT ${oldEmployeesParam[FIELDS]}
-    FROM $TABELLA_PERSONALE_PRECEDENTE
-    WHERE 1=1 
-      AND (1=${oldEmployeesParam[FLAG_CODICE_FISCALE_EXISTS]} OR 
-        (codice_fiscale IS NOT NULL AND LOWER(codice_fiscale) != '' ))
-      AND (1=${oldEmployeesParam[FLAG_CODICE_FISCALE_NOT_EXISTS]} OR 
-        (codice_fiscale IS NULL OR LOWER(codice_fiscale) = '' ))
-      AND (1=${oldEmployeesParam[FLAG_CODICE_FISCALE_NOT_IN]} OR 
-        (LOWER(codice_fiscale) NOT IN ( ${oldEmployeesParam[FILTER_CODICE_FISCALE_NOT_IN]} )))
-    ORDER BY ${oldEmployeesParam[ORDERING]} ASC;
-  "
-}
-
 function query::getQueryOldEmployeesCfNotIn {
-  local oldEmployeesParam
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
 
   # clona mappa
-  oldEmployeesParam="$(query::defaultOldEmployeesParam)"
-  eval "${oldEmployeesParam}"
+  local -A employeesParam=()
+  eval "${queryParam}"
 
   # modifica mappa
-  oldEmployeesParam[FIELDS]="${1:-${oldEmployeesParam[FIELDS]}}"
-  oldEmployeesParam[ORDERING]="${2:-${oldEmployeesParam[ORDERING]}}"
-  oldEmployeesParam[FLAG_CODICE_FISCALE_EXISTS]="$FLAG_ON"
-  oldEmployeesParam[FLAG_CODICE_FISCALE_NOT_IN]="$FLAG_ON"
-  oldEmployeesParam[FILTER_CODICE_FISCALE_NOT_IN]="${3:-${oldEmployeesParam[FILTER_CODICE_FISCALE_NOT_IN]}}"
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]=" $TABELLA_PERSONALE_PRECEDENTE "
+
+  employeesParam[FLAG_CODICE_FISCALE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_CODICE_FISCALE_NOT_IN]="$FLAG_ON"
+  employeesParam[FILTER_CODICE_FISCALE_NOT_IN]="${3:-${employeesParam[FILTER_CODICE_FISCALE_NOT_IN]}}"
 
   # clona mappa modificata
-  local oldEmployeesP
-  oldEmployeesP="$(declare -p oldEmployeesParam)"
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryOldEmployees "$oldEmployeesP" )
+  query=$(query::getQueryEmployees "$queryParamString" )
   echo "$query"
 }
 
@@ -269,7 +239,6 @@ function query::getTeachersNotDeletedAddedInPeriod {
   query=$(query::getQueryEmployees "$queryParamString" )
   echo "$query"
 }
-
 
 function query::getAtaNotDeletedAddedInPeriod {
   local queryParam
