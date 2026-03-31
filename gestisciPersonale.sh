@@ -172,9 +172,9 @@ main() {
 
                 ## Creo la query del personale della vecchia tabella
                 ## i cui codici fiscali non si trovano nella nuova tabella
-                local FIELDS="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
-                    UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, 
-                    LOWER(email_gsuite) as email_gsuite, cancellato_il "
+                local FIELDS="LOWER(tipo_personale) AS tipo, UPPER(cognome) AS cognome, 
+                    UPPER(nome) AS nome, UPPER(codice_fiscale) AS codice_fiscale, 
+                    LOWER(email_gsuite) AS email_gsuite, cancellato_il "
                 local ORDERING=" UPPER(codice_fiscale) "
 
                 query=$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")
