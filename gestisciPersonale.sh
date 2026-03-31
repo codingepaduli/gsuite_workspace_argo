@@ -50,68 +50,43 @@ main() {
         
         case $choice in
             1)
-                echo "1. Cancello e ricreo la tabella del personale"
-                
-                # Cancello la tabella
-                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_PERSONALE';"
+              echo "1. Cancello e ricreo la tabella del personale"
+              
+              # Cancello la tabella
+              query=$(query::dropTableIfExists )
+              $SQLITE_CMD studenti.db "$query"
 
-                # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_PERSONALE' ( 
-                    tipo_personale VARCHAR(200), 
-                    cognome VARCHAR(200), 
-                    nome VARCHAR(200), 
-                    data_nascita VARCHAR(200), 
-                    codice_fiscale VARCHAR(200), 
-                    telefono VARCHAR(200), 
-                    altro_telefono VARCHAR(200), 
-                    cellulare VARCHAR(200), 
-                    email_personale VARCHAR(200), 
-                    email_gsuite VARCHAR(200), 
-                    aggiunto_il TEXT, 
-                    cancellato_il TEXT, 
-                    contratto VARCHAR(200), 
-                    dipartimento VARCHAR(200), 
-                    note VARCHAR(200));"
-                ;;
+              # Creo la tabella
+              query=$(query::createTableIfNotExists )
+              $SQLITE_CMD studenti.db "$query"
+            ;;
             2)
-                echo "2. Importo e normalizzo i dati dal file CSV $FILE_PERSONALE_CSV ..."
+              echo "2. Importo e normalizzo i dati dal file CSV $FILE_PERSONALE_CSV ..."
                 
-                # Importa CSV dati
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_PERSONALE_CSV $TABELLA_PERSONALE"
+              # Importa CSV dati
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_PERSONALE_CSV $TABELLA_PERSONALE"
 
-                # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_PERSONALE 
-                SET codice_fiscale = TRIM(UPPER(codice_fiscale)),
-                    tipo_personale = TRIM(LOWER(tipo_personale)),
-                    email_personale = TRIM(LOWER(email_personale)),
-                    cognome = TRIM(UPPER(cognome)),
-                    nome = TRIM(UPPER(nome)) ;"
+              # Normalizza dati
+              query=$(query::normalizeFields )
+              $SQLITE_CMD studenti.db "$query"
                 
-                local addedDateFormat
-                addedDateFormat=$(getDateFormat 'aggiunto_il')
+              # Normalizza date
+              query=$(query::normalizeInsertDate )
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Normalizza date
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE 
-                SET aggiunto_il = date($addedDateFormat)
-                WHERE aggiunto_il is NOT NULL AND TRIM(aggiunto_il) != '';"
-
-                local cancelledDateFormat
-                cancelledDateFormat=$(getDateFormat 'cancellato_il')
-                
-                # Normalizza date
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE 
-                SET cancellato_il = date($cancelledDateFormat)
-                WHERE cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '';"
-                ;;
+              # Normalizza date
+              query=$(query::normalizeRetiredDate )
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             3)
-                echo "Personale neo-assunto ancora senza email:"
-                query=$(query::getEmployeesNonDeletedWithoutEmailGSuite )
-                $SQLITE_CMD studenti.db -header -table "$query"
+              echo "Personale neo-assunto ancora senza email:"
+              query=$(query::getEmployeesNonDeletedWithoutEmailGSuite )
+              $SQLITE_CMD studenti.db -header -table "$query"
 
-                echo "Personale neo-assunto con email creata:"
-                query=$(query::getEmployeesNotDeletedAddedInPeriod )
-                $SQLITE_CMD studenti.db -header -table "$query"
-                ;;
+              echo "Personale neo-assunto con email creata:"
+              query=$(query::getEmployeesNotDeletedAddedInPeriod )
+              $SQLITE_CMD studenti.db -header -table "$query"
+            ;;
             4)
                 checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
@@ -264,7 +239,6 @@ main() {
                 local ORDERING="UPPER(codice_fiscale)"
                 
                 query=$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING")
-                echo "$query"
 
                 # Creo lo script con i dati della query
                 mkdir -p "$EXPORT_DIR_DATE"
@@ -281,12 +255,14 @@ main() {
 
                 done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
+                query=$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING")
+
                 while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
                   # Aggiungo il CF negli script
                   echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_PERSONALE SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il = '$aggiunto', cancellato_il = '$cancellato', contratto = UPPER('$contratto'), dipartimento = UPPER('$dipartimento'), note = '$note' WHERE UPPER(codice_fiscale) = UPPER('$codice_fiscale')\" # $cognome $nome $tipo_personale;" >> "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
 
-                done < <($SQLITE_CMD -csv studenti.db "SELECT LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note FROM $TABELLA_PERSONALE_PRECEDENTE ORDER BY UPPER(codice_fiscale)" | sed "s/\"//g")
+                done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
                 ;;
             13)
                 echo "Sospendi (disabilita) personale ..."

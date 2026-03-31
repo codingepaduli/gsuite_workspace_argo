@@ -7,6 +7,70 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
+function query::dropTableIfExists() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  echo "
+    DROP TABLE IF EXISTS '$TABLE';
+  "
+}
+
+function query::createTableIfNotExists() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  echo "
+    CREATE TABLE IF NOT EXISTS '$TABLE' ( 
+      tipo_personale VARCHAR(200), 
+      cognome VARCHAR(200), 
+      nome VARCHAR(200), 
+      data_nascita VARCHAR(200), 
+      codice_fiscale VARCHAR(200), 
+      telefono VARCHAR(200), 
+      altro_telefono VARCHAR(200), 
+      cellulare VARCHAR(200), 
+      email_personale VARCHAR(200), 
+      email_gsuite VARCHAR(200), 
+      aggiunto_il TEXT, 
+      cancellato_il TEXT, 
+      contratto VARCHAR(200), 
+      dipartimento VARCHAR(200), 
+      note VARCHAR(200)
+    );
+  "
+}
+
+function query::normalizeFields() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  echo "
+    UPDATE $TABLE 
+    SET codice_fiscale = TRIM(UPPER(codice_fiscale)),
+      tipo_personale = TRIM(LOWER(tipo_personale)),
+      email_personale = TRIM(LOWER(email_personale)),
+      cognome = TRIM(UPPER(cognome)),
+      nome = TRIM(UPPER(nome))
+  "
+}
+
+function query::normalizeInsertDate() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  local addedDateFormat
+  addedDateFormat=$(getDateFormat 'aggiunto_il')
+  echo "
+    UPDATE $TABLE 
+      SET aggiunto_il = date($addedDateFormat)
+      WHERE aggiunto_il is NOT NULL AND TRIM(aggiunto_il) != '';
+  "
+}
+
+function query::normalizeRetiredDate() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  local cancelledDateFormat
+  cancelledDateFormat=$(getDateFormat 'cancellato_il')
+  echo "
+    UPDATE $TABLE 
+    SET cancellato_il = date($cancelledDateFormat)
+    WHERE cancellato_il IS NOT NULL AND TRIM(cancellato_il) != ''
+  "
+}
+
 function query::defaultEmployeesParam() {
   local -A employeesParam=()
 
@@ -144,6 +208,28 @@ function query::getQueryEmployeesDefaultValues {
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
   employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query=$(query::getQueryEmployees "$queryParamString" )
+  echo "$query"
+}
+
+function query::getQueryOldEmployeesDefaultValues {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="$TABELLA_PERSONALE_PRECEDENTE"
 
   # clona mappa modificata
   local queryParamString
