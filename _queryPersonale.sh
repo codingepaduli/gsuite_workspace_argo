@@ -71,6 +71,34 @@ function query::normalizeRetiredDate() {
   "
 }
 
+function query::createEmailTeachers() {
+  echo "
+    UPDATE $TABELLA_PERSONALE
+    SET email_gsuite = 'd.' || 
+          REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
+          REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
+        aggiunto_il = '$CURRENT_DATE'
+    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+      AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
+      AND UPPER(tipo_personale) = UPPER('docente')
+      AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');
+  "
+}
+
+function query::createEmailATA() {
+  echo "
+    UPDATE $TABELLA_PERSONALE
+    SET email_gsuite = 'a.' || 
+          REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
+          REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
+        aggiunto_il = '$CURRENT_DATE'
+    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+      AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
+      AND UPPER(tipo_personale) = UPPER('ata')
+      AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');
+  "
+}
+
 function query::defaultEmployeesParam() {
   local -A employeesParam=()
 

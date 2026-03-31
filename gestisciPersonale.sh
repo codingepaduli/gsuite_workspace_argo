@@ -88,35 +88,20 @@ main() {
               $SQLITE_CMD studenti.db -header -table "$query"
             ;;
             4)
-                checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
+              checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
-                echo "Creo la mail ai nuovi docenti ..."
-                
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE
-                    SET email_gsuite = 'd.' || 
-                            REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
-                            REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
-                        aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                        AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
-                        AND UPPER(tipo_personale) = UPPER('docente')
-                        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
-                ;;
+              echo "Creo la mail ai nuovi docenti ..."
+              query=$(query::createEmailTeachers )
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             5)
-                checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
+              checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
-                echo "Creo la mail al nuovo personale ATA ..."
-                
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_PERSONALE
-                    SET email_gsuite = 'a.' || 
-                            REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
-                            REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
-                        aggiunto_il = '$CURRENT_DATE'
-                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-                        AND (email_gsuite IS NULL OR TRIM(email_gsuite) = '')
-                        AND UPPER(tipo_personale) = UPPER('ata')
-                        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '');"
-                ;;
+              echo "Creo la mail al nuovo personale ATA ..."
+              
+              query=$(query::createEmailATA )
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             6)
                 checkAllVarsNotEmpty "PASSWORD_CLASSROOM"
 
