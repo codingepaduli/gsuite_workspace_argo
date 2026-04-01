@@ -4,18 +4,20 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
+source "./_querySezioni.sh"
+source "./_queryStudenti.sh"
 
-SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) ORDER BY sz.sezione_gsuite"
+# SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) ORDER BY sz.sezione_gsuite"
 
-# Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
-SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "
-# Itera sull'array
-for value in "${GSUITE_ADDITIONAL_GROUPS[@]}"; do
-    # Aggiungi il valore alla lista, racchiudendolo tra apici
-    SQL_QUERY_ADDITIONAL_GROUPS+=" UNION ALL"
-    SQL_QUERY_ADDITIONAL_GROUPS+=" SELECT '$value' AS value"
-done
-SQL_QUERY_ADDITIONAL_GROUPS+=") SELECT value FROM temp WHERE value IS NOT NULL "
+# # Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
+# SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "
+# # Itera sull'array
+# for value in "${GSUITE_ADDITIONAL_GROUPS[@]}"; do
+#     # Aggiungi il valore alla lista, racchiudendolo tra apici
+#     SQL_QUERY_ADDITIONAL_GROUPS+=" UNION ALL"
+#     SQL_QUERY_ADDITIONAL_GROUPS+=" SELECT '$value' AS value"
+# done
+# SQL_QUERY_ADDITIONAL_GROUPS+=") SELECT value FROM temp WHERE value IS NOT NULL "
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -42,6 +44,10 @@ show_menu() {
 
 # Funzione principale
 main() {
+    local querySezioni
+    querySezioni="$(query::querySezioniTutte "sezione_gsuite" )"
+
+    local query
 
     if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"; then
         echo "Errore: Definisci le variabili nel file di configurazione." >&2
@@ -52,70 +58,59 @@ main() {
         
         case $choice in
             1)
-                echo "Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
+              echo "Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
 
-                while IFS="," read -r sezione_gsuite; do
+              while IFS="," read -r sezione_gsuite; do
                     echo "Creo classe $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " /* NO */ "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+            ;;
             2)
-                echo "Cancella le classi ed i gruppi aggiuntivi da GSUITE"
+              echo "Cancella le classi ed i gruppi aggiuntivi da GSUITE"
 
-                while IFS="," read -r sezione_gsuite; do
+              while IFS="," read -r sezione_gsuite; do
                     echo "Cancello classe $sezione_gsuite ...!"
                     $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " /* NO */ "
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+            ;;
             3)
-                echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
+              echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
 
-                mkdir -p "$EXPORT_DIR_DATE"
-                declare -A gruppi_classe
+              mkdir -p "$EXPORT_DIR_DATE"
+              declare -A "gruppi_classe"
 
-                while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="
-                        SELECT sz.sezione_gsuite AS classe, UPPER(sa.cognome) AS cognome,
-                            UPPER(sa.nome) AS nome, LOWER(sa.email_gsuite) AS email_gsuite,  
-                            UPPER(sa.cod_fisc) AS cod_fisc, sa.datan AS data_nascita, 
-                            sa.datar AS data_ritiro
-                        FROM $TABELLA_STUDENTI sa 
-                            INNER JOIN $TABELLA_SEZIONI sz 
-                            ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                            AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
-                        ORDER BY sz.sezione_gsuite, UPPER(sa.cognome);"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+              local FIELDS="sz.sezione_gsuite AS classe, UPPER(cognome) AS cognome, UPPER(nome) AS nome, LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, datan AS data_nascita, datar AS data_ritiro"
+              local ORDERING="sz.sezione_gsuite, LOWER(cognome)"
 
-                for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
+              while IFS="," read -r sezione_gsuite; do
+                gruppi_classe[$sezione_gsuite]="
+                  $(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+
+              for nome_gruppo in "${!gruppi_classe[@]}"; do
+                    echo "$nome_gruppo" # "${gruppi_classe[$nome_gruppo]}"
                     $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
 
                     $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
-                done
-                ;;
+              done
+            ;;
             4)
-                echo "Aggiungo studenti alle classi"
+              echo "Aggiungo studenti alle classi"
 
-                declare -A gruppi_classe
+              declare -A "gruppi_classe"
 
-                while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="
-                        SELECT sa.email_gsuite
-                        FROM $TABELLA_STUDENTI sa 
-                          INNER JOIN $TABELLA_SEZIONI sz 
-                          ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                          AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
-                          AND (sa.datar IS NULL OR sa.datar = '')
-                        ORDER BY sa.email_gsuite;"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+              local FIELDS="LOWER(email_gsuite)"
+              local ORDERING="LOWER(email_gsuite)"
 
-                for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
-                done
-                ;;
+              while IFS="," read -r sezione_gsuite; do
+                gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+
+              for nome_gruppo in "${!gruppi_classe[@]}"; do
+                # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
+                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
+              done
+            ;;
             5)
                 echo "Esportato numero studenti per classe in file CSV"
 
@@ -133,23 +128,17 @@ main() {
                 ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
                 ;;
             6)
-                mkdir -p "$EXPORT_DIR_DATE"
-                echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."
-                
-                $SQLITE_CMD studenti.db -header -csv "
-                SELECT s.sezione_gsuite AS classe, s.cl AS anno, s.letter AS sezione, s.addr_gsuite AS indirizzo,
-                sa.cognome, sa.nome, LOWER(sa.email_gsuite) AS email
-                FROM $TABELLA_STUDENTI sa 
-                  INNER JOIN $TABELLA_SEZIONI s 
-                  ON sa.sez = s.sez_argo AND sa.cl =s.cl 
-                WHERE sa.email_gsuite IS NOT NULL
-                  AND sa.email_gsuite != ''
-                  AND (sa.datar IS NULL OR sa.datar = '')
-                  ORDER BY s.sezione_gsuite, sa.cognome, sa.nome;
-                " > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+              mkdir -p "$EXPORT_DIR_DATE"
+              echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."
 
-                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
-                ;;
+              local FIELDS="sz.sezione_gsuite AS classe, sz.cl AS anno, sz.letter AS sezione, sz.sez_gsuite AS indirizzo, cognome, nome, LOWER(email_gsuite) AS email "
+              local ORDERING="sz.sezione_gsuite"
+              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
+
+              $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+
+              $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+            ;;
             8)
                 checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
 
@@ -242,46 +231,42 @@ main() {
                   " | sed "s/\"//g")
                 ;;
             11)
-                echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
-                mkdir -p "$EXPORT_DIR_DATE"
+              echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
+              mkdir -p "$EXPORT_DIR_DATE"
 
-                while IFS="," read -r sezione_gsuite; do
+              while IFS="," read -r sezione_gsuite; do
                     echo "Salvo gruppo GSuite $sezione_gsuite"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " > "$EXPORT_DIR_DATE/classe_$sezione_gsuite.csv"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+            ;;
             12)
-                echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
-                mkdir -p "$EXPORT_DIR_DATE"
-                touch "$EXPORT_DIR_DATE/classi_tutte.csv"
-                echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
+              echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
+              mkdir -p "$EXPORT_DIR_DATE"
+              touch "$EXPORT_DIR_DATE/classi_tutte.csv"
+              echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
 
-                while IFS="," read -r sezione_gsuite; do
+              while IFS="," read -r sezione_gsuite; do
                     echo "Salvo gruppo GSuite $sezione_gsuite"
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_ADDITIONAL_GROUPS UNION $SQL_QUERY_SEZIONI" | sed 's/"//g' )
-                ;;
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+            ;;
             14)
-                echo "Reset password di TUTTI gli studenti delle classi"
+              echo "Reset password di TUTTI gli studenti delle classi"
 
-                declare -A gruppi_classe
+              declare -A "gruppi_classe"
 
-                while IFS="," read -r sezione_gsuite; do
-                    gruppi_classe[$sezione_gsuite]="
-                        SELECT LOWER(sa.email_gsuite)
-                        FROM $TABELLA_STUDENTI sa 
-                          INNER JOIN $TABELLA_SEZIONI sz 
-                          ON sa.sez = sz.sez_argo AND sa.cl =sz.cl 
-                        WHERE sz.sezione_gsuite = '$sezione_gsuite'
-                          AND (sa.email_gsuite IS NOT NULL AND TRIM(sa.email_gsuite) != '')
-                        ORDER BY sa.email_gsuite;"
-                done < <($SQLITE_CMD -csv studenti.db "$SQL_QUERY_SEZIONI" | sed 's/"//g' )
+              local FIELDS="LOWER(email_gsuite)"
+              local ORDERING="LOWER(email_gsuite)"
 
-                for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "${gruppi_classe[$nome_gruppo]}"
-                done
-                ;;
+              while IFS="," read -r sezione_gsuite; do
+                gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
+              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+
+              for nome_gruppo in "${!gruppi_classe[@]}"; do
+                # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
+                $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "${gruppi_classe[$nome_gruppo]}"
+              done
+              ;;
             20)
                 echo "Arrivederci!"
                 exit 0
@@ -304,8 +289,6 @@ showConfig() {
     log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_STUDENTI_DA" 
     log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_STUDENTI_A"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
-    log::_write_log "CONFIG" "Query sezioni: $SQL_QUERY_SEZIONI"
-    log::_write_log "CONFIG" "Query altri gruppi: $SQL_QUERY_ADDITIONAL_GROUPS"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
   fi
