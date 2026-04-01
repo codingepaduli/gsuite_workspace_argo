@@ -24,6 +24,7 @@ show_menu() {
 
 # Funzione principale
 main() {
+  local query
 
     if ! checkAllVarsNotEmpty "TABELLA_STUDENTI" "TABELLA_SEZIONI"; then
       echo "Errore: Definisci le variabili nel file di configurazione." >&2
@@ -37,17 +38,17 @@ main() {
               echo "Crea tabella sezioni a partire dai dati degli studenti ..."
               
               # Cancello la tabella
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "DROP TABLE IF EXISTS '$TABELLA_SEZIONI';"
+              query="$(query::dropTableIfExists)"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
               # Creo la tabella
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' ( cl NUMERIC, letter VARCHAR(200), addr_argo VARCHAR(200), sez_argo NUMERIC, addr_gsuite VARCHAR(200), sez_gsuite VARCHAR(200), sezione_gsuite VARCHAR(200), email_coordinatore VARCHAR(200));"
+              query="$(query::createTableIfNotExists)"
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
             2)
               echo "Crea dati delle sezioni ..."
 
-              local query
               query="$(query::queryCreaSezioniDaStudenti)"
-
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
               INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
               $query "
@@ -55,29 +56,24 @@ main() {
             3)
               echo "Visualizza dati delle sezioni ..."
 
-              local query
-              query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
-
+              query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
               $SQLITE_CMD -header -table studenti.db " $query"
             ;;
             4)
               mkdir -p "$EXPORT_DIR_DATE"
               echo "Esporto le sezioni in file CSV ..."
 
-              local query
-              query=$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )
-              
+              query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
               $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
             ;;
             6)
               echo "Invia elenco classi ai coordinatori"
 
               echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
+              
+              query="$(query::querySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )"
 
-              local query
-              query=$(query::querySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )
-
-                while IFS="," read -r sezione_gsuite email_coordinatore; do
+              while IFS="," read -r sezione_gsuite email_coordinatore; do
 
                     local TO="$email_coordinatore" # , CDC_$sezione_gsuite@$DOMAIN
 
@@ -104,16 +100,16 @@ main() {
 
                     $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
 
-                done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
+              done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
             ;;
             20)
                 echo "Arrivederci!"
                 exit 0
-                ;;
+            ;;
             *)
                 echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
                 sleep 1
-                ;;
+            ;;
         esac
 }
 

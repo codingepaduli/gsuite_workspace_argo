@@ -7,6 +7,27 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
+function query::dropTableIfExists() {
+  echo "
+    DROP TABLE IF EXISTS '$TABELLA_SEZIONI';
+  "
+}
+
+function query::createTableIfNotExists() {
+  echo "
+    CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' (
+      cl NUMERIC,
+      letter VARCHAR(200),
+      addr_argo VARCHAR(200),
+      sez_argo NUMERIC,
+      addr_gsuite VARCHAR(200),
+      sez_gsuite VARCHAR(200),
+      sezione_gsuite VARCHAR(200),
+      email_coordinatore VARCHAR(200)
+    )
+  "
+}
+
 function query::defaultSectionParam() {
   local -A sectionParam=()
   sectionParam[FIELDS]=" * "
