@@ -52,7 +52,7 @@ function query::normalizeFields() {
 function query::normalizeInsertDate() {
   local TABLE="${1:-${TABELLA_PERSONALE}}"
   local addedDateFormat
-  addedDateFormat=$(getDateFormat 'aggiunto_il')
+  addedDateFormat="$(getDateFormat 'aggiunto_il')"
   echo "
     UPDATE $TABLE 
       SET aggiunto_il = date($addedDateFormat)
@@ -63,7 +63,7 @@ function query::normalizeInsertDate() {
 function query::normalizeRetiredDate() {
   local TABLE="${1:-${TABELLA_PERSONALE}}"
   local cancelledDateFormat
-  cancelledDateFormat=$(getDateFormat 'cancellato_il')
+  cancelledDateFormat="$(getDateFormat 'cancellato_il')"
   echo "
     UPDATE $TABLE 
     SET cancellato_il = date($cancelledDateFormat)
@@ -221,7 +221,7 @@ function query::getQueryOldEmployeesCfNotIn {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -242,7 +242,7 @@ function query::getQueryEmployeesDefaultValues {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -264,7 +264,7 @@ function query::getQueryOldEmployeesDefaultValues {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -292,7 +292,7 @@ function query::getEmployeesNonDeletedWithoutEmailGSuite {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -321,7 +321,7 @@ function query::getEmployeesNotDeletedAddedInPeriod {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -350,7 +350,7 @@ function query::getTeachersNotDeletedAddedInPeriod {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -379,7 +379,7 @@ function query::getAtaNotDeletedAddedInPeriod {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 
@@ -411,7 +411,7 @@ function query::getQueryTeachersWithGSuiteEmail {
   queryParamString="$(declare -p "employeesParam")"
 
   local query
-  query=$(query::getQueryEmployees "$queryParamString" )
+  query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
 }
 

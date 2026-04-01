@@ -91,7 +91,7 @@ function query::querySezioniTutte {
   queryParamString="$(declare -p sectionParam)"
 
   local query
-  query=$(query::getQuerySezioni "$queryParamString")
+  query"=$(query::getQuerySezioni "$queryParamString")"
   echo "$query"
 }
 
@@ -113,7 +113,7 @@ function query::querySezioniSupervisorNotEmpty {
   queryParamString="$(declare -p sectionParam)"
 
   local query
-  query=$(query::getQuerySezioni "$queryParamString" )
+  query="$(query::getQuerySezioni "$queryParamString" )"
   echo "$query"
 }
 
