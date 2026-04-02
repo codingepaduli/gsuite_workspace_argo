@@ -112,21 +112,13 @@ main() {
               done
             ;;
             5)
-                echo "Esportato numero studenti per classe in file CSV"
+              echo "Esportato numero studenti per classe in file CSV"
 
-                mkdir -p "$EXPORT_DIR_DATE"
+              mkdir -p "$EXPORT_DIR_DATE"
 
-                $SQLITE_CMD -header -csv studenti.db "
-                SELECT s.cl AS cl, s.sez_argo AS sez_argo, s.sezione_gsuite AS sez_gsuite, COUNT(*) AS numero_alunni 
-                FROM $TABELLA_STUDENTI sa 
-                  INNER JOIN $TABELLA_SEZIONI s 
-                  ON sa.sez = s.sez_argo AND sa.cl =s.cl 
-                WHERE sa.email_gsuite IS NOT NULL
-                  AND sa.email_gsuite != ''
-                  AND (sa.datar IS NULL OR sa.datar = '')
-                GROUP BY s.sez_argo, s.cl
-                ORDER BY cl, sez_argo;" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
-                ;;
+              query="$(query::numeroStudentiPerClasse )"
+              $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
+            ;;
             6)
               mkdir -p "$EXPORT_DIR_DATE"
               echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."

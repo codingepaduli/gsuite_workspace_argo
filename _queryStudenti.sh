@@ -643,13 +643,43 @@ function query::studentiByEmailGSuite {
   echo "$query"
 }
 
+function query::numeroStudentiPerClasse {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="UPPER(cod_fisc) AS cod_fisc"
+  studentsParam[ORDERING]="UPPER(cod_fisc)"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::queryStudentiNonCancellatiConEmail)"
+
+  query="
+  SELECT sezione_gsuite AS classe, COUNT(*) AS numero_alunni
+  FROM (
+    $query
+  ) 
+  GROUP BY sezione_gsuite
+  ORDER BY sezione_gsuite
+  "
+
+  echo "$query"
+}
+
 # Esempio di come chiamare la funzione
 function execDebug {
   if log::level_is_active "DEBUG"; then
     _="$(query::defaultStudentsParam)"
 
     local query
-    query="$(query::dropTableIfExists )"
+    query="$(query::numeroStudentiPerClasse )"
     echo "$query"
 
     $SQLITE_CMD -header -table studenti.db " $query"
