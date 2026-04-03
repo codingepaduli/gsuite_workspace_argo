@@ -97,19 +97,11 @@ main() {
             4)
               echo "Aggiungo studenti alle classi"
 
-              declare -A "gruppi_classe"
+              local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
+              local ORDERING="sz.sezione_gsuite"
+              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-              local FIELDS="LOWER(email_gsuite)"
-              local ORDERING="LOWER(email_gsuite)"
-
-              while IFS="," read -r sezione_gsuite; do
-                gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
-
-              for nome_gruppo in "${!gruppi_classe[@]}"; do
-                # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi_classe[$nome_gruppo]}"
-              done
+              $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
             ;;
             5)
               echo "Esportato numero studenti per classe in file CSV"
@@ -199,29 +191,17 @@ main() {
                   " | sed "s/\"//g")
                 ;;
             9)
-                checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
-                
-                echo "8. Aggiungi nuovi studenti (aggiunti tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A) alle classi"
+              checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+              
+              echo "8. Aggiungi nuovi studenti (aggiunti tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A) alle classi"
 
-                local QUERY_DIFF2="
-                  -- SELECT s.email_gsuite, sz.sezione_gsuite, s.aggiunto_il, s.datar
-                  FROM $TABELLA_STUDENTI s
-                    INNER JOIN $TABELLA_SEZIONI sz
-                    ON s.sez = sz.sez_argo AND s.cl = sz.cl
-                  WHERE s.email_gsuite IS NOT NULL 
-                    AND s.email_gsuite != ''  
-                    AND (s.datar IS NULL OR  s.datar = '')
-                    AND s.aggiunto_il BETWEEN '$PERIODO_STUDENTI_DA' AND '$PERIODO_STUDENTI_A'
-                    ORDER BY sz.sezione_gsuite, s.email_gsuite;
-                "
+              local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
+              local ORDERING="sz.sezione_gsuite"
 
-                while IFS="," read -r email_gsuite sezione_gsuite; do
-                    echo "inserisco $email_gsuite in classe $sezione_gsuite"
-                    $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$sezione_gsuite" --query "SELECT '$email_gsuite' AS email_gsuite;"
-                done < <($SQLITE_CMD -csv studenti.db "
-                  SELECT s.email_gsuite, sz.sezione_gsuite $QUERY_DIFF2
-                  " | sed "s/\"//g")
-                ;;
+              query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+
+              $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
+            ;;
             11)
               echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
               mkdir -p "$EXPORT_DIR_DATE"
