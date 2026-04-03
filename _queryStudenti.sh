@@ -353,8 +353,8 @@ function query::queryStudentiNonCancellatiConEmail {
   # modifica mappa
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
@@ -377,8 +377,8 @@ function query::queryStudentiDellaClasseNonCancellatiConEmail {
   # modifica mappa
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
   studentsParam[FLAG_CLASSES_IN]="$FLAG_ON"
@@ -426,6 +426,7 @@ function query::queryStudentiNonCancellatiIscrittiInPeriodo {
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
   studentsParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
@@ -478,6 +479,7 @@ function query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo {
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_CLASSES_LIKE]="$FLAG_ON"
   studentsParam[FILTER_CLASSES_LIKE]="%_sirio"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
@@ -504,6 +506,7 @@ function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_YEARS_IN]="$FLAG_ON"
   studentsParam[FILTER_YEARS_IN]=" '$3' "
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]="s."
 
