@@ -225,28 +225,21 @@ main() {
             14)
               echo "Reset password di TUTTI gli studenti delle classi"
 
-              declare -A "gruppi_classe"
-
               local FIELDS="LOWER(email_gsuite)"
-              local ORDERING="LOWER(email_gsuite)"
+              local ORDERING="sz.sezione_gsuite"
 
-              while IFS="," read -r sezione_gsuite; do
-                gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-              for nome_gruppo in "${!gruppi_classe[@]}"; do
-                # echo "$nome_gruppo" "${gruppi_classe[$nome_gruppo]}"
-                $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "${gruppi_classe[$nome_gruppo]}"
-              done
-              ;;
+              $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "$query"
+            ;;
             20)
-                echo "Arrivederci!"
-                exit 0
-                ;;
+              echo "Arrivederci!"
+              exit 0
+              ;;
             *)
-                echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
-                sleep 1
-                ;;
+              echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
+              sleep 1
+              ;;
         esac
 }
 

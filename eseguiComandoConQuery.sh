@@ -86,7 +86,7 @@ case $command in
         ;;
     "resetPasswordUser")
         while IFS="," read -r email_gsuite; do
-            $GAM_CMD update user "$email_gsuite" password "$RESET_PASSWORD" changepassword on
+            $GAM_CMD update user "$email_gsuite" password "$RESET_PASSWORD" changepassword on || true  # Ignora l'errore di questo comando specifico, tipo "utente non esiste"
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "suspendUsers")
