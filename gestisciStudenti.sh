@@ -65,19 +65,33 @@ main() {
 
               $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
 
+              # Rimuovo tutte le righe vuote del file
+              sed -i '/^[[:space:]]*$/d' "$FILE_CSV_STUDENTI"
+
+              # Aggiungo due campi nel file
+              sed -i 's/$/,,/' "$FILE_CSV_STUDENTI"
+
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
               
+              echo "Normalizzo i campi"
+
               # Normalizza dati
               query="$(query::normalizeFields )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+              echo "Normalizzo data ritiro"
                 
-              # # Normalizza dati
+              # # Normalizza date
               query="$(query::normalizeRetiredDate )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+              echo "Normalizzo email"
 
               # # Normalizza dati
               query="$(query::normalizeEmailGSuite )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+              echo "Normalizzo inserimenti"
 
               # # Normalizza dati
               query="$(query::normalizeInsertDate )"
