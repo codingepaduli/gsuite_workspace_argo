@@ -238,25 +238,38 @@ main() {
 
               $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
 
+              # Rimuovo tutte le righe vuote del file
+              sed -i '/^[[:space:]]*$/d' "$FILE_CSV_STUDENTI_SERALE"
+
+              # Aggiungo due campi nel file
+              sed -i 's/$/,,/' "$FILE_CSV_STUDENTI_SERALE"
+
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
-              # Normalizza dati
+              echo "Normalizzo i campi"
               query="$(query::normalizeFields "$TABELLA_STUDENTI_SERALE" )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-              # sezione = '%_sirio'
               query="$(query::normalizeSirioSection )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-              # Normalizza data ritiro
+              echo "Date errate"
+              query="$(query:checkWrongDate "$TABELLA_STUDENTI_SERALE")";
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+              echo "Normalizzo data nascita"
+              query="$(query::normalizeBirthDate "$TABELLA_STUDENTI_SERALE")";
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+              echo "Normalizzo data ritiro"
               query="$(query::normalizeRetiredDate "$TABELLA_STUDENTI_SERALE" )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-              # Normalizza email gsuite
+              echo "Normalizzo email"
               query="$(query::normalizeEmailGSuite "$TABELLA_STUDENTI_SERALE" )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             
-              # Normalizza data inserimento
+              echo "Normalizzo inserimenti"
               query="$(query::normalizeInsertDate "$TABELLA_STUDENTI_SERALE" )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
