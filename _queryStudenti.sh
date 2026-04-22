@@ -18,50 +18,65 @@ function query::createTableIfNotExists() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
   echo "
     CREATE TABLE IF NOT EXISTS '$TABLE' ( 
-      cognome VARCHAR(200) NOT NULL, 
-      nome VARCHAR(200) NOT NULL, 
-      cod_fisc VARCHAR(200) NOT NULL, 
-      cl NUMERIC NOT NULL, 
-      sez VARCHAR(200) NOT NULL, 
-      e_mail VARCHAR(200),
-      email_pa VARCHAR(200),
-      email_ma VARCHAR(200),
-      email_gen VARCHAR(200),
-      matricola VARCHAR(200),
-      codicesidi VARCHAR(200),
-      datan TEXT,
-      ritira VARCHAR(200),
-      datar TEXT,
-      email_gsuite VARCHAR(200) DEFAULT NULL,
+      cognome TEXT NOT NULL, 
+      nome TEXT NOT NULL, 
+      cod_fisc TEXT NOT NULL, 
+      cl INTEGER NOT NULL, 
+      sez TEXT NOT NULL, 
+      e_mail TEXT,
+      email_pa TEXT,
+      email_ma TEXT,
+      email_gen TEXT,
+      matricola INTEGER,
+      codicesidi TEXT,
+      datan TEXT,                       -- DATE
+      ritira TEXT,
+      datar TEXT,                       -- DATE
+      email_gsuite TEXT DEFAULT NULL,
       aggiunto_il TEXT DEFAULT NULL,
       CHECK (
-        length(datan)=10
-        AND substr(datan,3,1)='/'
-        AND substr(datan,6,1)='/'
-        AND substr(datan,1,2) GLOB '[0-9][0-9]'
-        AND substr(datan,4,2) GLOB '[0-9][0-9]'
-        AND substr(datan,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        ( 
+          length(datan)=10
+          AND SUBSTR(datan,1,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datan,3,1)='/'
+          AND SUBSTR(datan,4,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datan,6,1)='/'
+          AND SUBSTR(datan,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        ) OR (
+          length(datan)=10
+          AND SUBSTR(datan,1,4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND SUBSTR(datan,5,1)='-'
+          AND SUBSTR(datan,6,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datan,8,1)='-'
+          AND SUBSTR(datan,9,2) GLOB '[0-9][0-9]'
+        )
       ),
       CHECK (
         datar IS NULL
-        OR datar = ''
+        OR TRIM(datar) = ''
         OR (
           length(datar)=10
-          AND substr(datar,3,1)='/'
-          AND substr(datar,6,1)='/'
-          AND substr(datar,1,2) GLOB '[0-9][0-9]'
-          AND substr(datar,4,2) GLOB '[0-9][0-9]'
-          AND substr(datar,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND SUBSTR(datar,1,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datar,3,1)='/'
+          AND SUBSTR(datar,4,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datar,6,1)='/'
+          AND SUBSTR(datar,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        ) OR (
+          length(datar)=10
+          AND SUBSTR(datar,1,4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND SUBSTR(datar,5,1)='-'
+          AND SUBSTR(datar,6,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(datar,8,1)='-'
+          AND SUBSTR(datar,9,2) GLOB '[0-9][0-9]'
         )
       )
-    );
+    ) STRICT;
   "
 }
 
 function query::normalizeFields() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
-  local birthdayDateFormat
-  birthdayDateFormat="$(getDateFormat 'datan')"
+  
   echo "
     UPDATE $TABLE 
     SET cod_fisc = TRIM(UPPER(cod_fisc)),
@@ -69,17 +84,18 @@ function query::normalizeFields() {
       cognome = TRIM(UPPER(cognome)),
       nome = TRIM(UPPER(nome)),
       sez = TRIM(sez),
-      datan = date($birthdayDateFormat);
+      datan = SUBSTR(datan, 7, 4) || '-'
+        || SUBSTR(datan, 4, 2) || '-' || SUBSTR(datan, 1, 2);
   "
 }
 
+# converte 13/06/2011 in 2011-06-13
 function query::normalizeRetiredDate() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
-  local cancelledDateFormat
-  cancelledDateFormat="$(getDateFormat 'datar')"
   echo "
     UPDATE $TABLE 
-    SET datar = date($cancelledDateFormat)
+    SET datar = SUBSTR(datar, 7, 4) || '-'
+      || SUBSTR(datar, 4, 2) || '-' || SUBSTR(datar, 1, 2)
     WHERE datar IS NOT NULL AND TRIM(datar) != '';
   "
 }
