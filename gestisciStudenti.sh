@@ -74,26 +74,26 @@ main() {
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
               
               echo "Normalizzo i campi"
-
-              # Normalizza dati
               query="$(query::normalizeFields )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-              echo "Normalizzo data ritiro"
+              echo "Date errate"
+              query="$(query:checkWrongDate )";
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+              
+              echo "Normalizzo data nascita"
+              query="$(query::normalizeBirthDate )";
+              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
                 
-              # # Normalizza date
+              echo "Normalizzo data ritiro"
               query="$(query::normalizeRetiredDate )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
               echo "Normalizzo email"
-
-              # # Normalizza dati
               query="$(query::normalizeEmailGSuite )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
               echo "Normalizzo inserimenti"
-
-              # # Normalizza dati
               query="$(query::normalizeInsertDate )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;

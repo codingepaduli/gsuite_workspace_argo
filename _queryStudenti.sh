@@ -74,6 +74,27 @@ function query::createTableIfNotExists() {
   "
 }
 
+function query:checkWrongDate() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+
+  echo "
+    SELECT rowid, cod_fisc, cognome, nome, datan, datar
+    FROM $TABLE
+    WHERE (
+        datan IS NULL OR TRIM(datan) = '' OR
+        (
+          datan GLOB '[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]' AND
+          date(SUBSTR(datan,7,4) || '-' || SUBSTR(datan,4,2) || '-' || SUBSTR(datan,1,2)) IS NULL
+        )
+      ) OR (
+        datar IS NOT NULL AND
+        datar GLOB '[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]' AND
+        date(SUBSTR(datar,7,4) || '-' || SUBSTR(datar,4,2) || '-' || SUBSTR(datar,1,2)) IS NULL
+      )
+    ;
+  "
+}
+
 function query::normalizeFields() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
   
@@ -83,8 +104,16 @@ function query::normalizeFields() {
       email_gsuite = TRIM(LOWER(email_gsuite)),
       cognome = TRIM(UPPER(cognome)),
       nome = TRIM(UPPER(nome)),
-      sez = TRIM(sez),
-      datan = SUBSTR(datan, 7, 4) || '-'
+      sez = TRIM(sez);
+  "
+}
+
+function query::normalizeBirthDate() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  
+  echo "
+    UPDATE $TABLE 
+    SET datan = SUBSTR(datan, 7, 4) || '-'
         || SUBSTR(datan, 4, 2) || '-' || SUBSTR(datan, 1, 2);
   "
 }
