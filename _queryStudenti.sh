@@ -154,7 +154,7 @@ function query::normalizeSirioSection() {
   "
 }
 
-function query::createUsernameDiurno() {
+function query::showUsername() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
   echo "
     WITH
@@ -176,18 +176,34 @@ function query::createUsernameDiurno() {
       ),
       utentiConUsername AS (
         -- compongo lo username
-        SELECT *, CASE
+        SELECT *, 
+          CASE
             WHEN cl = 1 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
             WHEN cl = 2 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
             WHEN cl = 3 THEN 's.' || cognome_norm || '.' || primonome_norm || '@$DOMAIN'
             ELSE 's.' || primonome_norm || '.' || cognome_norm || '@$DOMAIN'
-          END AS username
+          END AS usernameDiurno, 
+            's.' || cognome_norm || '.' || primonome_norm || '.' || matricola 
+            || '@$DOMAIN' AS usernameSerale
         FROM campiUtenteNormalizzati
       )
+    SELECT *
+    FROM utentiConUsername
+  "
+}
+
+function query::creaUsernameDiurno() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+
+  local utentiConUsername
+  utentiConUsername="$(query::showUsername "$TABLE")"
+
+  echo "
     UPDATE $TABLE 
-    SET email_gsuite = ucu.username,
+    SET email_gsuite = ucu.usernameDiurno,
         aggiunto_il = '$CURRENT_DATE'
-    FROM  utentiConUsername AS ucu
+    FROM 
+      ( $utentiConUsername ) AS ucu
     WHERE ($TABLE.cod_fisc = ucu.cod_fisc)
       AND ($TABLE.sez NOT LIKE '%_sirio')
       AND ($TABLE.email_gsuite is NULL OR TRIM($TABLE.email_gsuite) = '') 
@@ -196,52 +212,74 @@ function query::createUsernameDiurno() {
   "
 }
 
-function query::createEmailDiurno() {
+function query::creaUsernameSerale() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
+
+  local utentiConUsername
+  utentiConUsername="$(query::showUsername "$TABLE")"
+
   echo "
     UPDATE $TABLE 
-    SET email_gsuite = 
-    CASE
-      WHEN cl = 1 THEN 's.' 
-      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-      || '.' || matricola || '@$DOMAIN'
-      WHEN cl = 2 THEN 's.' 
-      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-      || '.' || matricola || '@$DOMAIN'
-      WHEN cl = 3 THEN 's.' 
-      || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-      || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-      || '@$DOMAIN'
-      ELSE 's.' 
-      || REPLACE(REPLACE(nome, '''',''), ' ', '') 
-      || '.' || REPLACE(REPLACE(cognome, '''', ''), ' ', '') 
-      || '@$DOMAIN'
-    END,
+    SET email_gsuite = ucu.usernameSerale,
         aggiunto_il = '$CURRENT_DATE'
-    WHERE sez NOT LIKE '%_sirio' 
-        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
-        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
-        AND (datar IS NULL OR TRIM(datar) = '');
+    FROM 
+      ( $utentiConUsername ) AS ucu
+    WHERE ($TABLE.cod_fisc = ucu.cod_fisc)
+      AND ($TABLE.sez LIKE '%_sirio')
+      AND ($TABLE.email_gsuite is NULL OR TRIM($TABLE.email_gsuite) = '') 
+      AND ($TABLE.matricola IS NOT NULL AND TRIM($TABLE.matricola) != '')
+      AND ($TABLE.datar IS NULL OR TRIM($TABLE.datar) = '');
   "
 }
 
-function query::createEmailSirio() {
-  local TABLE="${1:-${TABELLA_STUDENTI}}"
-  echo "
-    UPDATE $TABLE
-    SET email_gsuite = 's.' 
-        || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
-        || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
-        || '.' || matricola || '@$DOMAIN',
-      aggiunto_il = '$CURRENT_DATE'
-    WHERE sez LIKE '%_sirio' 
-        AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
-        AND (matricola IS NOT NULL AND TRIM(matricola) != '')
-        AND (datar IS NULL OR TRIM(datar) = '');
-  "
-}
+# Unused
+# function query::createEmailDiurno() {
+#   local TABLE="${1:-${TABELLA_STUDENTI}}"
+#   echo "
+#     UPDATE $TABLE 
+#     SET email_gsuite = 
+#     CASE
+#       WHEN cl = 1 THEN 's.' 
+#       || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+#       || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+#       || '.' || matricola || '@$DOMAIN'
+#       WHEN cl = 2 THEN 's.' 
+#       || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+#       || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+#       || '.' || matricola || '@$DOMAIN'
+#       WHEN cl = 3 THEN 's.' 
+#       || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+#       || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+#       || '@$DOMAIN'
+#       ELSE 's.' 
+#       || REPLACE(REPLACE(nome, '''',''), ' ', '') 
+#       || '.' || REPLACE(REPLACE(cognome, '''', ''), ' ', '') 
+#       || '@$DOMAIN'
+#     END,
+#         aggiunto_il = '$CURRENT_DATE'
+#     WHERE sez NOT LIKE '%_sirio' 
+#         AND (email_gsuite is NULL OR TRIM(email_gsuite) = '') 
+#         AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+#         AND (datar IS NULL OR TRIM(datar) = '');
+#   "
+# }
+
+# Unused
+# function query::createEmailSirio() {
+#   local TABLE="${1:-${TABELLA_STUDENTI}}"
+#   echo "
+#     UPDATE $TABLE
+#     SET email_gsuite = 's.' 
+#         || REPLACE(REPLACE(cognome, '''',''), ' ', '') 
+#         || '.' || REPLACE(REPLACE(nome, '''', ''), ' ', '') 
+#         || '.' || matricola || '@$DOMAIN',
+#       aggiunto_il = '$CURRENT_DATE'
+#     WHERE sez LIKE '%_sirio' 
+#         AND (email_gsuite is NULL OR TRIM(email_gsuite) = '')
+#         AND (matricola IS NOT NULL AND TRIM(matricola) != '')
+#         AND (datar IS NULL OR TRIM(datar) = '');
+#   "
+# }
 
 function query::defaultStudentsParam() {
   local -A studentsParam=()

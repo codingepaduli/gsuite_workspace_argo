@@ -122,11 +122,11 @@ main() {
               echo "Creo la mail ai nuovi studenti ..."
                 
               # creo le mail del diurno
-              query="$(query::createUsernameDiurno )"
+              query="$(query::creaUsernameDiurno )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
               # creo le mail del serale
-              query="$(query::createEmailSirio )"
+              query="$(query::creaUsernameSerale )"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
             5)
