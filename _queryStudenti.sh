@@ -154,6 +154,48 @@ function query::normalizeSirioSection() {
   "
 }
 
+function query::createUsernameDiurno() {
+  local TABLE="${1:-${TABELLA_STUDENTI}}"
+  echo "
+    WITH
+      utentiPrimoNome AS (
+        -- seleziono solo il primo nome, separando al primo spazio trovato
+        SELECT *, CASE 
+                    WHEN INSTR(nome,' ')=0 THEN nome 
+                    ELSE SUBSTR(nome,1,INSTR(nome,' ')-1) 
+                  END AS primonome 
+        FROM $TABLE
+      ),
+      campiUtenteNormalizzati AS (
+        -- normalizzo i campi in lowercase togliendo apostrofi e spazi 
+        SELECT *,
+          REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') AS cognome_norm,
+          REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') AS nome_norm,
+          REPLACE(REPLACE(LOWER(primonome), '''', ''), ' ', '') AS primonome_norm
+        FROM utentiPrimoNome
+      ),
+      utentiConUsername AS (
+        -- compongo lo username
+        SELECT *, CASE
+            WHEN cl = 1 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
+            WHEN cl = 2 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
+            WHEN cl = 3 THEN 's.' || cognome_norm || '.' || primonome_norm || '@$DOMAIN'
+            ELSE 's.' || primonome_norm || '.' || cognome_norm || '@$DOMAIN'
+          END AS username
+        FROM campiUtenteNormalizzati
+      )
+    UPDATE $TABLE 
+    SET email_gsuite = ucu.username,
+        aggiunto_il = '$CURRENT_DATE'
+    FROM  utentiConUsername AS ucu
+    WHERE ($TABLE.cod_fisc = ucu.cod_fisc)
+      AND ($TABLE.sez NOT LIKE '%_sirio')
+      AND ($TABLE.email_gsuite is NULL OR TRIM($TABLE.email_gsuite) = '') 
+      AND ($TABLE.matricola IS NOT NULL AND TRIM($TABLE.matricola) != '')
+      AND ($TABLE.datar IS NULL OR TRIM($TABLE.datar) = '');
+  "
+}
+
 function query::createEmailDiurno() {
   local TABLE="${1:-${TABELLA_STUDENTI}}"
   echo "
