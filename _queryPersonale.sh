@@ -18,22 +18,58 @@ function query::createTableIfNotExists() {
   local TABLE="${1:-${TABELLA_PERSONALE}}"
   echo "
     CREATE TABLE IF NOT EXISTS '$TABLE' ( 
-      tipo_personale VARCHAR(200), 
-      cognome VARCHAR(200), 
-      nome VARCHAR(200), 
-      data_nascita VARCHAR(200), 
-      codice_fiscale VARCHAR(200), 
-      telefono VARCHAR(200), 
-      altro_telefono VARCHAR(200), 
-      cellulare VARCHAR(200), 
-      email_personale VARCHAR(200), 
-      email_gsuite VARCHAR(200), 
-      aggiunto_il TEXT, 
-      cancellato_il TEXT, 
-      contratto VARCHAR(200), 
-      dipartimento VARCHAR(200), 
-      note VARCHAR(200)
-    );
+      tipo_personale TEXT, 
+      cognome TEXT, 
+      nome TEXT, 
+      data_nascita TEXT,        -- DATE
+      codice_fiscale TEXT, 
+      telefono TEXT, 
+      altro_telefono TEXT, 
+      cellulare TEXT, 
+      email_personale TEXT, 
+      email_gsuite TEXT, 
+      aggiunto_il TEXT,         -- DATE
+      cancellato_il TEXT,       -- DATE
+      contratto TEXT, 
+      dipartimento TEXT, 
+      note TEXT,
+      CHECK (
+        ( 
+          length(data_nascita)=10
+          AND SUBSTR(data_nascita,1,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(data_nascita,3,1)='/'
+          AND SUBSTR(data_nascita,4,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(data_nascita,6,1)='/'
+          AND SUBSTR(data_nascita,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        ) OR (
+          length(data_nascita)=10
+          AND SUBSTR(data_nascita,1,4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND SUBSTR(data_nascita,5,1)='-'
+          AND SUBSTR(data_nascita,6,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(data_nascita,8,1)='-'
+          AND SUBSTR(data_nascita,9,2) GLOB '[0-9][0-9]'
+        )
+      ),
+      CHECK (
+        cancellato_il IS NULL
+        OR TRIM(cancellato_il) = ''
+        OR (
+          length(cancellato_il)=10
+          AND SUBSTR(cancellato_il,1,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(cancellato_il,3,1)='/'
+          AND SUBSTR(cancellato_il,4,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(cancellato_il,6,1)='/'
+          AND SUBSTR(cancellato_il,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+        ) OR (
+          length(cancellato_il)=10
+          AND SUBSTR(cancellato_il,1,4) GLOB '[0-9][0-9][0-9][0-9]'
+          AND SUBSTR(cancellato_il,5,1)='-'
+          AND SUBSTR(cancellato_il,6,2) GLOB '[0-9][0-9]'
+          AND SUBSTR(cancellato_il,8,1)='-'
+          AND SUBSTR(cancellato_il,9,2) GLOB '[0-9][0-9]'
+        )
+      )
+    ) STRICT;
   "
 }
 
@@ -46,6 +82,16 @@ function query::normalizeFields() {
       email_personale = TRIM(LOWER(email_personale)),
       cognome = TRIM(UPPER(cognome)),
       nome = TRIM(UPPER(nome))
+  "
+}
+
+function query::normalizeBirthDate() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
+  
+  echo "
+    UPDATE $TABLE 
+    SET data_nascita = SUBSTR(data_nascita, 7, 4) || '-'
+        || SUBSTR(data_nascita, 4, 2) || '-' || SUBSTR(data_nascita, 1, 2);
   "
 }
 

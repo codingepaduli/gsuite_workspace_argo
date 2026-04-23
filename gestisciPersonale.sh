@@ -10,7 +10,7 @@ source "./_queryPersonale.sh"
 GRUPPO_CLASSROOM="insegnanti_classe"
 
 # File CSV di lavoro con personale versionata alla data indicata
-FILE_PERSONALE_CSV="$BASE_DIR/dati_argo/personale_argo/$TABELLA_PERSONALE.csv"
+FILE_PERSONALE_CSV="$PERSONALE_ARGO_IMPORT_DIR/$TABELLA_PERSONALE.csv"
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -62,6 +62,14 @@ main() {
     ;;
     2)
       echo "2. Importo e normalizzo i dati dal file CSV $FILE_PERSONALE_CSV ..."
+
+      $LIBREOFFICE_CMD --convert-to csv --outdir "$PERSONALE_ARGO_IMPORT_DIR" "$PERSONALE_ARGO_IMPORT_DIR/$TABELLA_PERSONALE.xls"
+
+      # Rimuovo tutte le righe vuote del file
+      sed -i '/^[[:space:]]*$/d' "$FILE_PERSONALE_CSV"
+
+      # Aggiungo due campi nel file
+      # sed -i 's/$/,,/' "$FILE_PERSONALE_CSV"
         
       # Importa CSV dati
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_PERSONALE_CSV $TABELLA_PERSONALE"
@@ -69,7 +77,11 @@ main() {
       # Normalizza dati
       query=$(query::normalizeFields )
       $SQLITE_CMD studenti.db "$query"
-        
+      
+      # Normalizza birthday
+      query=$(query::normalizeBirthDate )
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
       # Normalizza date
       query=$(query::normalizeInsertDate )
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
