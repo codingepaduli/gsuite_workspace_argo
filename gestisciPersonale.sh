@@ -181,7 +181,7 @@ main() {
       $SQLITE_CMD studenti.db -header -table  "INSERT INTO $TABELLA_PERSONALE $query"
     ;;
     9)
-      checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA" "$PASSWORD_CLASSROOM"
+      checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA" "PASSWORD_CLASSROOM"
       
       echo "Crea il nuovo personale su GSuite ..."
 
