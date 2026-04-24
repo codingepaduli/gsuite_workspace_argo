@@ -33,6 +33,7 @@ show_menu() {
     echo "6. Creo le tabelle, importo il personale"
     echo "7. Eseguo script aggiornamento email personale"
     echo "8. Importo personale 'precedente' "
+    echo "9. Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
 
     echo "20. Esci"
 }
@@ -133,6 +134,31 @@ main() {
 
         ./gestisciPersonale.sh "$IMPORT_OLD_EMPLOYEES"
         ./gestisciPersonale.sh "$CHECK_EMPLOYEES"
+      ;;
+      9)
+        echo "Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
+        local CREATE_MAIL_TEACHER=4
+        local CREATE_MAIL_ATA=5
+        local CREATE_ACCOUNT_ON_GSUITE=9
+        local EXPORT_AS_CSV=6
+        local CREATE_SCRIPT_CF=12
+        local ADD_EMPLOYEES_TO_GROUPS=4
+        local ADD_EMPLOYEES_TO_DEPART=7
+
+        echo "creo email"
+        ./gestisciPersonale.sh "$CREATE_MAIL_TEACHER"
+        echo "creo email ata"
+        ./gestisciPersonale.sh "$CREATE_MAIL_ATA"
+        echo "creo account"
+        ./gestisciPersonale.sh "$CREATE_ACCOUNT_ON_GSUITE"
+        echo "export"
+        ./gestisciPersonale.sh "$EXPORT_AS_CSV"
+        echo "creo script.sh"
+        ./gestisciPersonale.sh "$CREATE_SCRIPT_CF"
+        echo "aggiungo a gruppi"
+        ./gestisciGruppiGSuiteDocenti.sh "$ADD_EMPLOYEES_TO_GROUPS"
+        echo "aggiungo ai dipartimenti"
+        ./gestisciDipartimenti.sh "$ADD_EMPLOYEES_TO_DEPART"
       ;;
       20)
         echo "Arrivederci!"
