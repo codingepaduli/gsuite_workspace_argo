@@ -94,10 +94,8 @@ show_menu() {
 
 # Funzione principale
 main() {
-    while true; do
-        show_menu
-        read -p "Scegli un'opzione (1-20): " -r choice
-        
+        local choice="$1"
+
         case $choice in
             1)
                 echo "Aggiungi tutti i membri ai gruppi GSuite ..."
@@ -241,12 +239,34 @@ main() {
                 sleep 1
                 ;;
         esac
-        
-        # Pausa per permettere all'utente di leggere il risultato
-        read -p "Premi Invio per continuare..." -r _
-    done
 }
 
-# Avvia la funzione principale
-main
+showConfig() {
+  if log::level_is_active "CONFIG"; then
+    log::_write_log "CONFIG" "Checking config - $(date --date='today' '+%Y-%m-%d %H:%M:%S')"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
+    log::_write_log "CONFIG" "Tabella personale: $TABELLA_PERSONALE"
+    log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_PERSONALE_DA" 
+    log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_PERSONALE_A"
+    log::_write_log "CONFIG" "Dominio: $DOMAIN"
+    log::_write_log "CONFIG" "Gruppo Classroom: $GRUPPO_CLASSROOM"
+    log::_write_log "CONFIG" "Password Classroom: $PASSWORD_CLASSROOM"
+    log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "-----------------------------------------"
+    read -p "Premi Invio per continuare..." -r _
+  fi
+}
 
+if [ "$#" -eq 1 ]; then
+  scelta="$1"
+else
+  # Show config vars
+  showConfig
+
+  show_menu
+  read -p "Scegli un'opzione (1-20): " -r scelta
+fi
+
+# Avvia la funzione principale
+main "$scelta"
