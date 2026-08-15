@@ -34,6 +34,9 @@ show_menu() {
   echo "15. "
   echo "16. Controlla codici fiscali duplicati"
   echo "17. Controlla email gsuite duplicate"
+  echo "18. Cancello e ricreo la tabella studenti DIPLOMATI, poi salvo i diplomati"
+  echo "19. VEDI FIXME - Copio i dati dalla tabella studenti DIPLOMATI nella tabella studenti ..."
+
   echo "20. Esci"
 }
 
@@ -332,6 +335,48 @@ main() {
       query="$(query::studentiByEmailGSuite "$FIELDS" "$ORDERING" "$EMAIL_GSUITE_IN")"
 
       $SQLITE_CMD studenti.db -header -table "$query"
+    ;;
+    18)
+      echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_DIPLOMATI ..."
+        
+      # Cancello la tabella
+      local query
+      query="$(query::dropTableIfExists "$TABELLA_STUDENTI_DIPLOMATI" )"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+      # Creo la tabella
+      query="$(query::createTableIfNotExists "$TABELLA_STUDENTI_DIPLOMATI" )"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+      # Inserisco i dati
+      echo "Copio i dati dalla tabella $TABELLA_STUDENTI nella tabella $TABELLA_STUDENTI_DIPLOMATI ..."
+
+      local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
+      local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+      query="$(query::queryStudentiDellAnnoNonCancellatiConEmail "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" 5 )"
+        
+      # Copio i dati dei diplomati nella tabella diplomati
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI_DIPLOMATI ( $FIELDS, cl, sez ) $query ;"
+    
+      # incremento l'anno dei diplomati
+      query="$(query::incrementYearDiplomati)"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+    ;;
+    19)
+      echo "Copio i dati dalla tabella $TABELLA_STUDENTI_DIPLOMATI nella tabella $TABELLA_STUDENTI ..."
+      
+      # FIXME Funziona solo se nella query studenti si usa il LEFT JOIN invece di INNER JOIN
+      echo "Funziona solo se nella query studenti si usa il LEFT JOIN invece di INNER JOIN"
+
+      local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
+      local ORDERING="sz.sezione_gsuite, cognome, nome"
+
+      local query
+      query="$(query::queryStudentiTabellaDiplomatiTutti "$FIELDS, st.cl, st.sez " "$ORDERING" )"
+      
+      # Copio i dati dei diplomati nella tabella del diurno
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query; "
     ;;
     20)
       echo "Arrivederci!"

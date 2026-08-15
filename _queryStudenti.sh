@@ -389,7 +389,7 @@ function query::getQueryStudenti {
       AND (1=${studentsParam[FLAG_ADDRESS_ARGO_IN]} OR 
         sz.addr_argo IN ( ${studentsParam[FILTER_ADDRESS_ARGO_IN]} ) )
       AND (1=${studentsParam[FLAG_ADDRESS_GSUITE_IN]} OR 
-        addr_gsuite IN ( ${studentsParam[FILTER_ADDRESS_GSUITE_IN]} ) )
+        sz.addr_gsuite IN ( ${studentsParam[FILTER_ADDRESS_GSUITE_IN]} ) )
       AND (1=${studentsParam[FLAG_CLASSES_IN]} OR 
         sz.sezione_gsuite IN ( ${studentsParam[FILTER_CLASSES_IN]} ) )
       AND (1=${studentsParam[FLAG_CLASSES_LIKE]} OR 
@@ -467,6 +467,32 @@ function query::queryStudentiTabellaSeraleTutti {
   echo "$query"
 }
 
+function query::queryStudentiTabellaDiplomatiTutti {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[TABLE]=" $TABELLA_STUDENTI_DIPLOMATI "
+
+  # necessario per evitare filtro di default per anno e indirizzo
+  studentsParam[FLAG_ADDRESS_ARGO_IN]="$FLAG_OFF"
+  studentsParam[FLAG_YEARS_IN]="$FLAG_OFF"
+  studentsParam[FILTER_YEARS_IN]=" 6 "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
 function query::queryStudentiNonCancellatiConEmail {
   local queryParam
   queryParam="$(query::defaultStudentsParam)"
@@ -508,6 +534,39 @@ function query::queryStudentiDellaClasseNonCancellatiConEmail {
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
   studentsParam[FLAG_CLASSES_IN]="$FLAG_ON"
   studentsParam[FILTER_CLASSES_IN]="${3:-${studentsParam[FILTER_CLASSES_IN]}}"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
+function query::incrementYearDiplomati() {
+  echo "
+    UPDATE $TABELLA_STUDENTI_DIPLOMATI 
+    SET cl = 6;
+  "
+}
+
+function query::queryStudentiDellAnnoNonCancellatiConEmail {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+  studentsParam[FLAG_YEARS_IN]="$FLAG_ON"
+  studentsParam[FILTER_YEARS_IN]="${3:-${studentsParam[FILTER_YEARS_IN]}}"
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
