@@ -6,7 +6,9 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 source "./_queryStudenti.sh"
 
-# File CSV 
+# File XLS e CSV da importare
+FILE_XLS_STUDENTI="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
+FILE_XLS_STUDENTI_SERALE="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
 FILE_CSV_STUDENTI="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.csv"
 FILE_CSV_STUDENTI_SERALE="$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.csv"
 
@@ -64,9 +66,9 @@ main() {
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     1)
-      echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI ..."
+      echo "Importo e normalizzo i dati dal file XLS $FILE_XLS_STUDENTI ..."
 
-      $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI.xls"
+      $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$FILE_XLS_STUDENTI"
 
       # Rimuovo tutte le righe vuote del file
       sed -i '/^[[:space:]]*$/d' "$FILE_CSV_STUDENTI"
@@ -237,9 +239,9 @@ main() {
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     13)
-      echo "Importo e normalizzo i dati dal file CSV $FILE_CSV_STUDENTI_SERALE ..."
+      echo "Importo e normalizzo i dati dal file XLS $FILE_XLS_STUDENTI_SERALE ..."
 
-      $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$STUDENTI_ARGO_IMPORT_DIR/$TABELLA_STUDENTI_SERALE.xls"
+      $LIBREOFFICE_CMD --convert-to csv --outdir "$STUDENTI_ARGO_IMPORT_DIR" "$FILE_XLS_STUDENTI_SERALE"
 
       # Rimuovo tutte le righe vuote del file
       sed -i '/^[[:space:]]*$/d' "$FILE_CSV_STUDENTI_SERALE"
@@ -396,9 +398,11 @@ showConfig() {
     log::_write_log "CONFIG" "Current date: $CURRENT_DATE"
     log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
     log::_write_log "CONFIG" "Tabella studenti serale: $TABELLA_STUDENTI_SERALE"
+    log::_write_log "CONFIG" "Tabella studenti serale: $TABELLA_STUDENTI_SERALE"
+    log::_write_log "CONFIG" "Cartella di importazione: $STUDENTI_ARGO_IMPORT_DIR"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
-    log::_write_log "CONFIG" "File CVS studenti diurno: $FILE_CSV_STUDENTI"
-    log::_write_log "CONFIG" "File CVS studenti serale: $FILE_CSV_STUDENTI_SERALE"
+    log::_write_log "CONFIG" "File studenti diurno: $FILE_XLS_STUDENTI"
+    log::_write_log "CONFIG" "File studenti serale: $FILE_XLS_STUDENTI_SERALE"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
   fi
