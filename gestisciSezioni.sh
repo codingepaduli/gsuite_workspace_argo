@@ -12,8 +12,8 @@ show_menu() {
     echo "-------------"
     echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
     echo "-------------"
-    echo "1. Crea tabella sezioni a partire dai dati degli studenti"
-    echo "2. Crea dati delle sezioni"
+    echo "1. Cancella e crea tabella sezioni"
+    echo "2. Crea dati delle sezioni a partire dai dati degli studenti"
     echo "3. Visualizza sezioni"
     echo "4. Esporto le sezioni in file CSV"
     echo ""
@@ -35,7 +35,7 @@ main() {
         
         case $choice in
             1)
-              echo "Crea tabella sezioni a partire dai dati degli studenti ..."
+              echo "Cancella e crea tabella sezioni ..."
               
               # Cancello la tabella
               query="$(query::dropTableIfExists)"
@@ -46,7 +46,7 @@ main() {
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
             2)
-              echo "Crea dati delle sezioni ..."
+              echo "Crea dati delle sezioni a partire dai dati degli studenti ..."
 
               query="$(query::queryCreaSezioniDaStudenti)"
               $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
