@@ -26,6 +26,9 @@ GAM_CMD="$HOME/bin/gam/gam"
 # Libreoffice conversion
 LIBREOFFICE_CMD='flatpak run org.libreoffice.LibreOffice --headless ' # 'echo --convert-to xlsx '
 
+# Python
+PYTHON_CMD="python3"
+
 # Script to run
 RUN_CMD_WITH_QUERY="$BASE_DIR/eseguiComandoConQuery.sh "
 
@@ -37,13 +40,13 @@ CURRENT_DATE="$(date --date='today' '+%Y-%m-%d')"
 #       Import / Export folders         #
 #########################################
 
-ARGO_IMPORT_DIR="$BASE_DIR/dati_argo/"
+ARGO_IMPORT_DIR="$BASE_DIR/dati_argo"
 
-STUDENTI_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/studenti_argo/"
+STUDENTI_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/studenti_argo"
 
-CDC_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/cdc/"
+CDC_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/cdc"
 
-PERSONALE_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/personale_argo/"
+PERSONALE_ARGO_IMPORT_DIR="$ARGO_IMPORT_DIR/personale_argo"
 
 # Cartella di esportazione
 EXPORT_DIR="$BASE_DIR/export"
