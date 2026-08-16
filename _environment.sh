@@ -90,6 +90,8 @@ export ENABLE_QUERY_FILTER=0
 TABELLA_STUDENTI="" # studenti_argo_2025_06_22
 TABELLA_STUDENTI_SERALE="" # studenti_argo_2025_06_22_sirio
 
+TABELLA_STUDENTI_DIPLOMATI="" #studenti_argo_diplomati
+
 # Usata nella gestione classi per rilevare le differenze
 TABELLA_STUDENTI_PRECEDENTE="" # studenti_argo_2025_06_01
 
