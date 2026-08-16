@@ -6,6 +6,8 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 source "./_querySezioni.sh"
 
+FILE_SEZIONI_CSV="${EXPORT_DIR_DATE}/${TABELLA_SEZIONI}_${CURRENT_DATE}.csv"
+
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione tabella sezioni $TABELLA_SEZIONI"
@@ -64,7 +66,7 @@ main() {
               echo "Esporto le sezioni in file CSV ..."
 
               query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
-              $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/${TABELLA_SEZIONI}_$CURRENT_DATE.csv"
+              $SQLITE_CMD studenti.db -header -csv "$query" > "$FILE_SEZIONI_CSV"
             ;;
             6)
               echo "Invia elenco classi ai coordinatori"
@@ -103,12 +105,12 @@ main() {
               done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
             ;;
             20)
-                echo "Arrivederci!"
-                exit 0
+              echo "Arrivederci!"
+              exit 0
             ;;
             *)
-                echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
-                sleep 1
+              echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
+              sleep 1
             ;;
         esac
 }
@@ -121,6 +123,7 @@ showConfig() {
     log::_write_log "CONFIG" "Tabella studenti diurno: $TABELLA_STUDENTI"
     log::_write_log "CONFIG" "Tabella sezioni: $TABELLA_SEZIONI"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
+    log::_write_log "CONFIG" "File di esportazione CSV: $FILE_SEZIONI_CSV"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
   fi
