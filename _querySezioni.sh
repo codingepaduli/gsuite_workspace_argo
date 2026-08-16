@@ -16,15 +16,15 @@ function query::dropTableIfExists() {
 function query::createTableIfNotExists() {
   echo "
     CREATE TABLE IF NOT EXISTS '$TABELLA_SEZIONI' (
-      cl NUMERIC,
-      letter VARCHAR(200),
-      addr_argo VARCHAR(200),
-      sez_argo NUMERIC,
-      addr_gsuite VARCHAR(200),
-      sez_gsuite VARCHAR(200),
-      sezione_gsuite VARCHAR(200),
-      email_coordinatore VARCHAR(200)
-    )
+      cl INTEGER NOT NULL,
+      letter TEXT NOT NULL,
+      addr_argo TEXT NOT NULL,
+      sez_argo TEXT NOT NULL,
+      addr_gsuite TEXT NOT NULL,
+      sez_gsuite TEXT NOT NULL,
+      sezione_gsuite TEXT NOT NULL,
+      email_coordinatore TEXT DEFAULT NULL
+    ) STRICT
   "
 }
 
