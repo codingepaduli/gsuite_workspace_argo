@@ -54,6 +54,7 @@ main() {
         local CREATE_TABLE_STUDENTS_SIRIO=12
         local IMPORT_STUDENTS_SIRIO=13
         local COPY_STUDENTS_FROM_SIRIO=14
+        local COPY_STUDENTS_FROM_GRADUATED=19
 
         ./gestisciStudenti.sh "$CREATE_TABLE_STUDENTS"
         ./gestisciStudenti.sh "$IMPORT_STUDENTS"
@@ -62,6 +63,7 @@ main() {
         ./gestisciStudenti.sh "$IMPORT_STUDENTS_SIRIO"
         read -p "Premi per continuare " -r _
         ./gestisciStudenti.sh "$COPY_STUDENTS_FROM_SIRIO"
+        ./gestisciStudenti.sh "$COPY_STUDENTS_FROM_GRADUATED"
         read -p "Premi per continuare " -r _
       ;;
       1)
