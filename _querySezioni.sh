@@ -151,7 +151,7 @@ function query::queryCreaSezioniDaStudenti {
 function execDebug {
   if log::level_is_active "DEBUG"; then
     local param
-    param="$(query::defaultStudentsParam)"
+    param="$(query::defaultSectionParam)"
     echo "$param"
     
     local query
