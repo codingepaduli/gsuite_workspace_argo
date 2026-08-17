@@ -313,28 +313,12 @@ main() {
       echo "Controllo i dati"
 
       echo "Codici fiscali duplicati"
+      query=$(query::getDuplicatedCF )
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-      $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "
-        SELECT *
-        FROM $TABELLA_PERSONALE 
-        WHERE UPPER(codice_fiscale) IN (
-          SELECT UPPER(codice_fiscale)
-          FROM $TABELLA_PERSONALE 
-          GROUP BY UPPER(codice_fiscale)
-          HAVING COUNT(*) > 1
-        )"
-      
       echo "email duplicate"
-
-      $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "
-        SELECT *
-        FROM $TABELLA_PERSONALE 
-        WHERE UPPER(email_gsuite) IN (
-          SELECT UPPER(email_gsuite)
-          FROM $TABELLA_PERSONALE 
-          GROUP BY UPPER(email_gsuite)
-          HAVING COUNT(*) > 1
-        )"
+      query=$(query::getDuplicatedEmail )
+      $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "$query"
     ;;
     20)
       echo "Arrivederci!"

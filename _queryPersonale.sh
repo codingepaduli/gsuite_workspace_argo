@@ -241,7 +241,7 @@ function query::getQueryEmployees {
         (note IS NOT NULL AND LOWER(note) != '' ))
       AND (1=${employeesParam[FLAG_NOTE_NOT_EXISTS]} OR 
         (note IS NULL OR LOWER(note) = '' ))
-    ORDER BY ${employeesParam[ORDERING]} ASC;
+    ORDER BY ${employeesParam[ORDERING]} ASC
   "
 }
 
@@ -438,7 +438,6 @@ function query::getQueryTeachersWithGSuiteEmail {
   eval "${queryParam}"
 
   # modifica mappa
-  # modifica mappa
   local EMPLOYEES_FIELDS="LOWER(tipo_personale) as tipo, 
     UPPER(cognome) as cognome, UPPER(nome) as nome, 
     LOWER(email_personale) as email_personale, 
@@ -459,6 +458,61 @@ function query::getQueryTeachersWithGSuiteEmail {
   local query
   query="$(query::getQueryEmployees "$queryParamString" )"
   echo "$query"
+}
+
+function query::getDuplicatedCF {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "
+    SELECT *
+    FROM ( $query ) 
+    WHERE UPPER(codice_fiscale) IN (
+      SELECT UPPER(codice_fiscale)
+      FROM ( $query ) 
+      GROUP BY UPPER(codice_fiscale)
+      HAVING COUNT(*) > 1
+    )"
+}
+
+
+function query::getDuplicatedEmail {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "
+    SELECT *
+    FROM ( $query ) 
+    WHERE UPPER(email_gsuite) IN (
+      SELECT UPPER(email_gsuite)
+      FROM ( $query ) 
+      GROUP BY UPPER(email_gsuite)
+      HAVING COUNT(*) > 1
+    )"
 }
 
 # Esempio di come chiamare la funzione
