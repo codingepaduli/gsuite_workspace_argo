@@ -7,10 +7,41 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
+function query::dropTableIfExists() {
+  local TABLE="${1:-${TABELLA_CDC_ARGO}}"
+  echo "
+    DROP TABLE IF EXISTS '$TABLE';
+  "
+}
+
+function query::createTableIfNotExists() {
+  local TABLE="${1:-${TABELLA_CDC_ARGO}}"
+  echo "
+    CREATE TABLE IF NOT EXISTS '$TABLE' (
+      \"Pr.\" INTEGER NOT NULL,
+      Docente TEXT NOT NULL,
+      Materie TEXT NOT NULL,
+      Classi TEXT NOT NULL
+    ) STRICT;
+  "
+}
+
+function query::normalizeFields() {
+  local TABLE="${1:-${TABELLA_CDC_ARGO}}"
+  
+  echo "
+    UPDATE $TABLE 
+    SET Docente = TRIM(UPPER(Docente)),
+        Materie = TRIM(UPPER(Materie)),
+        Classi = SUBSTR(Classi, 1, INSTR(Classi,' ')-1);
+  "
+}
+
+
 function query::defaultCdCParam() {
   local -A cdcParam=()
-  cdcParam[FIELDS]=" * "
-  cdcParam[ORDERING]=" sezione_gsuite, d.cognome, d.nome "
+  cdcParam[FIELDS]=" UPPER(docente) AS docente, materie AS materia "
+  cdcParam[ORDERING]=" sezione_gsuite, cognome, nome "
 
   # filtro da tabella CdC
   cdcParam[FLAG_DOCENTE_NOT_IN]="$FLAG_OFF"
@@ -52,14 +83,14 @@ function query::defaultCdCParam() {
   cdcParam[FLAG_DIPARTIMENTO_NOT_EXISTS]="$FLAG_OFF"
 
   ## filtro da tabella sezioni
-  cdcParam[FLAG_YEARS]="$FLAG_ON"
-  cdcParam[FILTER_YEARS]="$SQL_FILTRO_ANNI"
-  cdcParam[FLAG_ADDRESS_ARGO]="$FLAG_ON"
-  cdcParam[FILTER_ADDRESS_ARGO]="$SQL_FILTRO_SEZIONI"
-  cdcParam[FLAG_ADDRESS_GSUITE]="$FLAG_OFF"
-  cdcParam[FILTER_ADDRESS_GSUITE]=" '' "
-  cdcParam[FLAG_CLASSES]="$FLAG_OFF"
-  cdcParam[FILTER_CLASSES]=" '' "
+  cdcParam[FLAG_YEARS_IN]="$FLAG_ON"
+  cdcParam[FILTER_YEARS_IN]="$SQL_FILTRO_ANNI"
+  cdcParam[FLAG_ADDRESS_ARGO_IN]="$FLAG_ON"
+  cdcParam[FILTER_ADDRESS_ARGO_IN]="$SQL_FILTRO_SEZIONI"
+  cdcParam[FLAG_ADDRESS_GSUITE_IN]="$FLAG_OFF"
+  cdcParam[FILTER_ADDRESS_GSUITE_IN]=" '' "
+  cdcParam[FLAG_CLASSES_IN]="$FLAG_OFF"
+  cdcParam[FILTER_CLASSES_IN]=" '' "
   cdcParam[FLAG_SUPERVISORS_EXISTS]="$FLAG_OFF"
   cdcParam[FLAG_SUPERVISORS_NOT_EXISTS]="$FLAG_OFF"
 
@@ -74,12 +105,33 @@ function query::getQueryCdc {
   eval "${queryParam}"
 
   echo "
-    SELECT ${cdcParam[FIELDS]}
-    FROM $TABELLA_CDC
-      INNER JOIN $TABELLA_SEZIONI sz
-        ON cdc.classi = (sz.cl || sz.sez_argo)
-      INNER JOIN $TABELLA_PERSONALE d
+    WITH consigli AS (
+      SELECT cdc.* , sz.* , d.*,
+        CASE 
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('en', 'et')         THEN 'primo_biennio_elettronica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'primo_biennio_informatica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mDD')         THEN 'primo_biennio_meccanica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('od')               THEN 'primo_biennio_odontotecnica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('tr')               THEN 'primo_biennio_aeronautica'
+          
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('en', 'et')         THEN 'secondo_biennio_elettronica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'secondo_biennio_informatica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mDD')         THEN 'secondo_biennio_meccanica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('od')               THEN 'secondo_biennio_odontotecnica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('tr')               THEN 'secondo_biennio_aeronautica'
+          
+          WHEN sz.cl IN (6)                                             THEN 'diplomati'
+
+          ELSE ''
+        END AS biennio
+      FROM $TABELLA_CDC_ARGO cdc
+        INNER JOIN $TABELLA_SEZIONI sz
+          ON cdc.classi = (sz.cl || sz.sez_argo)
+        INNER JOIN $TABELLA_PERSONALE d
         ON UPPER(d.cognome || ' ' || d.nome) = UPPER(cdc.docente) 
+    )
+    SELECT ${cdcParam[FIELDS]}
+    FROM consigli
     WHERE 1=1 
       -- tabella CdC
       AND (1=${cdcParam[FLAG_DOCENTE_NOT_IN]} OR 
@@ -126,14 +178,14 @@ function query::getQueryCdc {
         (dipartimento IS NULL OR LOWER(dipartimento) = '' ) )
 
       -- tabella sezioni
-      AND (1=${cdcParam[FLAG_YEARS]} OR 
-        (anno IN ( ${cdcParam[FILTER_YEARS]} ) ) )
-      AND (1=${cdcParam[FLAG_ADDRESS_ARGO]} OR 
-        (addr_argo IN ( ${cdcParam[FILTER_ADDRESS_ARGO]} ) ) )
-      AND (1=${cdcParam[FLAG_ADDRESS_GSUITE]} OR 
-        (addr_gsuite IN ( ${cdcParam[FILTER_ADDRESS_GSUITE]} ) ) )
-      AND (1=${cdcParam[FLAG_CLASSES]} OR 
-        (sezione_gsuite IN ( ${cdcParam[FILTER_CLASSES]} ) ) )
+      AND (1=${cdcParam[FLAG_YEARS_IN]} OR 
+        (cl IN ( ${cdcParam[FILTER_YEARS_IN]} ) ) )
+      AND (1=${cdcParam[FLAG_ADDRESS_ARGO_IN]} OR 
+        (addr_argo IN ( ${cdcParam[FILTER_ADDRESS_ARGO_IN]} ) ) )
+      AND (1=${cdcParam[FLAG_ADDRESS_GSUITE_IN]} OR 
+        (addr_gsuite IN ( ${cdcParam[FILTER_ADDRESS_GSUITE_IN]} ) ) )
+      AND (1=${cdcParam[FLAG_CLASSES_IN]} OR 
+        (sezione_gsuite IN ( ${cdcParam[FILTER_CLASSES_IN]} ) ) )
       AND (1=${cdcParam[FLAG_SUPERVISORS_EXISTS]} OR 
         (email_coordinatore IS NOT NULL AND LOWER( email_coordinatore) != '' ) )
       AND (1=${cdcParam[FLAG_SUPERVISORS_NOT_EXISTS]} OR 
@@ -141,3 +193,108 @@ function query::getQueryCdc {
     ORDER BY ${cdcParam[ORDERING]} ASC;
   "
 }
+
+function query::queryAllCdc {
+  local queryParam
+  queryParam="$(query::defaultCdCParam)"
+  
+  # clona mappa
+  local -A cdcParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  cdcParam[FIELDS]="${1:-${cdcParam[FIELDS]}}"
+  cdcParam[ORDERING]="${2:-${cdcParam[ORDERING]}}"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "cdcParam")"
+
+  local query
+  query="$(query::getQueryCdc "$queryParam")"
+  echo "$query"
+}
+
+function query::queryCdcByClass {
+  local queryParam
+  queryParam="$(query::defaultCdCParam)"
+
+  # clona mappa
+  local -A cdcParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  cdcParam[FIELDS]="${1:-${cdcParam[FIELDS]}}"
+  cdcParam[ORDERING]="${2:-${cdcParam[ORDERING]}}"
+
+  cdcParam[FLAG_CLASSES_IN]="$FLAG_ON"
+  cdcParam[FILTER_CLASSES_IN]=" '${3}' "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "cdcParam")"
+
+  local query
+  query="$(query::getQueryCdc "$queryParam")"
+  echo "$query"
+}
+
+function query::queryNewTeachers {
+  local queryParam
+  queryParam="$(query::defaultCdCParam)"
+
+  # clona mappa
+  local -A cdcParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  cdcParam[FIELDS]="${1:-${cdcParam[FIELDS]}}"
+  cdcParam[ORDERING]="${2:-${cdcParam[ORDERING]}}"
+
+  cdcParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "cdcParam")"
+
+  local query
+  query="$(query::getQueryCdc "$queryParam")"
+  echo "$query"
+}
+
+
+function query::queryCdcByBienni {
+  local queryParam
+  queryParam="$(query::defaultCdCParam)"
+
+  # clona mappa
+  local -A cdcParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  cdcParam[FIELDS]="${1:-${cdcParam[FIELDS]}}"
+  cdcParam[ORDERING]="${2:-${cdcParam[ORDERING]}}"
+
+  cdcParam[FLAG_CLASSES_IN]="$FLAG_ON"
+  cdcParam[FILTER_CLASSES_IN]=" '1, 2, 3, 4' "
+
+  # clona mappa modificata
+  queryParam="$(declare -p "cdcParam")"
+
+  local query
+  query="$(query::getQueryCdc "$queryParam")"
+  echo "$query"
+}
+
+
+# Esempio di come chiamare la funzione
+function execDebug {
+  if log::level_is_active "DEBUG"; then
+    local param
+    param="$(query::defaultCdCParam)"
+    echo "$param"
+    
+    local query
+    query="$(query::queryAllCdc)"
+    echo "$query"
+  fi
+}
+
+execDebug
