@@ -283,7 +283,7 @@ function query::creaUsernameSerale() {
 
 function query::defaultStudentsParam() {
   local -A studentsParam=()
-  studentsParam[FIELDS]=" * "
+  studentsParam[FIELDS]=" cognome,nome,cod_fisc,st.cl,st.sez,e_mail,email_pa,email_ma,email_gen,matricola,codicesidi,datan,ritira,datar,email_gsuite,aggiunto_il"
   studentsParam[ORDERING]=" UPPER(cod_fisc) "
   studentsParam[TABLE]=" $TABELLA_STUDENTI "
 
@@ -416,48 +416,7 @@ function query::queryStudentiTutti {
   # modifica mappa
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-
-  # clona mappa modificata
-  queryParam="$(declare -p "studentsParam")"
-
-  local query
-  query="$(query::getQueryStudenti "$queryParam")"
-  echo "$query"
-}
-
-function query::queryStudentiPrecedentiTutti {
-  local queryParam
-  queryParam="$(query::defaultStudentsParam)"
-  
-  # clona mappa
-  local -A studentsParam=()
-  eval "$queryParam"
-
-  # modifica mappa
-  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
-  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-  studentsParam[TABLE]=" $TABELLA_STUDENTI_PRECEDENTE "
-
-  # clona mappa modificata
-  queryParam="$(declare -p "studentsParam")"
-
-  local query
-  query="$(query::getQueryStudenti "$queryParam")"
-  echo "$query"
-}
-
-function query::queryStudentiTabellaSeraleTutti {
-  local queryParam
-  queryParam="$(query::defaultStudentsParam)"
-  
-  # clona mappa
-  local -A studentsParam=()
-  eval "$queryParam"
-
-  # modifica mappa
-  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
-  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-  studentsParam[TABLE]=" $TABELLA_STUDENTI_SERALE "
+  studentsParam[TABLE]="${3:-${studentsParam[TABLE]}}"
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
@@ -478,9 +437,10 @@ function query::queryStudentiTabellaDiplomatiTutti {
   # modifica mappa
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
-  studentsParam[TABLE]=" $TABELLA_STUDENTI_DIPLOMATI "
+  studentsParam[TABLE]="${3:-${studentsParam[TABLE]}}"
 
   # necessario per evitare filtro di default per anno e indirizzo
+  # FIXME probabilmente non sono piu necessari questi primi due flag
   studentsParam[FLAG_ADDRESS_ARGO_IN]="$FLAG_OFF"
   studentsParam[FLAG_YEARS_IN]="$FLAG_OFF"
   studentsParam[FILTER_YEARS_IN]=" 6 "
@@ -504,6 +464,7 @@ function query::queryStudentiNonCancellatiConEmail {
   # modifica mappa
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[TABLE]="${3:-${studentsParam[TABLE]}}"
   studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
@@ -534,6 +495,8 @@ function query::queryStudentiDellaClasseNonCancellatiConEmail {
   studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
   studentsParam[FLAG_CLASSES_IN]="$FLAG_ON"
   studentsParam[FILTER_CLASSES_IN]="${3:-${studentsParam[FILTER_CLASSES_IN]}}"
+  studentsParam[TABLE]="${4:-${studentsParam[TABLE]}}"
+
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
@@ -831,6 +794,22 @@ function query::studentiByEmailGSuite {
 }
 
 function query::numeroStudentiPerClasse {
+  local query
+  query="$(query::queryStudentiNonCancellatiConEmail)"
+
+  query="
+    SELECT sezione_gsuite AS classe, COUNT(*) AS numero_alunni
+    FROM (
+      $query
+    ) 
+    GROUP BY sezione_gsuite
+    ORDER BY sezione_gsuite
+  "
+
+  echo "$query"
+}
+
+function query::studentiCambioClasse {
   local queryParam
   queryParam="$(query::defaultStudentsParam)"
   
@@ -839,22 +818,66 @@ function query::numeroStudentiPerClasse {
   eval "$queryParam"
 
   # modifica mappa
-  studentsParam[FIELDS]="UPPER(cod_fisc) AS cod_fisc"
-  studentsParam[ORDERING]="UPPER(cod_fisc)"
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
 
-  local query
-  query="$(query::queryStudentiNonCancellatiConEmail)"
+  local queryPrecedenti
+  queryPrecedenti="$(query::queryStudentiNonCancellatiConEmail " st.*, sz.* " "st.cl, st.sez, st.cod_fisc" "$TABELLA_STUDENTI_PRECEDENTE" )"
+  
+  local queryAttuali
+  queryAttuali="$(query::queryStudentiNonCancellatiConEmail " st.*, sz.* " "st.cl, st.sez, st.cod_fisc")"
 
   query="
-  SELECT sezione_gsuite AS classe, COUNT(*) AS numero_alunni
-  FROM (
-    $query
-  ) 
-  GROUP BY sezione_gsuite
-  ORDER BY sezione_gsuite
+    SELECT ${studentsParam[FIELDS]}
+    FROM ( $queryPrecedenti ) as stP
+      INNER JOIN ( $queryAttuali ) as stD
+      ON stD.email_gsuite = stP.email_gsuite
+    WHERE 
+      -- cambia classe o sezione
+      stP.sezione_gsuite != stD.sezione_gsuite
+    ORDER BY ${studentsParam[ORDERING]}
+  "
+
+  echo "$query"
+}
+
+
+function query::studentiCambioClasseByYear {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_YEARS_IN]="$FLAG_ON"
+  studentsParam[FILTER_YEARS_IN]="${3:-${studentsParam[FILTER_YEARS_IN]}}"
+  studentsParam[TABLE]="${4:-${studentsParam[TABLE]}}"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local queryPrecedenti
+  queryPrecedenti="$(query::queryStudentiDellAnnoNonCancellatiConEmail " st.*, sz.* " "st.cl, st.sez, st.cod_fisc" "${studentsParam[FILTER_YEARS_IN]}" "$TABELLA_STUDENTI_PRECEDENTE" )"
+  
+  local queryAttuali
+  queryAttuali="$(query::queryStudentiDellAnnoNonCancellatiConEmail " st.*, sz.* " "st.cl, st.sez, st.cod_fisc" "${studentsParam[FILTER_YEARS_IN]}" )"
+
+  query="
+    SELECT ${studentsParam[FIELDS]}
+    FROM ( $queryPrecedenti ) as stP
+      INNER JOIN ( $queryAttuali ) as stD
+      ON stD.email_gsuite = stP.email_gsuite
+    WHERE 
+      -- cambia classe o sezione
+      stP.sezione_gsuite != stD.sezione_gsuite
+    ORDER BY ${studentsParam[ORDERING]}
   "
 
   echo "$query"

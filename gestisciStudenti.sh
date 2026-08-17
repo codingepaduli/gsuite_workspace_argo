@@ -180,7 +180,7 @@ main() {
       query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
       
       local queryStudentiPrecedenti
-      queryStudentiPrecedenti="$(query::queryStudentiPrecedentiTutti "$FIELDS" "$ORDERING" )"
+      queryStudentiPrecedenti="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" "$TABELLA_STUDENTI_PRECEDENTE" )"
         
       echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
       echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
@@ -285,7 +285,7 @@ main() {
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
       local query
-      query="$(query::queryStudentiTabellaSeraleTutti "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" )"
+      query="$(query::queryStudentiTutti "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" "$TABELLA_STUDENTI_SERALE" )"
         
       # Copio i dati del serale nella tabella del diurno
       # unificando i dati ed il processo di gestione
@@ -375,7 +375,7 @@ main() {
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
       local query
-      query="$(query::queryStudentiTabellaDiplomatiTutti "$FIELDS, st.cl, st.sez " "$ORDERING" )"
+      query="$(query::queryStudentiTabellaDiplomatiTutti "$FIELDS, st.cl, st.sez " "$ORDERING" "$TABELLA_STUDENTI_DIPLOMATI" )"
       
       # Copio i dati dei diplomati nella tabella del diurno
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query; "
