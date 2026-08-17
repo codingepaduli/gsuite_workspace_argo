@@ -35,6 +35,8 @@ show_menu() {
     echo "8. Importo personale 'precedente' "
     echo "9. Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
 
+    echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
+
     echo "20. Esci"
 }
 
@@ -161,6 +163,23 @@ main() {
         ./gestisciGruppiGSuiteDocenti.sh "$ADD_EMPLOYEES_TO_GROUPS"
         echo "aggiungo ai dipartimenti"
         ./gestisciDipartimenti.sh "$ADD_EMPLOYEES_TO_DEPART"
+      ;;
+      11)
+        echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
+
+        local CREATE_TABLE_CDC=0
+        local CREATE_AND_FILL_CSV_FROM_PDF=1
+        local IMPORT_CDC_AND_NORMALIZE_DATA=2
+        local EXPORT_CDC_AS_CSV=6
+
+        echo "cancello e ricreo tabella Cdc"
+        ./gestisciCdC.sh "$CREATE_TABLE_CDC"
+        echo "creo csv da pdf"
+        ./gestisciCdC.sh "$CREATE_AND_FILL_CSV_FROM_PDF"
+        echo "importo cdc da csv e normalizzo dati"
+        ./gestisciCdC.sh "$IMPORT_CDC_AND_NORMALIZE_DATA"
+        echo "esporto cdc in csv"
+        ./gestisciCdC.sh "$EXPORT_CDC_AS_CSV"
       ;;
       20)
         echo "Arrivederci!"
