@@ -19,19 +19,16 @@ show_menu() {
   echo "1. Cancello e ricreo la tabella del personale"
   echo "2. Importo e normalizzo i dati dal file CSV"
   echo "3. Visualizza personale neo-assunto"
-  echo "4. Creo la mail ai nuovi docenti"
-  echo "5. Creo la mail al nuovo personale ATA"
+  echo "4. Genero su DB la mail ai nuovi docenti"
+  echo "5. Genero su DB la mail al nuovo personale ATA"
   echo "6. Esporto il nuovo personale in file CSV"
   echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
   echo "8. Importa nella tabella attuale il personale della tabella precedente NON CANCELLATO E non incluso in quella attuale"
   echo "9. Crea il nuovo personale su GSuite"
   echo "10. Aggiungo i nuovi docenti su Classroom"
-  echo "11. Creo il nuovo personale su WordPress"
   echo "12. Crea script personale_CF.sh"
   echo "13. Sospendi (disabilita) personale"
   echo "14. Elimina personale"
-  echo "15. Visualizza personale su WordPress"
-  echo "16. Elimina personale su WordPress"
   echo "17. Sposta script personale_CF.sh relativo alla tabella precedente in root"
   echo "19. Controllo i dati"
   echo "20. Esci"
@@ -102,14 +99,14 @@ main() {
     4)
       checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
-      echo "Creo la mail ai nuovi docenti ..."
+      echo "Genero su DB la mail ai nuovi docenti ..."
       query=$(query::createEmailTeachers )
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     5)
       checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
-      echo "Creo la mail al nuovo personale ATA ..."
+      echo "Genero su DB la mail al nuovo personale ATA ..."
       
       query=$(query::createEmailATA )
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
@@ -203,31 +200,6 @@ main() {
       query=$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")
       $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "$query"
     ;;
-    11)
-      checkAllVarsNotEmpty "DOMAIN" "WORDPRESS_ROLE_TEACHER" "WORDPRESS_ROLE_ATA"
-      
-      echo "Creo il nuovo personale su $DOMAIN ..."
-      
-      $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_TEACHER" --query "
-        SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
-        FROM $TABELLA_PERSONALE
-        WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-          AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
-          AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-          AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-          AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-          ) AND UPPER(tipo_personale) = UPPER('docente');"
-
-      $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_ATA" --query "
-        SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
-        FROM $TABELLA_PERSONALE
-        WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
-          AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
-          AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
-          AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-          AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-          ) AND UPPER(tipo_personale) = UPPER('ata');"
-    ;;
     12)
       checkAllVarsNotEmpty "CURRENT_DATE"
 
@@ -281,16 +253,6 @@ main() {
         AND ( d.cancellato_il IS NOT NULL AND TRIM(d.cancellato_il) != ''
           AND d.cancellato_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A' );"
     ;;
-    15)
-      checkAllVarsNotEmpty "CURRENT_DATE"
-
-      echo "Visualizza personale su wordpress ..."
-
-      $RUN_CMD_WITH_QUERY --command showUsersOnWordPress --group " NO " --query "
-        SELECT LOWER(email_gsuite) 
-        FROM $TABELLA_PERSONALE 
-        WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
-    ;;
     17)
       cp "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_PERSONALE.sh" 
       chmod +x "$BASE_DIR/$TABELLA_PERSONALE.sh"
@@ -298,16 +260,6 @@ main() {
       # run the script
       echo "Eseguo script aggiornamento email" 
       "$BASE_DIR/$TABELLA_PERSONALE.sh"
-    ;;
-    16)
-      checkAllVarsNotEmpty "CURRENT_DATE"
-
-      echo "Cancella personale da wordpress ..."
-
-      $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "
-        SELECT LOWER(email_gsuite) 
-        FROM $TABELLA_PERSONALE 
-        WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
     ;;
     19)
       echo "Controllo i dati"

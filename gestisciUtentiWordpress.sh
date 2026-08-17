@@ -73,6 +73,52 @@ main() {
 
                 $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "select u.id from $TABELLA_UTENTI_WORDPRESS u WHERE u.id = 20000;"
                 ;;
+            
+            11)
+                checkAllVarsNotEmpty "DOMAIN" "WORDPRESS_ROLE_TEACHER" "WORDPRESS_ROLE_ATA"
+                
+                echo "Creo il nuovo personale su $DOMAIN ..."
+                
+                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_TEACHER" --query "
+                    SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
+                    FROM $TABELLA_PERSONALE
+                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                    AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+                    ) AND UPPER(tipo_personale) = UPPER('docente');"
+
+                $RUN_CMD_WITH_QUERY --command createUsersOnWordPress --group "$WORDPRESS_ROLE_ATA" --query "
+                    SELECT LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare 
+                    FROM $TABELLA_PERSONALE
+                    WHERE email_personale IS NOT NULL AND TRIM(email_personale) != ''
+                    AND (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '') 
+                    AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')
+                    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
+                    AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
+                    ) AND UPPER(tipo_personale) = UPPER('ata');"
+            ;;
+            15)
+                checkAllVarsNotEmpty "CURRENT_DATE"
+
+                echo "Visualizza personale su wordpress ..."
+
+                $RUN_CMD_WITH_QUERY --command showUsersOnWordPress --group " NO " --query "
+                    SELECT LOWER(email_gsuite) 
+                    FROM $TABELLA_PERSONALE 
+                    WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
+            ;;
+            16)
+                checkAllVarsNotEmpty "CURRENT_DATE"
+
+                echo "Cancella personale da wordpress ..."
+
+                $RUN_CMD_WITH_QUERY --command deleteUsersOnWordPress --group " NO " --query "
+                    SELECT LOWER(email_gsuite) 
+                    FROM $TABELLA_PERSONALE 
+                    WHERE email_gsuite IS NOT NULL AND aggiunto_il='$CURRENT_DATE';"
+            ;;
             20)
                 echo "Arrivederci!"
                 exit 0
