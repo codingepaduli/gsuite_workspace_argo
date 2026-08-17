@@ -136,6 +136,8 @@ main() {
     6)
       echo "Esporta un unico elenco docenti con classi associate in file CSV"
 
+      mkdir -p "$EXPORT_DIR_DATE"
+
       local FIELDS=" DISTINCT UPPER(docente) AS docente, materie AS materia "
       local ORDERING="sezione_gsuite"
       query="$(query::queryAllCdc "$FIELDS" "$ORDERING" )"
