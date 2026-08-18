@@ -7,222 +7,209 @@ source "./_maps.sh"
 source "./_querySezioni.sh"
 source "./_queryStudenti.sh"
 
-# SQL_QUERY_SEZIONI="SELECT sz.sezione_gsuite FROM $TABELLA_SEZIONI sz WHERE 1=1 AND sz.cl IN ( $SQL_FILTRO_ANNI ) AND sz.addr_argo IN ( $SQL_FILTRO_SEZIONI ) ORDER BY sz.sezione_gsuite"
-
-# # Crea la query per gruppi GSUITE aggiuntivi, indicati nel file di configurazione
-# SQL_QUERY_ADDITIONAL_GROUPS="WITH temp AS ( SELECT NULL AS value "
-# # Itera sull'array
-# for value in "${GSUITE_ADDITIONAL_GROUPS[@]}"; do
-#     # Aggiungi il valore alla lista, racchiudendolo tra apici
-#     SQL_QUERY_ADDITIONAL_GROUPS+=" UNION ALL"
-#     SQL_QUERY_ADDITIONAL_GROUPS+=" SELECT '$value' AS value"
-# done
-# SQL_QUERY_ADDITIONAL_GROUPS+=") SELECT value FROM temp WHERE value IS NOT NULL "
-
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione gruppi classe attraverso la tabella studenti ARGO"
-    echo "-------------"
-    echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
-    echo "-------------"
-    echo "1. Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
-    echo "2. Cancella le classi ed i gruppi aggiuntivi da GSuite"
-    echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
-    echo "4. Aggiungi studenti alle classi"
-    echo "5. Visualizza numero studenti per classe"
-    echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
-    echo "8. Effettua i cambi di classe"
-    echo "9. Aggiungi nuovi studenti (vedi periodo) alle classi"
-    echo "10. Toglie i ritirati (vedi periodo) dalle classi"
-    echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
-    echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
-    
-    echo "14. Reset password di TUTTI gli studenti delle classi"
+  echo "Gestione gruppi classe attraverso la tabella studenti ARGO"
+  echo "-------------"
+  echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
+  echo "-------------"
+  echo "1. Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
+  echo "2. Cancella le classi ed i gruppi aggiuntivi da GSuite"
+  echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
+  echo "4. Aggiungi studenti alle classi"
+  echo "5. Visualizza numero studenti per classe"
+  echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
+  echo "8. Effettua i cambi di classe"
+  echo "9. Aggiungi nuovi studenti (vedi periodo) alle classi"
+  echo "10. Toglie i ritirati (vedi periodo) dalle classi"
+  echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
+  echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
+  
+  echo "14. Reset password di TUTTI gli studenti delle classi"
 
-    echo "20. Esci"
+  echo "20. Esci"
 }
 
 # Funzione principale
 main() {
-    local querySezioni
-    querySezioni="$(query::querySezioniTutte "sezione_gsuite" )"
+  local querySezioni
+  querySezioni="$(query::querySezioniTutte "sezione_gsuite" )"
 
-    local query
+  local query
 
-    if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"; then
-        echo "Errore: Definisci le variabili nel file di configurazione." >&2
-        exit 1  # Termina lo script con codice di stato 1
-    fi
+  if ! checkAllVarsNotEmpty "DOMAIN" "TABELLA_STUDENTI" "TABELLA_STUDENTI_SERALE" "TABELLA_SEZIONI"; then
+    echo "Errore: Definisci le variabili nel file di configurazione." >&2
+    exit 1  # Termina lo script con codice di stato 1
+  fi
 
-    choice="$1"
-        
-        case $choice in
-            1)
-              echo "Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
+  choice="$1"
+    
+  case $choice in
+    1)
+      echo "Crea le classi ed i gruppi aggiuntivi su GSuite (solo classi e gruppi, senza studenti)"
 
-              while IFS="," read -r sezione_gsuite; do
-                    echo "Creo classe $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " /* NO */ "
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
-            ;;
-            2)
-              echo "Cancella le classi ed i gruppi aggiuntivi da GSUITE"
+      while IFS="," read -r sezione_gsuite; do
+        echo "Creo classe $sezione_gsuite ...!"
+        $RUN_CMD_WITH_QUERY --command createGroup --group "$sezione_gsuite" --query " /* NO */ "
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+    ;;
+    2)
+      echo "Cancella le classi ed i gruppi aggiuntivi da GSUITE"
 
-              while IFS="," read -r sezione_gsuite; do
-                    echo "Cancello classe $sezione_gsuite ...!"
-                    $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " /* NO */ "
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
-            ;;
-            3)
-              echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
+      while IFS="," read -r sezione_gsuite; do
+        echo "Cancello classe $sezione_gsuite ...!"
+        $RUN_CMD_WITH_QUERY --command deleteGroup --group "$sezione_gsuite" --query " /* NO */ "
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+    ;;
+    3)
+      echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
 
-              mkdir -p "$EXPORT_DIR_DATE"
-              declare -A "gruppi_classe"
+      mkdir -p "$EXPORT_DIR_DATE"
+      declare -A "gruppi_classe"
 
-              local FIELDS="sz.sezione_gsuite AS classe, UPPER(cognome) AS cognome, UPPER(nome) AS nome, LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, datan AS data_nascita, datar AS data_ritiro"
-              local ORDERING="sz.sezione_gsuite, LOWER(cognome)"
+      local FIELDS="sz.sezione_gsuite AS classe, UPPER(cognome) AS cognome, UPPER(nome) AS nome, LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, datan AS data_nascita, datar AS data_ritiro"
+      local ORDERING="sz.sezione_gsuite, LOWER(cognome)"
 
-              while IFS="," read -r sezione_gsuite; do
-                gruppi_classe[$sezione_gsuite]="
-                  $(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+      while IFS="," read -r sezione_gsuite; do
+        gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellatiConEmail "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
 
-              for nome_gruppo in "${!gruppi_classe[@]}"; do
-                    echo "$nome_gruppo" # "${gruppi_classe[$nome_gruppo]}"
-                    $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+      for nome_gruppo in "${!gruppi_classe[@]}"; do
+        echo "$nome_gruppo" # "${gruppi_classe[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
 
-                    $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
-              done
-            ;;
-            4)
-              echo "Aggiungo studenti alle classi"
+        $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+      done
+    ;;
+    4)
+      echo "Aggiungo studenti alle classi"
 
-              local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
-              local ORDERING="sz.sezione_gsuite"
-              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
+      local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
+      local ORDERING="sz.sezione_gsuite"
+      query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
-            ;;
-            5)
-              echo "Esportato numero studenti per classe in file CSV"
+      $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
+    ;;
+    5)
+      echo "Esportato numero studenti per classe in file CSV"
 
-              mkdir -p "$EXPORT_DIR_DATE"
+      mkdir -p "$EXPORT_DIR_DATE"
 
-              query="$(query::numeroStudentiPerClasse )"
-              $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
-            ;;
-            6)
-              mkdir -p "$EXPORT_DIR_DATE"
-              echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."
+      query="$(query::numeroStudentiPerClasse )"
+      $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
+    ;;
+    6)
+      mkdir -p "$EXPORT_DIR_DATE"
+      echo "Esporta le classi da tabella studenti, un unico file CSV con tutte le classi ..."
 
-              local FIELDS="sz.sezione_gsuite AS classe, sz.cl AS anno, sz.letter AS sezione, sz.sez_gsuite AS indirizzo, cognome, nome, LOWER(email_gsuite) AS email "
-              local ORDERING="sz.sezione_gsuite"
-              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
+      local FIELDS="sz.sezione_gsuite AS classe, sz.cl AS anno, sz.letter AS sezione, sz.sez_gsuite AS indirizzo, cognome, nome, LOWER(email_gsuite) AS email "
+      local ORDERING="sz.sezione_gsuite"
+      query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-              $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
 
-              $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
-            ;;
-            8)
-              checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+    ;;
+    8)
+      checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
 
-              echo "Effettua i cambi di classe, confrontando le tabelle $TABELLA_STUDENTI e $TABELLA_STUDENTI_PRECEDENTE ..."
+      echo "Effettua i cambi di classe, confrontando le tabelle $TABELLA_STUDENTI e $TABELLA_STUDENTI_PRECEDENTE ..."
 
-              local FIELDS="LOWER(stD.email_gsuite) AS email_gsuite, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
-              local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
-              query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
+      local FIELDS="LOWER(stD.email_gsuite) AS email_gsuite, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
+      local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
+      query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/cambi_studenti_tutti.csv"
-              
-              for anno in {1..6}
-              do
-                local FIELDS="LOWER(stD.email_gsuite) AS email_gsuite, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
-                local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
-                local FILTER_YEARS_IN="$anno"
-                query="$(query::studentiCambioClasseByYear "$FIELDS" "$ORDERING" " '$FILTER_YEARS_IN' ")"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/cambi_studenti_tutti.csv"
+      
+      for anno in {1..6}
+      do
+        local FIELDS="LOWER(stD.email_gsuite) AS email_gsuite, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
+        local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
+        local FILTER_YEARS_IN="$anno"
+        query="$(query::studentiCambioClasseByYear "$FIELDS" "$ORDERING" " '$FILTER_YEARS_IN' ")"
 
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"  > "$EXPORT_DIR_DATE/cambi_studenti_classe_$FILTER_YEARS_IN.csv"
+        $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"  > "$EXPORT_DIR_DATE/cambi_studenti_classe_$FILTER_YEARS_IN.csv"
 
-                $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/cambi_studenti_classe_$FILTER_YEARS_IN.csv"
-              done
+        $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/cambi_studenti_classe_$FILTER_YEARS_IN.csv"
+      done
 
-              # cancello gli account dalla classe precedente
-              local FIELDS="stP.sezione_gsuite AS sez_prima, LOWER(stP.email_gsuite) AS email_gsuite"
-              local ORDERING="stP.sezione_gsuite, stP.email_gsuite"
-              query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
+      # cancello gli account dalla classe precedente
+      local FIELDS="stP.sezione_gsuite AS sez_prima, LOWER(stP.email_gsuite) AS email_gsuite"
+      local ORDERING="stP.sezione_gsuite, stP.email_gsuite"
+      query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command deleteMembersFromGroupByMap --group " NO " --query "$query"
+      $RUN_CMD_WITH_QUERY --command deleteMembersFromGroupByMap --group " NO " --query "$query"
 
-              # aggiungo gli account alla classe in cui si sono trasferiti
-              local FIELDS="stD.sezione_gsuite AS sez_dopo, LOWER(stD.email_gsuite) AS email_gsuite"
-              local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
-              query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
+      # aggiungo gli account alla classe in cui si sono trasferiti
+      local FIELDS="stD.sezione_gsuite AS sez_dopo, LOWER(stD.email_gsuite) AS email_gsuite"
+      local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
+      query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
-            ;;
-            9)
-              checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
-              
-              echo "Aggiungo alle classi i nuovi studenti (periodo $PERIODO_STUDENTI_DA - $PERIODO_STUDENTI_A) "
+      $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
+    ;;
+    9)
+      checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+      
+      echo "Aggiungo alle classi i nuovi studenti (periodo $PERIODO_STUDENTI_DA - $PERIODO_STUDENTI_A) "
 
-              local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
-              local ORDERING="sz.sezione_gsuite"
+      local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
+      local ORDERING="sz.sezione_gsuite"
 
-              query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+      query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
-            ;;
-            10)
-              checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
-              
-              echo "Rimuovo gli studenti ritirati (tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A)"
+      $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
+    ;;
+    10)
+      checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+      
+      echo "Rimuovo gli studenti ritirati (tra $PERIODO_STUDENTI_DA e $PERIODO_STUDENTI_A)"
 
-              local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
-              local ORDERING="sz.sezione_gsuite"
+      local FIELDS="sz.sezione_gsuite, LOWER(email_gsuite)"
+      local ORDERING="sz.sezione_gsuite"
 
-              query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+      query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command deleteMembersFromGroupByMap --group " NO " --query "$query"
-            ;;
-            11)
-              echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
-              mkdir -p "$EXPORT_DIR_DATE"
+      $RUN_CMD_WITH_QUERY --command deleteMembersFromGroupByMap --group " NO " --query "$query"
+    ;;
+    11)
+      echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
+      mkdir -p "$EXPORT_DIR_DATE"
 
-              while IFS="," read -r sezione_gsuite; do
-                echo "Salvo gruppo GSuite $sezione_gsuite"
-                $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " > "$EXPORT_DIR_DATE/classe_$sezione_gsuite.csv"
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
-            ;;
-            12)
-              echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
-              mkdir -p "$EXPORT_DIR_DATE"
-              touch "$EXPORT_DIR_DATE/classi_tutte.csv"
-              echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
+      while IFS="," read -r sezione_gsuite; do
+        echo "Salvo gruppo GSuite $sezione_gsuite"
+        $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " > "$EXPORT_DIR_DATE/classe_$sezione_gsuite.csv"
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+    ;;
+    12)
+      echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
+      mkdir -p "$EXPORT_DIR_DATE"
+      touch "$EXPORT_DIR_DATE/classi_tutte.csv"
+      echo "group,name,id,email,role,type,status" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
 
-              while IFS="," read -r sezione_gsuite; do
-                echo "Salvo gruppo GSuite $sezione_gsuite"
-                $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
-              done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
-            ;;
-            14)
-              echo "Reset password di TUTTI gli studenti delle classi"
+      while IFS="," read -r sezione_gsuite; do
+        echo "Salvo gruppo GSuite $sezione_gsuite"
+        $RUN_CMD_WITH_QUERY --command printGroup --group "$sezione_gsuite" --query " /* NO; */ " | sed "1d" >> "$EXPORT_DIR_DATE/classi_tutte.csv"
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+    ;;
+    14)
+      echo "Reset password di TUTTI gli studenti delle classi"
 
-              local FIELDS="LOWER(email_gsuite)"
-              local ORDERING="sz.sezione_gsuite"
+      local FIELDS="LOWER(email_gsuite)"
+      local ORDERING="sz.sezione_gsuite"
 
-              query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
+      query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-              $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "$query"
-            ;;
-            20)
-              echo "Arrivederci!"
-              exit 0
-            ;;
-            *)
-              echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
-              sleep 1
-            ;;
-        esac
+      $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "$query"
+    ;;
+    20)
+      echo "Arrivederci!"
+      exit 0
+    ;;
+    *)
+      echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
+      sleep 1
+    ;;
+  esac
 }
 
 showConfig() {
@@ -241,16 +228,15 @@ showConfig() {
   fi
 }
 
-# Show config vars
-showConfig
-
 if [ "$#" -eq 1 ]; then
-  scelta=$1
+  scelta="$1"
 else
+  # Show config vars
+  showConfig
+
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
 fi
 
 # Avvia la funzione principale
 main "$scelta"
-
