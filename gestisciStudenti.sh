@@ -26,8 +26,8 @@ show_menu() {
   echo "5. Esporto i nuovi studenti in file CSV"
   echo "6. Creo il nuovi studenti su GSuite"
   echo "7. Crea script studenti_CF.sh"
-  echo "8. Sospendi studenti"
-  echo "9. Cancella studenti"
+  echo "8. Sospendi studenti ritirati"
+  echo "9. Cancella studenti ritirati"
   echo "10. Sposta script studenti_CF.sh relativo alla tabella precedente in root"
   echo "11. "
   echo "12. Cancello e ricreo la tabella studenti SERALE"
@@ -174,7 +174,7 @@ main() {
       mkdir -p "$EXPORT_DIR_DATE"
       echo "Crea script $TABELLA_STUDENTI.sh e $TABELLA_STUDENTI_PRECEDENTE.sh ..."
 
-      local FIELDS="LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, sz.cl, sz.sez_argo"
+      local FIELDS="LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, sz.cl, sz.sez_argo, datar, aggiunto_il"
       local ORDERING=" UPPER(cod_fisc) "
       local query
       query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
@@ -187,19 +187,19 @@ main() {
       echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
       # Tabella CF corrente
-      while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+      while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez datar aggiunto_il; do
         # Aggiungo il CF negli script
-        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
+        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il=\"$aggiunto_il\" WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
       # Tabella CF precedente
-      while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez; do
+      while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez datar aggiunto_il; do
         # Aggiungo il CF negli script
-        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite') WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez;" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il=\"$aggiunto_il\" WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
       done < <($SQLITE_CMD -csv studenti.db "$queryStudentiPrecedenti" | sed "s/\"//g")
     ;;
     8)
-      echo "Sospendi account studenti ..."
+      echo "Sospendi account studenti ritirati ..."
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
@@ -209,7 +209,7 @@ main() {
       $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$query"
     ;;
     9)
-      echo "Cancella account studenti ..."
+      echo "Cancella account studenti ritirati ..."
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
