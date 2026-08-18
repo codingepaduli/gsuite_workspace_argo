@@ -26,10 +26,10 @@ show_menu() {
   echo "5. Esporto i nuovi studenti in file CSV"
   echo "6. Creo il nuovi studenti su GSuite"
   echo "7. Crea script studenti_CF.sh"
-  echo "8. Sospendi studenti ritirati"
-  echo "9. Cancella studenti ritirati"
+  echo "8. Sospendi studenti ritirati nel periodo"
+  echo "9. Cancella studenti ritirati nel periodo"
   echo "10. Sposta script studenti_CF.sh relativo alla tabella precedente in root"
-  echo "11. "
+  echo "11. Visualizza account studenti ritirati nel periodo ..."
   echo "12. Cancello e ricreo la tabella studenti SERALE"
   echo "13. Importo e normalizzo i dati del SERALE"
   echo "14. Copio i dati del SERALE nella tabella del DIURNO, unificando la gestione"
@@ -143,7 +143,7 @@ main() {
 
       local query
       query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
-      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
 
       $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
 
@@ -151,7 +151,7 @@ main() {
       do
         query="$(query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" "$classe" )"
         
-        $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
+        $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
 
         $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_classi_$classe.csv"
       done
@@ -199,7 +199,7 @@ main() {
       done < <($SQLITE_CMD -csv studenti.db "$queryStudentiPrecedenti" | sed "s/\"//g")
     ;;
     8)
-      echo "Sospendi account studenti ritirati ..."
+      echo "Sospendi account studenti ritirati nel periodo ..."
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
@@ -209,7 +209,7 @@ main() {
       $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$query"
     ;;
     9)
-      echo "Cancella account studenti ritirati ..."
+      echo "Cancella account studenti ritirati nel periodo ..."
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
@@ -226,6 +226,16 @@ main() {
       # run the script
       echo "Eseguo script aggiornamento email" 
       "$BASE_DIR/$TABELLA_STUDENTI.sh"
+    ;;
+    11)
+      echo "Visualizza account studenti ritirati nel periodo ..."
+
+      local FIELDS="LOWER(email_gsuite), cognome, nome, datar, sezione_gsuite"
+      local ORDERING="sz.sezione_gsuite, cognome, nome"
+      local query
+      query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+
+      $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     12)
       echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_SERALE ..."
