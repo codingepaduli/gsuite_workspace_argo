@@ -33,7 +33,7 @@ show_menu() {
   echo "12. Cancello e ricreo la tabella studenti SERALE"
   echo "13. Importo e normalizzo i dati del SERALE"
   echo "14. Copio i dati del SERALE nella tabella del DIURNO, unificando la gestione"
-  echo "15. "
+  echo "15. Invia email agli studenti ritirati"
   echo "16. Controlla codici fiscali duplicati"
   echo "17. Controlla email gsuite duplicate"
   echo "18. Cancello e ricreo la tabella studenti DIPLOMATI, poi salvo i diplomati"
@@ -295,6 +295,24 @@ main() {
       # Copio i dati del serale nella tabella del diurno
       # unificando i dati ed il processo di gestione
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query"
+    ;;
+    15)
+      echo "15. Invia email agli studenti ritirati"
+
+      local FIELDS="group_concat(LOWER(email_gsuite), ',') AS email_gsuite" 
+      local ORDERING="sz.sezione_gsuite, cognome, nome"
+      query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+      local TO=$($RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query")
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local MESSAGE="
+          \n Gentile utente,
+          \n il suo account è in scadenza e sarà cancellato entro 15 giorni.
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+      
+      echo "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+
+      $GAM_CMD sendemail to "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
     ;;
     16)
       echo "Controllo eventuali codici fiscali duplicati:"
