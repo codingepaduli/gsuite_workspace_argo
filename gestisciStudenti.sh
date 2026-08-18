@@ -141,7 +141,6 @@ main() {
       local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, email_gsuite, '$PASSWORD_STUDENTI' as password"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-      local query
       query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
 
@@ -162,11 +161,9 @@ main() {
       local FIELDS="email_gsuite, cognome, nome, cod_fisc, ' ', ' ', '$PASSWORD_STUDENTI'"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-      local query
       query="$(query::queryStudentiDiurnoNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
       $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Diurno" --query "$query"
       
-      local query
       query="$(query::queryStudentiSeraleNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
       $RUN_CMD_WITH_QUERY --command createUsers --group "Studenti/Serale" --query "$query"
     ;;
@@ -176,15 +173,17 @@ main() {
 
       local FIELDS="LOWER(email_gsuite) AS email_gsuite, UPPER(cod_fisc) AS cod_fisc, UPPER(cognome) AS cognome, UPPER(nome) AS nome, sz.cl, sz.sez_argo, datar, aggiunto_il"
       local ORDERING=" UPPER(cod_fisc) "
-      local query
       query="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" )"
       
       local queryStudentiPrecedenti
       queryStudentiPrecedenti="$(query::queryStudentiTutti "$FIELDS" "$ORDERING" "$TABELLA_STUDENTI_PRECEDENTE" )"
-        
-      echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
-      echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
-      echo 'source "_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+      
+      {
+        echo "#!/bin/bash" 
+        echo 'source "_environment.sh"'
+        echo 'source "_environment_working_tables.sh"'
+        echo " "
+      } | tee "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh" "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
 
       # Tabella CF corrente
       while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez datar aggiunto_il; do
@@ -203,7 +202,6 @@ main() {
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
-      local query
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
       $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$query"
@@ -213,7 +211,6 @@ main() {
 
       local FIELDS="LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
-      local query
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
       $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
@@ -232,7 +229,6 @@ main() {
 
       local FIELDS="LOWER(email_gsuite), cognome, nome, datar, sezione_gsuite"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
-      local query
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
       $SQLITE_CMD studenti.db -header -table "$query"
@@ -294,7 +290,6 @@ main() {
       local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-      local query
       query="$(query::queryStudentiTutti "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" "$TABELLA_STUDENTI_SERALE" )"
         
       # Copio i dati del serale nella tabella del diurno
@@ -304,7 +299,6 @@ main() {
     16)
       echo "Controllo eventuali codici fiscali duplicati:"
 
-      local query
       query="$(query::cfStudentiDuplicati )"
 
       ## Salvo in un array i CF risultanti della query
@@ -327,7 +321,6 @@ main() {
     17)
       echo "Controllo eventuali email GSuite duplicate:"
       
-      local query
       query="$(query::emailStudentiDuplicati )"
 
       ## Salvo in un array le email risultanti della query
@@ -352,7 +345,6 @@ main() {
       echo "Cancello e ricreo la tabella studenti $TABELLA_STUDENTI_DIPLOMATI ..."
         
       # Cancello la tabella
-      local query
       query="$(query::dropTableIfExists "$TABELLA_STUDENTI_DIPLOMATI" )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
@@ -384,7 +376,6 @@ main() {
       local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-      local query
       query="$(query::queryStudentiTabellaDiplomatiTutti "$FIELDS, st.cl, st.sez " "$ORDERING" "$TABELLA_STUDENTI_DIPLOMATI" )"
       
       # Copio i dati dei diplomati nella tabella del diurno
