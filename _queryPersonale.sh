@@ -364,7 +364,7 @@ function query::getTeachersNotDeletedAddedInPeriod {
 
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
-  employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
   employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "

@@ -172,8 +172,8 @@ main() {
       echo "Crea il nuovo personale su GSuite ..."
 
       local FIELDS="LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare, '$PASSWORD_CLASSROOM'"
-
-      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")"
+      local ORDERING=" UPPER(cognome) "
+      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query "$query"
 
       query="$(query::getAtaNotDeletedAddedInPeriod "$FIELDS")"
@@ -185,8 +185,8 @@ main() {
       echo "Aggiungo i nuovi docenti su Classroom ..."
       
       local FIELDS="LOWER(email_gsuite)"
-      
-      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")"
+      local ORDERING=" UPPER(cognome) "
+      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "$query"
     ;;
     12)
