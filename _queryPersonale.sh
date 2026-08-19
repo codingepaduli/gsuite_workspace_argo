@@ -337,12 +337,8 @@ function query::getEmployeesNotDeletedAddedInPeriod {
   eval "${queryParam}"
 
   # modifica mappa
-  local EMPLOYEES_FIELDS="LOWER(tipo_personale) as tipo, 
-    UPPER(cognome) as cognome, UPPER(nome) as nome, 
-    LOWER(email_personale) as email_personale, 
-    LOWER(email_gsuite) as email_gsuite, aggiunto_il"
-  employeesParam[FIELDS]="${1:-$EMPLOYEES_FIELDS}"
-  employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
   employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"

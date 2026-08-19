@@ -94,7 +94,12 @@ main() {
       $SQLITE_CMD studenti.db -header -table "$query"
 
       echo "Personale neo-assunto con email creata:"
-      query="$(query::getEmployeesNotDeletedAddedInPeriod )"
+      local FIELDS="LOWER(tipo_personale) as tipo, 
+        UPPER(cognome) as cognome, UPPER(nome) as nome, 
+        LOWER(email_personale) as email_personale, 
+        LOWER(email_gsuite) as email_gsuite, aggiunto_il"
+      local ORDERING="UPPER(cognome)"
+      query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     4)
@@ -119,7 +124,8 @@ main() {
       echo "Esporto il nuovo personale in file CSV ..."
       
       local FIELDS="LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale"
-      query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS")"
+      local ORDERING="UPPER(cognome)"
+      query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
     ;;
     7)
