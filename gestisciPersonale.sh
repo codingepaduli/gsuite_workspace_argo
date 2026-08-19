@@ -209,7 +209,7 @@ main() {
 
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
-      query="$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING" "$TABELLA_PERSONALE_PRECEDENTE")"
+      query="$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING" "$TABELLA_PERSONALE_PRECEDENTE")"
 
       while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
