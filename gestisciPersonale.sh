@@ -50,11 +50,11 @@ main() {
       echo "1. Cancello e ricreo la tabella del personale"
       
       # Cancello la tabella
-      query=$(query::dropTableIfExists )
+      query="$(query::dropTableIfExists )"
       $SQLITE_CMD studenti.db "$query"
 
       # Creo la tabella
-      query=$(query::createTableIfNotExists )
+      query="$(query::createTableIfNotExists )"
       $SQLITE_CMD studenti.db "$query"
     ;;
     2)
@@ -72,35 +72,35 @@ main() {
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_PERSONALE_CSV $TABELLA_PERSONALE"
 
       # Normalizza dati
-      query=$(query::normalizeFields )
+      query="$(query::normalizeFields )"
       $SQLITE_CMD studenti.db "$query"
       
       # Normalizza birthday
-      query=$(query::normalizeBirthDate )
+      query="$(query::normalizeBirthDate )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
       # Normalizza date
-      query=$(query::normalizeInsertDate )
+      query="$(query::normalizeInsertDate )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
       # Normalizza date
-      query=$(query::normalizeRetiredDate )
+      query="$(query::normalizeRetiredDate )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     3)
       echo "Personale neo-assunto ancora senza email:"
-      query=$(query::getEmployeesNonDeletedWithoutEmailGSuite )
+      query="$(query::getEmployeesNonDeletedWithoutEmailGSuite )"
       $SQLITE_CMD studenti.db -header -table "$query"
 
       echo "Personale neo-assunto con email creata:"
-      query=$(query::getEmployeesNotDeletedAddedInPeriod )
+      query="$(query::getEmployeesNotDeletedAddedInPeriod )"
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     4)
       checkAllVarsNotEmpty "DOMAIN" "CURRENT_DATE"
 
       echo "Genero su DB la mail ai nuovi docenti ..."
-      query=$(query::createEmailTeachers )
+      query="$(query::createEmailTeachers )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     5)
@@ -108,7 +108,7 @@ main() {
 
       echo "Genero su DB la mail al nuovo personale ATA ..."
       
-      query=$(query::createEmailATA )
+      query="$(query::createEmailATA )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     6)
@@ -118,26 +118,17 @@ main() {
       echo "Esporto il nuovo personale in file CSV ..."
       
       local FIELDS="LOWER(email_gsuite) as email_gsuite, '$PASSWORD_CLASSROOM' as password, LOWER(tipo_personale) as tipo_personale, aggiunto_il as aggiunto_il, UPPER(cognome) as cognome, UPPER(nome) as nome, UPPER(codice_fiscale) as codice_fiscale, cellulare, LOWER(email_personale) as email_personale"
-      query=$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS")
+      query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS")"
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
     ;;
     7)
       echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
 
       # Creo la query di tutti i codici fiscali
-      local FIELDS="LOWER(codice_fiscale)"
-      query=$(query::getQueryEmployeesDefaultValues "$FIELDS")
+      local FIELDS="group_concat(quote(LOWER(codice_fiscale)), ',') AS codice_fiscale"
+      query="$(query::getQueryEmployeesDefaultValues "$FIELDS")"
 
-      ## Salvo in un array i CF risultanti della query
-      local -a cfArray
-      readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
-
-      ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
-      local cfArrayString
-      printf -v cfArrayString "'%s', " "${cfArray[@]}"
-
-      ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-      cfArrayString=${cfArrayString%, }
+      local $cfArrayString="$($SQLITE_CMD studenti.db -csv "$query")"
 
       ## Creo la query del personale della vecchia tabella
       ## i cui codici fiscali non si trovano nella nuova tabella
@@ -146,7 +137,7 @@ main() {
           LOWER(email_gsuite) AS email_gsuite, cancellato_il "
       local ORDERING=" UPPER(codice_fiscale) "
 
-      query=$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")
+      query="$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")"
 
       $SQLITE_CMD studenti.db -header -table  "$query"
     ;;
@@ -154,25 +145,16 @@ main() {
       echo "8. Importa nella tabella attuale il personale della tabella precedente NON CANCELLATO E non incluso in quella attuale"
 
       # Creo la query di tutti i codici fiscali
-      local FIELDS="LOWER(codice_fiscale)"
-      query=$(query::getQueryEmployeesDefaultValues "$FIELDS")
+      local FIELDS="group_concat(quote(LOWER(codice_fiscale)), ',') AS codice_fiscale"
+      query="$(query::getQueryEmployeesDefaultValues "$FIELDS")"
 
-      ## Salvo in un array i CF risultanti della query
-      local -a cfArray
-      readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
-
-      ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
-      local cfArrayString
-      printf -v cfArrayString "'%s', " "${cfArray[@]}"
-
-      ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-      cfArrayString=${cfArrayString%, }
+      local $cfArrayString="$($SQLITE_CMD studenti.db -csv "$query")"
 
       ## Creo la query del personale della vecchia tabella
       ## i cui codici fiscali non si trovano nella nuova tabella
       local FIELDS=" * "
       local ORDERING=" UPPER(codice_fiscale) "
-      query=$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")
+      query="$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")"
 
       ## Eseguo l'import a partire dalla query
       $SQLITE_CMD studenti.db -header -table  "INSERT INTO $TABELLA_PERSONALE $query"
@@ -184,10 +166,10 @@ main() {
 
       local FIELDS="LOWER(email_gsuite), UPPER(cognome), UPPER(nome), UPPER(codice_fiscale), LOWER(email_personale), cellulare, '$PASSWORD_CLASSROOM'"
 
-      query=$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")
+      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")"
       $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query "$query"
 
-      query=$(query::getAtaNotDeletedAddedInPeriod "$FIELDS")
+      query="$(query::getAtaNotDeletedAddedInPeriod "$FIELDS")"
       $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "$query"
     ;;
     10)
@@ -197,7 +179,7 @@ main() {
       
       local FIELDS="LOWER(email_gsuite)"
       
-      query=$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")
+      query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS")"
       $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "$query"
     ;;
     12)
@@ -207,7 +189,7 @@ main() {
       local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
       local ORDERING="UPPER(codice_fiscale)"
       
-      query=$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING")
+      query="$(query::getQueryEmployeesDefaultValues "$FIELDS" "$ORDERING")"
 
       # Creo lo script con i dati della query
       mkdir -p "$EXPORT_DIR_DATE"
@@ -224,7 +206,7 @@ main() {
 
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
-      query=$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING")
+      query="$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING")"
 
       while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
@@ -265,11 +247,11 @@ main() {
       echo "Controllo i dati"
 
       echo "Codici fiscali duplicati"
-      query=$(query::getDuplicatedCF )
+      query="$(query::getDuplicatedCF )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
       echo "email duplicate"
-      query=$(query::getDuplicatedEmail )
+      query="$(query::getDuplicatedEmail )"
       $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "$query"
     ;;
     20)
