@@ -184,6 +184,8 @@ function query::defaultEmployeesParam() {
 
   employeesParam[FLAG_DIPARTIMENTO_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]="$FLAG_OFF"
+  employeesParam[FLAG_DIPARTIMENTO_IN]="$FLAG_OFF"
+  employeesParam[FILTER_DIPARTIMENTO_IN]=" '' "
 
   employeesParam[FLAG_NOTE_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_NOTE_NOT_EXISTS]="$FLAG_OFF"
@@ -239,6 +241,8 @@ function query::getQueryEmployees {
         (dipartimento IS NOT NULL AND LOWER(dipartimento) != '' ))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]} OR 
         (dipartimento IS NULL OR LOWER(dipartimento) = '' ))
+      AND (1=${employeesParam[FLAG_DIPARTIMENTO_IN]} OR 
+        (LOWER(dipartimento) IN ( ${employeesParam[FILTER_DIPARTIMENTO_IN]} )))
       AND (1=${employeesParam[FLAG_NOTE_EXISTS]} OR 
         (note IS NOT NULL AND LOWER(note) != '' ))
       AND (1=${employeesParam[FLAG_NOTE_NOT_EXISTS]} OR 
@@ -461,6 +465,82 @@ function query::getEmployeesWithEmailGSuiteDeletedInPeriod {
   employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
   employeesParam[FLAG_CANCELLATO_IL]="$FLAG_ON"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
+function query::getEmployeesInDipartimentiAll {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_DIPARTIMENTO_EXISTS]="$FLAG_ON"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
+function query::getEmployeesInDipartimentoByNomeDipartimento {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${4:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_DIPARTIMENTO_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_DIPARTIMENTO_IN]="$FLAG_ON"
+  employeesParam[FILTER_DIPARTIMENTO_IN]="${3:-${employeesParam[FILTER_DIPARTIMENTO_IN]}}"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
+
+function query::getNewEmployeesInDipartimentoByNomeDipartimento {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${4:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_DIPARTIMENTO_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_DIPARTIMENTO_IN]="$FLAG_ON"
+  employeesParam[FILTER_DIPARTIMENTO_IN]="${3:-${employeesParam[FILTER_DIPARTIMENTO_IN]}}"
+  employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
+
 
   # clona mappa modificata
   local queryParamString
