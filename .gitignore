@@ -15,7 +15,7 @@
 /dati_gsuite/*.csv
 /dati_gsuite/*.xlsx
 /dati_gsuite/*.ods
-studenti.db
+*.db
 studenti_CF*
 studenti_argo_*
 personale_CF*
