@@ -113,6 +113,8 @@ main() {
     8)
       checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
 
+      mkdir -p "$EXPORT_DIR_DATE"
+
       echo "Effettua i cambi di classe, confrontando le tabelle $TABELLA_STUDENTI e $TABELLA_STUDENTI_PRECEDENTE ..."
 
       local FIELDS="LOWER(stD.email_gsuite) AS email_gsuite, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
