@@ -155,7 +155,7 @@ main() {
       local FIELDS="group_concat(quote(LOWER(codice_fiscale)), ',') AS codice_fiscale"
       query="$(query::getQueryEmployeesDefaultValues "$FIELDS")"
 
-      local $cfArrayString="$($SQLITE_CMD studenti.db -csv "$query")"
+      local cfArrayString="$($SQLITE_CMD studenti.db -csv "$query")"
 
       ## Creo la query del personale della vecchia tabella
       ## i cui codici fiscali non si trovano nella nuova tabella
