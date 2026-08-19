@@ -35,12 +35,16 @@ function query::createTableIfNotExists() {
       note TEXT,
       CHECK (
         ( 
-          length(data_nascita)=10
-          AND SUBSTR(data_nascita,1,2) GLOB '[0-9][0-9]'
-          AND SUBSTR(data_nascita,3,1)='/'
-          AND SUBSTR(data_nascita,4,2) GLOB '[0-9][0-9]'
-          AND SUBSTR(data_nascita,6,1)='/'
-          AND SUBSTR(data_nascita,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+          cancellato_il IS NULL
+          OR TRIM(cancellato_il) = ''
+          OR (
+            length(data_nascita)=10
+            AND SUBSTR(data_nascita,1,2) GLOB '[0-9][0-9]'
+            AND SUBSTR(data_nascita,3,1)='/'
+            AND SUBSTR(data_nascita,4,2) GLOB '[0-9][0-9]'
+            AND SUBSTR(data_nascita,6,1)='/'
+            AND SUBSTR(data_nascita,7,4) GLOB '[0-9][0-9][0-9][0-9]'
+          )
         ) OR (
           length(data_nascita)=10
           AND SUBSTR(data_nascita,1,4) GLOB '[0-9][0-9][0-9][0-9]'
