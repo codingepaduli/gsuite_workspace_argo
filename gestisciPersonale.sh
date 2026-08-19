@@ -29,6 +29,7 @@ show_menu() {
   echo "12. Crea script personale_CF.sh"
   echo "13. Sospendi (disabilita) personale"
   echo "14. Elimina personale"
+  echo "15. Visualizza personale da cancellare ..."
   echo "17. Sposta script personale_CF.sh relativo alla tabella precedente in root"
   echo "19. Controllo i dati"
   echo "20. Esci"
@@ -218,25 +219,38 @@ main() {
 
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
     ;;
+    15)
+      echo "Visualizza personale da cancellare ..."
+
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(codice_fiscale) AS codice_fiscale, UPPER(cognome) AS cognome, UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto) AS contratto, note"
+      local ORDERING="UPPER(codice_fiscale)"
+      query="$(query::getEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" )"
+
+      $SQLITE_CMD studenti.db -header -table "$query"
+    ;;
     13)
       echo "Sospendi (disabilita) personale ..."
 
-      $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "
-        SELECT LOWER(d.email_gsuite)
-        FROM $TABELLA_PERSONALE d 
-        WHERE d.email_gsuite IS NOT NULL AND TRIM(d.email_gsuite) != '' 
-          AND ( d.cancellato_il IS NOT NULL AND TRIM(d.cancellato_il) != ''
-            AND d.cancellato_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A' );"
+      local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
+      local ORDERING="UPPER(codice_fiscale)"
+
+      query="$(query::getEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING")"
+
+      $SQLITE_CMD -csv studenti.db "$query" 
+
+      # $RUN_CMD_WITH_QUERY --command suspendUsers --group " NO " --query "$query"
     ;;
     14)
       echo "Cancella personale ..."
 
-      $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "
-      SELECT LOWER(d.email_gsuite)
-      FROM $TABELLA_PERSONALE d 
-      WHERE d.email_gsuite IS NOT NULL AND TRIM (d.email_gsuite) != ''
-        AND ( d.cancellato_il IS NOT NULL AND TRIM(d.cancellato_il) != ''
-          AND d.cancellato_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A' );"
+      local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
+      local ORDERING="UPPER(codice_fiscale)"
+
+      query="$(query::getEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING")"
+
+      $SQLITE_CMD -csv studenti.db "$query" 
+
+      # $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
     17)
       cp "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_PERSONALE.sh" 

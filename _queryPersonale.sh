@@ -201,7 +201,7 @@ function query::getQueryEmployees {
 
   echo "
     SELECT ${employeesParam[FIELDS]}
-    FROM $employeesParam[TABLE]
+    FROM ${employeesParam[TABLE]}
     WHERE 1=1 
       AND (1=${employeesParam[FLAG_TIPO_PERSONALE]} OR 
         LOWER(tipo_personale) IN ( ${employeesParam[FILTER_TIPO_PERSONALE_IN]} ))
@@ -437,6 +437,31 @@ function query::getQueryTeachersWithGSuiteEmail {
   employeesParam[FLAG_EMAIL_GSUITE_PREFIX]="$FLAG_ON"
   employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
   
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
+function query::getEmployeesWithEmailGSuiteDeletedInPeriod {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
+  employeesParam[FLAG_CANCELLATO_IL]="$FLAG_ON"
+
   # clona mappa modificata
   local queryParamString
   queryParamString="$(declare -p "employeesParam")"
