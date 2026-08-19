@@ -15,30 +15,6 @@ GRUPPO_DOCENTI="docenti_volta"
 # Gruppo insegnanti abilitati a classroom
 GRUPPO_CLASSROOM="insegnanti_classe"
 
-# Query personale tutto
-QUERY_PERSONALE="
-    FROM $TABELLA_PERSONALE
-    WHERE (email_gsuite IS NOT NULL AND TRIM(email_gsuite != ''))
-        AND UPPER(tipo_personale)=UPPER('docente') 
-        AND (cancellato_il IS NULL OR TRIM(cancellato_il) = '')"
-
-add_to_map "$GRUPPO_DOCENTI" " 
-    SELECT LOWER(email_gsuite) AS email_gsuite 
-    $QUERY_PERSONALE
-    ORDER BY LOWER(email_gsuite);"
-
-add_to_map "$GRUPPO_CLASSROOM" "
-    SELECT LOWER(email_gsuite) AS email_gsuite 
-    $QUERY_PERSONALE
-    ORDER BY LOWER(email_gsuite);"
-
-# Query personale aggiunto in un certo periodo
-QUERY_DELTA_PERSONALE="
-    $QUERY_PERSONALE
-    AND ( aggiunto_il IS NOT NULL AND TRIM(aggiunto_il) != ''
-        AND aggiunto_il BETWEEN '$PERIODO_PERSONALE_DA' AND '$PERIODO_PERSONALE_A'
-    )"
-
 # Query docenti su GSuite non presenti su Argo
 PARTIAL_QUERY_DOCENTI_SU_GSUITE_NON_ARGO="
 FROM $TABELLA_UTENTI_GSUITE dg 
@@ -75,37 +51,43 @@ ORDER BY c.email;"
 
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione gruppi GSuite del personale:"
-    echo "-------------"
-    echo "1. Aggiungi tutti i membri ai gruppi GSuite"
-    echo "2. Importa in tabella GRUPPI i gruppi GSuite"
-    echo "3. Visualizza nuovo personale da aggiungere ai gruppi GSuite"
-    echo "4. Aggiungi nuovo personale ai gruppi GSuite"
-    echo "5. (TODO da cancellare) Visualizza docenti nei gruppi GSuite che non sono in Argo"
-    echo "6. (TODO da spostare) Disabilito i docenti GSuite che non sono in elenco Argo"
-    echo "8. (TODO da spostare) Visualizza docenti su GSuite non presenti su Argo"
-    echo "9. (TODO da spostare) Esporta docenti su GSuite non presenti su Argo"
-    echo "10. (TODO da spostare) Sospendi docenti su GSuite non presenti su Argo"
-    echo "11. (TODO da spostare) Cancella account docenti su GSuite non presenti su Argo"
-    echo "18. Crea i gruppi su GSuite ..."
-    echo "19. Cancella i gruppi GSuite ..."
-    echo "20. Esci"
+  echo "Gestione gruppi GSuite del personale:"
+  echo "-------------"
+  echo "1. Aggiungi tutti i membri ai gruppi GSuite"
+  echo "2. Importa in tabella GRUPPI i gruppi GSuite"
+  echo "3. Visualizza nuovo personale da aggiungere ai gruppi GSuite"
+  echo "4. Aggiungi nuovo personale ai gruppi GSuite"
+  echo "5. (TODO da cancellare) Visualizza docenti nei gruppi GSuite che non sono in Argo"
+  echo "6. (TODO da spostare) Disabilito i docenti GSuite che non sono in elenco Argo"
+  echo "8. (TODO da spostare) Visualizza docenti su GSuite non presenti su Argo"
+  echo "9. (TODO da spostare) Esporta docenti su GSuite non presenti su Argo"
+  echo "10. (TODO da spostare) Sospendi docenti su GSuite non presenti su Argo"
+  echo "11. (TODO da spostare) Cancella account docenti su GSuite non presenti su Argo"
+  echo "18. Crea i gruppi su GSuite ..."
+  echo "19. Cancella i gruppi GSuite ..."
+  echo "20. Esci"
 }
 
 # Funzione principale
 main() {
-        local choice="$1"
+  local choice="$1"
 
-        case $choice in
-            1)
-                echo "Aggiungi tutti i membri ai gruppi GSuite ..."
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Creo gruppo $nome_gruppo su GSuite...!"
-                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
-                done
-                ;;
-            2)
+  case $choice in
+    1)
+      echo "Aggiungi tutti i membri ai gruppi GSuite ..."
+
+      local FIELDS="LOWER(email_gsuite) AS email_gsuite"
+      local ORDERING="LOWER(email_gsuite)"
+
+      add_to_map "$GRUPPO_DOCENTI" "$(query::getTeachersWithEmailNotDeleted "$FIELDS" "$ORDERING" )"
+      add_to_map "$GRUPPO_CLASSROOM" "$(query::getTeachersWithEmailNotDeleted "$FIELDS" "$ORDERING" )"
+      
+      for nome_gruppo in "${!gruppi[@]}"; do
+        echo "Creo gruppo $nome_gruppo su GSuite...!"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+      done
+    ;;
+    2)
                 echo "Importa in tabella GRUPPI i gruppi GSuite"
                 
                 for nome_gruppo in "${!gruppi[@]}"; do
@@ -113,32 +95,36 @@ main() {
                     $RUN_CMD_WITH_QUERY --command printGroup --group "$nome_gruppo" --query " NO " | $SQLITE_UTILS_CMD insert studenti.db "$TABELLA_GRUPPI" - --csv --empty-null
                 done
                 ;;
-            3)
-                echo "Visualizza nuovo personale da aggiungere ai gruppi GSuite"
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
-                  $RUN_CMD_WITH_QUERY --command executeQuery --group " /* NO */ " --query "
-                      SELECT LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
-                          UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
-                          LOWER(email_gsuite) as email_gsuite
-                      $QUERY_DELTA_PERSONALE
-                      ORDER BY LOWER(email_gsuite);
-                  "
-                done
-                ;;
-            4)
-                echo "Aggiungi nuovo personale ai gruppi GSuite"
-                
-                for nome_gruppo in "${!gruppi[@]}"; do
-                  echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
-                  $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "
-                      SELECT LOWER(email_gsuite) as email_gsuite
-                      $QUERY_DELTA_PERSONALE
-                      ORDER BY LOWER(email_gsuite);
-                  "
-                done
-                ;;
+    3)
+      echo "Visualizza nuovo personale da aggiungere ai gruppi GSuite"
+      
+      local FIELDS="LOWER(tipo_personale) as tipo, UPPER(cognome) as cognome, 
+                UPPER(nome) as nome, LOWER(email_personale) as email_personale, 
+                LOWER(email_gsuite) as email_gsuite"
+      local ORDERING="LOWER(email_gsuite)"
+
+      add_to_map "$GRUPPO_DOCENTI" "$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
+      add_to_map "$GRUPPO_CLASSROOM" "$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
+
+      for nome_gruppo in "${!gruppi[@]}"; do
+        echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
+        $RUN_CMD_WITH_QUERY --command executeQuery --group " /* NO */ " --query "${gruppi[$nome_gruppo]}"
+      done
+    ;;
+    4)
+      echo "Aggiungi nuovo personale ai gruppi GSuite"
+
+      local FIELDS="LOWER(email_gsuite) AS email_gsuite"
+      local ORDERING="LOWER(email_gsuite)"
+
+      add_to_map "$GRUPPO_DOCENTI" "$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
+      add_to_map "$GRUPPO_CLASSROOM" "$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
+
+      for nome_gruppo in "${!gruppi[@]}"; do
+        echo "Nuovo personale da aggiungere al gruppo $nome_gruppo "
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+      done
+    ;;
             5)
                 echo "Visualizza personale nei gruppi GSuite che non sono in elenco Argo"
                 
@@ -238,7 +224,7 @@ main() {
                 echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
                 sleep 1
                 ;;
-        esac
+  esac
 }
 
 showConfig() {

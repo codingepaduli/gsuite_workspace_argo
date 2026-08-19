@@ -176,7 +176,7 @@ main() {
       query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_DOCENTI" --query "$query"
 
-      query="$(query::getAtaNotDeletedAddedInPeriod "$FIELDS")"
+      query="$(query::getAtaNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $RUN_CMD_WITH_QUERY --command createUsers --group "$GSUITE_OU_ATA" --query "$query"
     ;;
     10)

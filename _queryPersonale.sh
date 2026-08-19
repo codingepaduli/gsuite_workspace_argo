@@ -299,6 +299,35 @@ function query::getQueryEmployeesDefaultValues {
   echo "$query"
 }
 
+function query::getTeachersWithEmailNotDeleted {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
+  employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "
+  employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_EMAIL_GSUITE_PREFIX]="$FLAG_ON"
+  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
+  employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
 function query::getEmployeesNonDeletedWithoutEmailGSuite {
   local queryParam
   queryParam="$(query::defaultEmployeesParam)"
@@ -394,7 +423,7 @@ function query::getAtaNotDeletedAddedInPeriod {
 
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
-  employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
   employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'ata' "
@@ -405,38 +434,6 @@ function query::getAtaNotDeletedAddedInPeriod {
   employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
 
-  # clona mappa modificata
-  local queryParamString
-  queryParamString="$(declare -p "employeesParam")"
-
-  local query
-  query="$(query::getQueryEmployees "$queryParamString" )"
-  echo "$query"
-}
-
-function query::getQueryTeachersWithGSuiteEmail {
-  local queryParam
-  queryParam="$(query::defaultEmployeesParam)"
-
-  # clona mappa
-  local -A employeesParam=()
-  eval "${queryParam}"
-
-  # modifica mappa
-  local EMPLOYEES_FIELDS="LOWER(tipo_personale) as tipo, 
-    UPPER(cognome) as cognome, UPPER(nome) as nome, 
-    LOWER(email_personale) as email_personale, 
-    LOWER(email_gsuite) as email_gsuite, aggiunto_il"
-  employeesParam[FIELDS]="${1:-$EMPLOYEES_FIELDS}"
-  employeesParam[ORDERING]="${2:-cognome}"
-  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
-  employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
-  employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "
-  employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
-  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
-  employeesParam[FLAG_EMAIL_GSUITE_PREFIX]="$FLAG_ON"
-  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
-  
   # clona mappa modificata
   local queryParamString
   queryParamString="$(declare -p "employeesParam")"
