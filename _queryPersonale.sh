@@ -118,8 +118,9 @@ function query::normalizeRetiredDate() {
 }
 
 function query::createEmailTeachers() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
   echo "
-    UPDATE $TABELLA_PERSONALE
+    UPDATE $TABLE
     SET email_gsuite = 'd.' || 
           REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
           REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
@@ -132,8 +133,9 @@ function query::createEmailTeachers() {
 }
 
 function query::createEmailATA() {
+  local TABLE="${1:-${TABELLA_PERSONALE}}"
   echo "
-    UPDATE $TABELLA_PERSONALE
+    UPDATE $TABLE
     SET email_gsuite = 'a.' || 
           REPLACE(REPLACE(LOWER(nome), '''', ''), ' ', '') || '.' || 
           REPLACE(REPLACE(LOWER(cognome), '''',''), ' ', '') || '@$DOMAIN', 
@@ -199,7 +201,7 @@ function query::getQueryEmployees {
 
   echo "
     SELECT ${employeesParam[FIELDS]}
-    FROM $TABELLA_PERSONALE
+    FROM $employeesParam[TABLE]
     WHERE 1=1 
       AND (1=${employeesParam[FLAG_TIPO_PERSONALE]} OR 
         LOWER(tipo_personale) IN ( ${employeesParam[FILTER_TIPO_PERSONALE_IN]} ))
@@ -282,28 +284,7 @@ function query::getQueryEmployeesDefaultValues {
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
   employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
-
-  # clona mappa modificata
-  local queryParamString
-  queryParamString="$(declare -p "employeesParam")"
-
-  local query
-  query="$(query::getQueryEmployees "$queryParamString" )"
-  echo "$query"
-}
-
-function query::getQueryOldEmployeesDefaultValues {
-  local queryParam
-  queryParam="$(query::defaultEmployeesParam)"
-
-  # clona mappa
-  local -A employeesParam=()
-  eval "${queryParam}"
-
-  # modifica mappa
-  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
-  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
-  employeesParam[TABLE]="$TABELLA_PERSONALE_PRECEDENTE"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
 
   # clona mappa modificata
   local queryParamString
@@ -329,6 +310,7 @@ function query::getEmployeesNonDeletedWithoutEmailGSuite {
     LOWER(email_gsuite) as email_gsuite"
   employeesParam[FIELDS]="${1:-$EMPLOYEES_FIELDS}"
   employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
@@ -357,6 +339,7 @@ function query::getEmployeesNotDeletedAddedInPeriod {
     LOWER(email_gsuite) as email_gsuite, aggiunto_il"
   employeesParam[FIELDS]="${1:-$EMPLOYEES_FIELDS}"
   employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_AGGIUNTO_IL]="$FLAG_ON"
@@ -382,6 +365,7 @@ function query::getTeachersNotDeletedAddedInPeriod {
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
   employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
@@ -411,6 +395,7 @@ function query::getAtaNotDeletedAddedInPeriod {
   # modifica mappa
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
   employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'ata' "
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
@@ -444,6 +429,7 @@ function query::getQueryTeachersWithGSuiteEmail {
     LOWER(email_gsuite) as email_gsuite, aggiunto_il"
   employeesParam[FIELDS]="${1:-$EMPLOYEES_FIELDS}"
   employeesParam[ORDERING]="${2:-cognome}"
+  employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_TIPO_PERSONALE]="$FLAG_ON"
   employeesParam[FILTER_TIPO_PERSONALE_IN]=" 'docente' "
   employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]="$FLAG_ON"
@@ -486,7 +472,6 @@ function query::getDuplicatedCF {
       HAVING COUNT(*) > 1
     )"
 }
-
 
 function query::getDuplicatedEmail {
   local queryParam

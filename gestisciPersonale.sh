@@ -194,10 +194,13 @@ main() {
       # Creo lo script con i dati della query
       mkdir -p "$EXPORT_DIR_DATE"
       echo "Crea script $TABELLA_PERSONALE.sh e $TABELLA_PERSONALE_PRECEDENTE.sh ..."
-      
-      echo "#!/bin/bash" | tee "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
-      echo 'source "_environment.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
-      echo 'source "./_environment_working_tables.sh"' | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" | tee -a "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
+
+      {
+        echo "#!/bin/bash" 
+        echo 'source "_environment.sh"'
+        echo 'source "_environment_working_tables.sh"'
+        echo " "
+      } | tee "$EXPORT_DIR_DATE/$TABELLA_PERSONALE.sh" "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh"
 
       while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
@@ -206,7 +209,7 @@ main() {
 
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
-      query="$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING")"
+      query="$(query::getQueryOldEmployeesDefaultValues "$FIELDS" "$ORDERING" "$TABELLA_PERSONALE_PRECEDENTE")"
 
       while IFS="," read -r tipo_personale email_gsuite codice_fiscale cognome nome aggiunto cancellato contratto dipartimento note; do
 
