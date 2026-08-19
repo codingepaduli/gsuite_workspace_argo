@@ -302,7 +302,7 @@ main() {
       local FIELDS="group_concat(LOWER(email_gsuite), ';') AS email_gsuite" 
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
-      local TO=$($SQLITE_CMD -csv studenti.db "$query")
+      local TO="$($SQLITE_CMD -csv studenti.db "$query")"
       local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
       local MESSAGE="
           \n Gentile utente,
@@ -329,7 +329,7 @@ main() {
       printf -v COD_FISC_IN "'%s', " "${cfArray[@]}"
 
       ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-      COD_FISC_IN=${COD_FISC_IN%, }
+      COD_FISC_IN="${COD_FISC_IN%, }"
 
       local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
