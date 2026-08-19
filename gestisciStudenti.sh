@@ -28,7 +28,7 @@ show_menu() {
   echo "7. Crea script studenti_CF.sh"
   echo "8. Sospendi studenti ritirati nel periodo"
   echo "9. Cancella studenti ritirati nel periodo"
-  echo "10. Sposta script studenti_CF.sh relativo alla tabella precedente in root"
+  echo "10. Sposta script studenti_CF.sh relativo alla tabella precedente in root e lo esegue"
   echo "11. Visualizza account studenti ritirati nel periodo ..."
   echo "12. Cancello e ricreo la tabella studenti SERALE"
   echo "13. Importo e normalizzo i dati del SERALE"
@@ -216,7 +216,7 @@ main() {
       $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
     10)
-      echo "Sposta script studenti_CF.sh relativo alla tabella precedente in root"
+      echo "Sposta script studenti_CF.sh relativo alla tabella precedente in root e lo esegue"
       cp "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_STUDENTI.sh" 
       chmod +x "$BASE_DIR/$TABELLA_STUDENTI.sh"
 
@@ -299,14 +299,15 @@ main() {
     15)
       echo "15. Invia email agli studenti ritirati"
 
-      local FIELDS="group_concat(LOWER(email_gsuite), ',') AS email_gsuite" 
+      local FIELDS="group_concat(LOWER(email_gsuite), ';') AS email_gsuite" 
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
-      local TO=$($RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query")
+      local TO=$($SQLITE_CMD -csv studenti.db "$query")
       local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
       local MESSAGE="
           \n Gentile utente,
-          \n il suo account è in scadenza e sarà cancellato entro 15 giorni.
+          \n il suo account è in scadenza e sarà cancellato entro 15 giorni. 
+          \n Siete pregati di effettuare il backup dei dati necessari. 
           \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
           \n Cordiali saluti"
       
