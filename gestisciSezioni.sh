@@ -10,109 +10,109 @@ FILE_SEZIONI_CSV="${EXPORT_DIR_DATE}/${TABELLA_SEZIONI}_${CURRENT_DATE}.csv"
 
 # Funzione per mostrare il menu
 show_menu() {
-    echo "Gestione tabella sezioni $TABELLA_SEZIONI"
-    echo "-------------"
-    echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
-    echo "-------------"
-    echo "1. Cancella e crea tabella sezioni"
-    echo "2. Crea dati delle sezioni a partire dai dati degli studenti"
-    echo "3. Visualizza sezioni"
-    echo "4. Esporto le sezioni in file CSV"
-    echo ""
-    echo "6. Invia elenco classi ai coordinatori"
-    echo " "
-    echo "20. Esci"
+  echo "Gestione tabella sezioni $TABELLA_SEZIONI"
+  echo "-------------"
+  echo "Esecuzione in DRY-RUN mode: $dryRunFlag"
+  echo "-------------"
+  echo "1. Cancella e crea tabella sezioni"
+  echo "2. Crea dati delle sezioni a partire dai dati degli studenti"
+  echo "3. Visualizza sezioni"
+  echo "4. Esporto le sezioni in file CSV"
+  echo ""
+  echo "6. Invia elenco classi ai coordinatori"
+  echo " "
+  echo "20. Esci"
 }
 
 # Funzione principale
 main() {
   local query
 
-    if ! checkAllVarsNotEmpty "TABELLA_STUDENTI" "TABELLA_SEZIONI"; then
-      echo "Errore: Definisci le variabili nel file di configurazione." >&2
-      exit 1  # Termina lo script con codice di stato 1
-    fi
+  if ! checkAllVarsNotEmpty "TABELLA_STUDENTI" "TABELLA_SEZIONI"; then
+    echo "Errore: Definisci le variabili nel file di configurazione." >&2
+    exit 1  # Termina lo script con codice di stato 1
+  fi
 
-    choice="$1"
+  choice="$1"
         
-        case $choice in
-            1)
-              echo "Cancella e crea tabella sezioni ..."
-              
-              # Cancello la tabella
-              query="$(query::dropTableIfExists)"
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+  case $choice in
+    1)
+      echo "Cancella e crea tabella sezioni ..."
+      
+      # Cancello la tabella
+      query="$(query::dropTableIfExists)"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-              # Creo la tabella
-              query="$(query::createTableIfNotExists)"
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
-            ;;
-            2)
-              echo "Crea dati delle sezioni a partire dai dati degli studenti ..."
+      # Creo la tabella
+      query="$(query::createTableIfNotExists)"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+    ;;
+    2)
+      echo "Crea dati delle sezioni a partire dai dati degli studenti ..."
 
-              query="$(query::queryCreaSezioniDaStudenti)"
-              $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
-              INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
-              $query "
-            ;;
-            3)
-              echo "Visualizza dati delle sezioni ..."
+      query="$(query::queryCreaSezioniDaStudenti)"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "
+      INSERT INTO $TABELLA_SEZIONI (cl, sez_argo, letter, addr_argo, addr_gsuite, sez_gsuite, sezione_gsuite) 
+      $query "
+    ;;
+    3)
+      echo "Visualizza dati delle sezioni ..."
 
-              query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
-              $SQLITE_CMD -header -table studenti.db " $query"
-            ;;
-            4)
-              mkdir -p "$EXPORT_DIR_DATE"
-              echo "Esporto le sezioni in file CSV ..."
+      query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
+      $SQLITE_CMD -header -table studenti.db " $query"
+    ;;
+    4)
+      mkdir -p "$EXPORT_DIR_DATE"
+      echo "Esporto le sezioni in file CSV ..."
 
-              query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
-              $SQLITE_CMD studenti.db -header -csv "$query" > "$FILE_SEZIONI_CSV"
-            ;;
-            6)
-              echo "Invia elenco classi ai coordinatori"
+      query="$(query::querySezioniTutte "cl, letter, addr_argo, addr_gsuite, sezione_gsuite, email_coordinatore" "sezione_gsuite" )"
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$FILE_SEZIONI_CSV"
+    ;;
+    6)
+      echo "Invia elenco classi ai coordinatori"
 
-              echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
-              
-              query="$(query::querySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )"
+      echo "Prepara EMAIL degli account studenti, da inviare ai coordinatori"
+      
+      query="$(query::querySezioniSupervisorNotEmpty "sezione_gsuite, email_coordinatore" "addr_argo" )"
 
-              while IFS="," read -r sezione_gsuite email_coordinatore; do
+      while IFS="," read -r sezione_gsuite email_coordinatore; do
 
-                    local TO="$email_coordinatore" # , CDC_$sezione_gsuite@$DOMAIN
+        local TO="$email_coordinatore" # , CDC_$sezione_gsuite@$DOMAIN
 
-                    local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+        local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
 
-                    local MESSAGE="
-                      \n Buongiorno,
-                      \n in allegato l'elenco degli account degli studenti della classe $sezione_gsuite .
-                      \n Richieste e segnalazioni di imprecisioni o problematiche relative agli account studenti possono essere inoltrate a supporto_digitale@$DOMAIN .
-                      \n Tutti i docenti sono abilitati ad effettuare il reset password degli studenti, come da circolare 211 (in allegato).
-                      \n Cordiali saluti"
+        local MESSAGE="
+          \n Buongiorno,
+          \n in allegato l'elenco degli account degli studenti della classe $sezione_gsuite .
+          \n Richieste e segnalazioni di imprecisioni o problematiche relative agli account studenti possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Tutti i docenti sono abilitati ad effettuare il reset password degli studenti, come da circolare 211 (in allegato).
+          \n Cordiali saluti"
 
-                    echo "Invio EMAIL degli account studenti della classe $sezione_gsuite - coordinatore $email_coordinatore"
+        echo "Invio EMAIL degli account studenti della classe $sezione_gsuite - coordinatore $email_coordinatore"
 
-                    if [ ! -e "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" ]; then
-                      echo "Il file $EXPORT_DIR_DATE/$sezione_gsuite.xlsx non esiste."
-                      break;
-                    fi
+        if [ ! -e "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" ]; then
+          echo "Il file $EXPORT_DIR_DATE/$sezione_gsuite.xlsx non esiste."
+          break;
+        fi
 
-                    if [ ! -e "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf" ]; then
-                      echo "Il file $EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf non esiste."
-                      break;
-                    fi
+        if [ ! -e "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf" ]; then
+          echo "Il file $EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf non esiste."
+          break;
+        fi
 
-                    $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
+        $GAM_CMD sendemail to "$TO" cc "$CC" subject "Account studenti $sezione_gsuite" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" attach "$EXPORT_DIR_DATE/Circolare211-ResetPassword.pdf"
 
-              done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
-            ;;
-            20)
-              echo "Arrivederci!"
-              exit 0
-            ;;
-            *)
-              echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
-              sleep 1
-            ;;
-        esac
+      done < <($SQLITE_CMD -csv studenti.db " $query" | sed 's/"//g' )
+    ;;
+    20)
+      echo "Arrivederci!"
+      exit 0
+    ;;
+    *)
+      echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
+      sleep 1
+    ;;
+  esac
 }
 
 showConfig() {
