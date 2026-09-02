@@ -10,7 +10,7 @@ FLAG_OFF=1
 function query::dropTableIfExists() {
   local TABLE="${1:-${TABELLA_PERSONALE}}"
   echo "
-    DROP TABLE IF EXISTS '$TABLE';
+    DROP TABLE IF EXISTS '$TABLE'
   "
 }
 
@@ -73,7 +73,7 @@ function query::createTableIfNotExists() {
           AND SUBSTR(cancellato_il,9,2) GLOB '[0-9][0-9]'
         )
       )
-    ) STRICT;
+    ) STRICT
   "
 }
 
@@ -95,7 +95,7 @@ function query::normalizeBirthDate() {
   echo "
     UPDATE $TABLE 
     SET data_nascita = SUBSTR(data_nascita, 7, 4) || '-'
-        || SUBSTR(data_nascita, 4, 2) || '-' || SUBSTR(data_nascita, 1, 2);
+      || SUBSTR(data_nascita, 4, 2) || '-' || SUBSTR(data_nascita, 1, 2)
   "
 }
 

@@ -52,11 +52,11 @@ main() {
       
       # Cancello la tabella
       query="$(query::dropTableIfExists )"
-      $SQLITE_CMD studenti.db "$query"
+      $SQLITE_CMD studenti.db "$query;"
 
       # Creo la tabella
       query="$(query::createTableIfNotExists )"
-      $SQLITE_CMD studenti.db "$query"
+      $SQLITE_CMD studenti.db "$query;"
     ;;
     2)
       echo "2. Importo e normalizzo i dati dal file CSV $FILE_PERSONALE_CSV ..."
@@ -74,19 +74,19 @@ main() {
 
       # Normalizza dati
       query="$(query::normalizeFields )"
-      $SQLITE_CMD studenti.db "$query"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query;"
       
       # Normalizza birthday
       query="$(query::normalizeBirthDate )"
-      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query;"
 
       # Normalizza date
       query="$(query::normalizeInsertDate )"
-      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query;"
 
       # Normalizza date
       query="$(query::normalizeRetiredDate )"
-      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query;"
     ;;
     3)
       echo "Personale neo-assunto ancora senza email:"
@@ -165,7 +165,7 @@ main() {
       query="$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")"
 
       ## Eseguo l'import a partire dalla query
-      $SQLITE_CMD studenti.db -header -table  "INSERT INTO $TABELLA_PERSONALE $query"
+      $SQLITE_CMD studenti.db -header -table  "INSERT INTO $TABELLA_PERSONALE $query;"
     ;;
     9)
       checkAllVarsNotEmpty "GSUITE_OU_DOCENTI" "GSUITE_OU_ATA" "PASSWORD_CLASSROOM"
