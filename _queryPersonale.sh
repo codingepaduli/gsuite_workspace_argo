@@ -185,6 +185,8 @@ function query::defaultEmployeesParam() {
 
   employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_CONTRATTO_NOT_EXISTS]="$FLAG_OFF"
+  employeesParam[FLAG_CONTRATTO_IN]="$FLAG_OFF"
+  employeesParam[FILTER_CONTRATTO_IN]=" '' "
 
   employeesParam[FLAG_DIPARTIMENTO_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]="$FLAG_OFF"
@@ -241,6 +243,8 @@ function query::getQueryEmployees {
         (contratto IS NOT NULL AND LOWER(contratto) != '' ))
       AND (1=${employeesParam[FLAG_CONTRATTO_NOT_EXISTS]} OR 
         (contratto IS NULL OR LOWER(contratto) = '' ))
+      AND (1=${employeesParam[FLAG_CONTRATTO_IN]} OR 
+        (LOWER(contratto) IN ( ${employeesParam[FILTER_CONTRATTO_IN]} )))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_EXISTS]} OR 
         (dipartimento IS NOT NULL AND LOWER(dipartimento) != '' ))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]} OR 
@@ -293,6 +297,33 @@ function query::getQueryEmployeesDefaultValues {
   employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
   employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
   employeesParam[TABLE]="${3:-${employeesParam[TABLE]}}"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
+function query::getEmployeesNotDeletedWithEmailGsuite {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${4:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_CONTRATTO_IN]="$FLAG_ON"
+  employeesParam[FILTER_CONTRATTO_IN]="${3:-${employeesParam[FILTER_CONTRATTO_IN]}}"
 
   # clona mappa modificata
   local queryParamString

@@ -30,7 +30,9 @@ show_menu() {
   echo "13. Sospendi (disabilita) personale"
   echo "14. Elimina personale"
   echo "15. Visualizza personale da cancellare ..."
+  echo "16. Visualizza personale supplente ..."
   echo "17. Sposta script personale_CF.sh relativo alla tabella precedente in root"
+  echo "18. Invia mail di sospensione account al personale supplente ..."
   echo "19. Controllo i dati"
   echo "20. Esci"
 }
@@ -135,7 +137,8 @@ main() {
       local FIELDS="group_concat(quote(LOWER(codice_fiscale)), ',') AS codice_fiscale"
       query="$(query::getQueryEmployeesDefaultValues "$FIELDS")"
 
-      local $cfArrayString="$($SQLITE_CMD studenti.db -csv "$query")"
+      # FIX: non usare -csv, perchè altrimenti i CF sono inseriti tra doppi apici
+      local $cfArrayString="$($SQLITE_CMD studenti.db "$query")"
 
       ## Creo la query del personale della vecchia tabella
       ## i cui codici fiscali non si trovano nella nuova tabella
@@ -259,6 +262,15 @@ main() {
 
       # $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
+    16)
+      echo "Visualizza personale supplente ..."
+
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) AS cognome, UPPER(nome) AS nome, aggiunto_il, UPPER(contratto) AS contratto"
+      local ORDERING="UPPER(codice_fiscale)"
+      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente' ")"
+
+      $SQLITE_CMD studenti.db -header -table "$query"
+    ;;
     17)
       cp "$EXPORT_DIR_DATE/$TABELLA_PERSONALE_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_PERSONALE.sh" 
       chmod +x "$BASE_DIR/$TABELLA_PERSONALE.sh"
@@ -266,6 +278,28 @@ main() {
       # run the script
       echo "Eseguo script aggiornamento email" 
       "$BASE_DIR/$TABELLA_PERSONALE.sh"
+    ;;
+    18)
+      echo "Invia mail di sospensione account al personale supplente ..."
+
+      local FIELDS="group_concat(LOWER(email_gsuite), ';') AS email_gsuite"
+      local ORDERING="UPPER(codice_fiscale)"
+      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente' ")"
+
+      # FIX: non usare -csv, perchè altrimenti le email sono inseriti tra doppi apici
+      local TO="$($SQLITE_CMD -csv studenti.db "$query")"
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local MESSAGE="
+          \n Gentile utente,
+          \n il suo account è in scadenza e sarà cancellato entro 15 giorni. 
+          \n \n $TO \n \n
+          \n Siete pregati di effettuare il backup dei dati necessari. 
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+      
+      echo "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+
+      $GAM_CMD sendemail to "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
     ;;
     19)
       echo "Controllo i dati"
