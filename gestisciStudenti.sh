@@ -321,16 +321,8 @@ main() {
 
       query="$(query::cfStudentiDuplicati )"
 
-      ## Salvo in un array i CF risultanti della query
-      local -a cfArray
-      readarray -t cfArray < <($SQLITE_CMD studenti.db -csv "$query" )
-
-      ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
-      local COD_FISC_IN
-      printf -v COD_FISC_IN "'%s', " "${cfArray[@]}"
-
-      ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-      COD_FISC_IN="${COD_FISC_IN%, }"
+      # FIX: non usare -csv, perchè altrimenti i CF sono inseriti tra doppi apici
+      local COD_FISC_IN="$( $SQLITE_CMD studenti.db "$query" )"
 
       local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
@@ -343,16 +335,8 @@ main() {
       
       query="$(query::emailStudentiDuplicati )"
 
-      ## Salvo in un array le email risultanti della query
-      local -a emailArray
-      readarray -t emailArray < <($SQLITE_CMD studenti.db -csv "$query" )
-
-      ## Scrivo l'array (a, b, c) come stringa 'a', 'b', 'c',
-      local EMAIL_GSUITE_IN
-      printf -v EMAIL_GSUITE_IN "'%s', " "${emailArray[@]}"
-
-      ## Tolgo l'ultima virgola e l'ultimo spazio ", "
-      EMAIL_GSUITE_IN="${EMAIL_GSUITE_IN%, }"
+      # FIX: non usare -csv, perchè altrimenti le email sono inserite tra doppi apici
+      local EMAIL_GSUITE_IN="$($SQLITE_CMD studenti.db "$query")"
 
       local FIELDS="cognome, nome, cod_fisc, sz.cl, sz.sez_argo, datar, email_gsuite"
       local ORDERING="sz.sezione_gsuite, cognome, nome"

@@ -707,7 +707,7 @@ function query::cfStudentiDuplicati {
   query="$(query::getQueryStudenti "$queryParam")"
 
   query="
-  SELECT DISTINCT UPPER(cod_fisc)
+  SELECT DISTINCT group_concat(quote(UPPER(cod_fisc)), ',')
   FROM (
     $query
   ) 
@@ -738,7 +738,7 @@ function query::emailStudentiDuplicati {
   query="$(query::getQueryStudenti "$queryParam")"
 
   query="
-  SELECT DISTINCT LOWER(email_gsuite)
+  SELECT DISTINCT group_concat(quote(LOWER(email_gsuite)), ',')
   FROM (
     $query
   ) 
