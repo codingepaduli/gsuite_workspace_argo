@@ -188,13 +188,13 @@ main() {
       # Tabella CF corrente
       while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez datar aggiunto_il; do
         # Aggiungo il CF negli script
-        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il=\"$aggiunto_il\" WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
+        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il='$aggiunto_il' WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI.sh"
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
 
       # Tabella CF precedente
       while IFS="," read -r email_gsuite cod_fisc cognome nome cl sez datar aggiunto_il; do
         # Aggiungo il CF negli script
-        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il=\"$aggiunto_il\" WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
+        echo "\$SQLITE_CMD -header -csv studenti.db \"UPDATE \$TABELLA_STUDENTI SET email_gsuite = LOWER('$email_gsuite'), aggiunto_il='$aggiunto_il' WHERE UPPER(cod_fisc) = UPPER('$cod_fisc')\" # $cognome $nome $cl $sez ${datar:+ritirato: $datar};" >> "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh"
       done < <($SQLITE_CMD -csv studenti.db "$queryStudentiPrecedenti" | sed "s/\"//g")
     ;;
     8)
