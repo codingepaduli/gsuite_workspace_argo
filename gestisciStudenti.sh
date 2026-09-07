@@ -78,11 +78,11 @@ main() {
 
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI $TABELLA_STUDENTI"
       
-      echo "Normalizzo i campi"
+      echo "Normalizzo i campi di tipo testo"
       query="$(query::normalizeFields )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-      echo "Date errate"
+      echo "Verifico non ci siano date errate"
       query="$(query:checkWrongDate )";
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
       
@@ -98,7 +98,7 @@ main() {
       query="$(query::normalizeEmailGSuite )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-      echo "Normalizzo inserimenti"
+      echo "Normalizzo date di inserimento"
       query="$(query::normalizeInsertDate )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
@@ -216,7 +216,7 @@ main() {
       $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
     10)
-      echo "Sposta script studenti_CF.sh relativo alla tabella precedente in root e lo esegue"
+      echo "Sposta script studenti_CF.sh relativo alla tabella precedente in $BASE_DIR e lo esegue"
       cp "$EXPORT_DIR_DATE/$TABELLA_STUDENTI_PRECEDENTE.sh" "$BASE_DIR/$TABELLA_STUDENTI.sh" 
       chmod +x "$BASE_DIR/$TABELLA_STUDENTI.sh"
 
@@ -257,14 +257,15 @@ main() {
 
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CSV_STUDENTI_SERALE $TABELLA_STUDENTI_SERALE"
 
-      echo "Normalizzo i campi"
+      echo "Normalizzo i campi di tipo testo"
       query="$(query::normalizeFields "$TABELLA_STUDENTI_SERALE" )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
+      echo "Normalizzo i campi delle sezioni sirio" # Solo per tabella SIRIO
       query="$(query::normalizeSirioSection )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-      echo "Date errate"
+      echo "Verifico non ci siano date errate"
       query="$(query:checkWrongDate "$TABELLA_STUDENTI_SERALE")";
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
@@ -280,7 +281,7 @@ main() {
       query="$(query::normalizeEmailGSuite "$TABELLA_STUDENTI_SERALE" )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     
-      echo "Normalizzo inserimenti"
+      echo "Normalizzo date di inserimento"
       query="$(query::normalizeInsertDate "$TABELLA_STUDENTI_SERALE" )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
