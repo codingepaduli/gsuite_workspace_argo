@@ -655,7 +655,7 @@ function query::queryStudentiDellAnnoNonCancellatiIscrittiInPeriodo {
   studentsParam[FILTER_YEARS_IN]=" '$3' "
   studentsParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   studentsParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
-  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]="s."
+  studentsParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
