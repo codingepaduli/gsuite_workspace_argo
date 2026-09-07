@@ -115,6 +115,8 @@ main() {
       local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, aggiunto_il, datar AS data_ritiro, matricola, email_gsuite"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
+      echo "Studenti senza email"
+
       query="$(query::queryStudentiSenzaEmail "$FIELDS" "$ORDERING" )"
       $SQLITE_CMD studenti.db -header -table "$query"
 
@@ -342,7 +344,6 @@ main() {
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
       query="$(query::studentiByEmailGSuite "$FIELDS" "$ORDERING" "$EMAIL_GSUITE_IN")"
-
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     18)
