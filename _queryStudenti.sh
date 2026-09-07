@@ -802,19 +802,22 @@ function query::studentiByEmailGSuite {
 }
 
 function query::numeroStudentiPerClasse {
+  local FIELDS="sz.sezione_gsuite AS classe, sz.cl AS anno, sz.letter AS sezione, sz.sez_gsuite AS indirizzo, cognome, nome, LOWER(email_gsuite) AS email "
+  local ORDERING="sz.sezione_gsuite"
+  
   local query
-  query="$(query::queryStudentiNonCancellatiConEmail)"
+  query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
-  query="
-    SELECT sezione_gsuite AS classe, COUNT(*) AS numero_alunni
+  local queryStudentiPerClasse="
+    SELECT classe, COUNT(*) AS numero_alunni
     FROM (
       $query
     ) 
-    GROUP BY sezione_gsuite
-    ORDER BY sezione_gsuite
+    GROUP BY classe -- sz.sezione_gsuite
+    ORDER BY classe
   "
 
-  echo "$query"
+  echo "$queryStudentiPerClasse"
 }
 
 function query::studentiCambioClasse {
