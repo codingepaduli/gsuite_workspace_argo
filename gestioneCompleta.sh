@@ -57,6 +57,8 @@ main() {
         read -p "Premi per continuare " -r _
       ;;
       1)
+        echo "Genero ed eseguo script aggiornamento email studenti"
+        
         local CREATE_SCRIPT_CF_STUDENTS=7
         local MOVE_AND_RUN_SCRIPT_OLD_STUDENTS=10
         local CHECK_STUDENTS_CF=16
