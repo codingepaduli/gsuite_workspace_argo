@@ -17,7 +17,7 @@ show_menu() {
   echo "2. Cancella le classi ed i gruppi aggiuntivi da GSuite"
   echo "3. Esporta le classi da tabella studenti, un file CSV per ogni classe"
   echo "4. Aggiungi studenti alle classi"
-  echo "5. Visualizza numero studenti per classe"
+  echo "5. Esporta numero studenti per classe in file CSV"
   echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
   echo "8. Effettua i cambi di classe"
   echo "9. Aggiungi nuovi studenti (vedi periodo) alle classi"
@@ -91,11 +91,12 @@ main() {
       $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
     ;;
     5)
-      echo "Esportato numero studenti per classe in file CSV"
+      echo "Esporta numero studenti per classe in file CSV"
 
       mkdir -p "$EXPORT_DIR_DATE"
 
       query="$(query::numeroStudentiPerClasse )"
+
       $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
     ;;
     6)
