@@ -98,6 +98,8 @@ main() {
       query="$(query::numeroStudentiPerClasse )"
 
       $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/num_studenti_per_classe.csv"
     ;;
     6)
       mkdir -p "$EXPORT_DIR_DATE"
