@@ -139,7 +139,7 @@ case $command in
         $GAM_CMD print group-members group "$nome_gruppo" membernames fields 'id,email,role,type,status'
         ;;
     "deleteGroup")
-        $GAM_CMD delete group "$nome_gruppo"
+        $GAM_CMD delete group "$nome_gruppo" || true  # Ignora l'errore di questo comando specifico
         ;;
     "addMembersToGroup")
         while IFS="," read -r email; do
