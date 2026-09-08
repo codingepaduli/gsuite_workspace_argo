@@ -526,6 +526,28 @@ function query::getEmployeesInDipartimentiAll {
   echo "$query"
 }
 
+function query::getDipartimentiRaggruppatiAll {
+  echo "
+    SELECT 'SOSTEGNO' AS dipartimento, ' ''SOSTEGNO'' ' AS materie
+      UNION ALL 
+    SELECT 'MATEMATICA', ' ''MATEMATICA'' '
+      UNION ALL 
+    SELECT 'UMANISTICO', ' ''LETTERE'', ''DIRITTO'' ' 
+      UNION ALL 
+    SELECT 'INGLESE', ' ''INGLESE'' '
+      UNION ALL 
+    SELECT 'TECNOLOGICO', ' ''INFORMATICA'', ''ELETTRONICA'' '
+      UNION ALL 
+    SELECT 'SCIENTIFICO_MOTORIO', ' ''SCIENZE_MOTORIE'', ''SCIENZE'' '
+      UNION ALL 
+    SELECT 'ODONTOTECNICO', ' ''ODONTOTECNICO'' '
+      UNION ALL 
+    SELECT 'INDUSTRIA', ' ''DISEGNO'', ''MACCANICA_AEREONAUTICA'' '
+      UNION ALL 
+    SELECT 'PERSONALE_ATA', ' ''PERSONALE_ATA'' ';
+  "
+}
+
 function query::getEmployeesInDipartimentoByNomeDipartimento {
   local queryParam
   queryParam="$(query::defaultEmployeesParam)"
