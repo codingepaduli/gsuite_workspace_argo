@@ -108,24 +108,18 @@ function query::getQueryCdc {
     WITH consigli AS (
       SELECT cdc.* , sz.* , d.*,
         CASE 
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('en', 'et')         THEN 'primo_biennio_elettronica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt', 'Qi')    THEN 'primo_biennio_informatica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mDD')         THEN 'primo_biennio_meccanica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('od')               THEN 'primo_biennio_odontotecnica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('tr')               THEN 'primo_biennio_aeronautica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('en', 'et')         THEN 'docenti_1_biennio_elettronica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt', 'Qi')    THEN 'docenti_1_biennio_informatica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mDD')         THEN 'docenti_1_biennio_meccanica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('od')               THEN 'docenti_1_biennio_odontotecnica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('tr')               THEN 'docenti_1_biennio_aeronautica'
           
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('en', 'et')         THEN 'secondo_biennio_elettronica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'secondo_biennio_informatica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mDD')         THEN 'secondo_biennio_meccanica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('od')               THEN 'secondo_biennio_odontotecnica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('tr')               THEN 'secondo_biennio_aeronautica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('en', 'et')         THEN 'docenti_2_biennio_elettronica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'docenti_2_biennio_informatica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mDD')         THEN 'docenti_2_biennio_meccanica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('od')               THEN 'docenti_2_biennio_odontotecnica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('tr')               THEN 'docenti_2_biennio_aeronautica'
           
-          WHEN sz.cl IN (6)    AND sz.addr_argo IN ('en', 'et')         THEN 'diplomati_elettronica'
-          WHEN sz.cl IN (6)    AND sz.addr_argo IN ('in', 'idd', 'tlt', 'Qi')    THEN 'diplomati_informatica'
-          WHEN sz.cl IN (6)    AND sz.addr_argo IN ('m', 'mDD')         THEN 'diplomati_meccanica'
-          WHEN sz.cl IN (6)    AND sz.addr_argo IN ('od')               THEN 'diplomati_odontotecnica'
-          WHEN sz.cl IN (6)    AND sz.addr_argo IN ('tr')               THEN 'diplomati_aereonautica'
-
           ELSE ''
         END AS biennio
       FROM $TABELLA_CDC_ARGO cdc

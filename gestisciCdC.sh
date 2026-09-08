@@ -16,18 +16,6 @@ FILE_CDC_ARGO_PDF="$CDC_ARGO_IMPORT_DIR/$TABELLA_CDC_ARGO.pdf"
 FILE_CDC_ARGO_CSV="$CDC_ARGO_IMPORT_DIR/$TABELLA_CDC_ARGO.csv"
 FILE_CDC_ARGO_IMPORT_CSV="$CDC_ARGO_IMPORT_DIR/full_$TABELLA_CDC_ARGO.csv"
 
-add_to_map "primo_biennio_elettronica"      " "
-add_to_map "primo_biennio_informatica"      " "
-add_to_map "primo_biennio_meccanica"        " "
-add_to_map "primo_biennio_odontotecnica"    " "
-add_to_map "primo_biennio_aeronautica"      " "
-
-add_to_map "secondo_biennio_elettronica"    " "
-add_to_map "secondo_biennio_informatica"    " "
-add_to_map "secondo_biennio_meccanica"      " "
-add_to_map "secondo_biennio_odontotecnica"  " "
-add_to_map "secondo_biennio_aeronautica"    " "
-
 # Funzione per mostrare il menu
 show_menu() {
     echo "Gestione CdC su GSuite"
@@ -58,6 +46,14 @@ main() {
 
   local querySezioni
   querySezioni="$(query::querySezioniTutte "sezione_gsuite" )"
+
+  local queryBienni
+  queryBienni="$(query::queryAllCdc " DISTINCT LOWER(biennio) " " LOWER(biennio) " )"
+
+  declare -a bienni
+  readarray -t bienni < <( $SQLITE_CMD -csv studenti.db "$queryBienni" )
+
+  # echo "${bienni[@]}"
 
   local query
 
@@ -165,14 +161,14 @@ main() {
     11)
       echo "Cancella tutti i gruppi dei bienni da GSuite"
 
-      for nome_gruppo in "${!gruppi[@]}"; do
+      for nome_gruppo in "${bienni[@]}"; do
         $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " NO "
       done
     ;;
     12)
       echo "Crea tutti i gruppi dei bienni su GSuite"
       
-      for nome_gruppo in "${!gruppi[@]}"; do
+      for nome_gruppo in "${bienni[@]}"; do
         echo "Creo gruppo $nome_gruppo su GSuite...!"
         $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " NO "
       done
