@@ -133,7 +133,7 @@ case $command in
         done < <($SQLITE_CMD -csv studenti.db "$query" | sed 's/"//g' )
         ;;
     "createGroup")
-        $GAM_CMD create group "$nome_gruppo@$DOMAIN" name "$nome_gruppo" description "$GROUP_DESCRIPTION"
+        $GAM_CMD create group "$nome_gruppo@$DOMAIN" name "$nome_gruppo" description "$GROUP_DESCRIPTION"  || true  # Ignora l'errore di questo comando specifico
         ;;
     "printGroup")
         $GAM_CMD print group-members group "$nome_gruppo" membernames fields 'id,email,role,type,status'
