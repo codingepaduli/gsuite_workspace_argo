@@ -26,17 +26,17 @@ main() {
 
   local choice="$1"
 
-  local FIELDS="DISTINCT LOWER(dipartimento) AS dipartimento"
-  local ORDERING="LOWER(dipartimento)"
-  local QUERY_NOMI_DIPARTIMENTI="$(query::getEmployeesInDipartimentiAll "$FIELDS" "$ORDERING" )"
-
+  # local FIELDS="DISTINCT LOWER(dipartimento) AS dipartimento"
+  # local ORDERING="LOWER(dipartimento)"
+  # local QUERY_NOMI_DIPARTIMENTI="$(query::getEmployeesInDipartimentiAll "$FIELDS" "$ORDERING" )"
+  local QUERY_NOMI_DIPARTIMENTI="$(query::getDipartimentiRaggruppatiAll )"
   $SQLITE_CMD studenti.db -header -table "$QUERY_NOMI_DIPARTIMENTI"
 
   # Le query del personale di ogni dipartimenti
-  while IFS="," read -r dipartimento; do
+  while IFS="," read -r dipartimento materie; do
     FIELDS="LOWER(email_gsuite) AS email_gsuite"
     ORDERING="LOWER(email_gsuite)"
-    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" " '$dipartimento' " )"
+    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
     add_to_map "$dipartimento" "$query"
   done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
 
