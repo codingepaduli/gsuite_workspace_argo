@@ -4,6 +4,7 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
+source "./_queryPersonale.sh"
 
 ##########################################################################
 # Progettato per gestire il personale, non per CdC, non per dipartimenti # 
