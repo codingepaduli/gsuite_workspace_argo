@@ -205,33 +205,27 @@ main() {
       
         local TO="$email_personale"
         local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+        local SUBJECT="Credenziali Istituzionali ISIS Volta Aversa"
         local MESSAGE="
             \n Salve,
             \n di seguito le credenziali per la nuova mail istituzionale.
-            \n
-            \n username: $email_gsuite
-            \n passoword: $PASSWORD_CLASSROOM
-            \n
+            username: $email_gsuite
+            passoword: $PASSWORD_CLASSROOM
+            
             \n Per una guida all'impostazione dell'account su dispositivi mobili si rimanda alle pagine ufficiali di Google:
-            \n - https://support.google.com/android/answer/7664951?hl=it
-            \n - https://support.google.com/accounts/answer/6390156?hl=it
-            \n
+            - https://support.google.com/android/answer/7664951?hl=it
+            - https://support.google.com/accounts/answer/6390156?hl=it
+            
             \n L'accesso al sito istituzionale avviene con le credenziali SPID oppure ARGO.
             \n Attenzione, è necessario cliccare sul pulsante in basso 'Accedi con ARGO/SPID'
-            \n
             \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
             \n Cordiali saluti
-            \n"
-        
-        # Se in debug, invia la mail a CC, non all'utente
-        if [ -n "$DRY_RUN" ]; then
-          MESSAGE="$MESSAGE \n email inviata a: \n $TO \n"
-          TO="$CC"
-        fi
+            \n
+          "
 
-        echo "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+        echo "to: $TO cc: $CC subject: $SUBJECT message: $MESSAGE"
 
-        $GAM_CMD sendemail to "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+        $GAM_CMD sendemail to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE"
 
       done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
     ;;
