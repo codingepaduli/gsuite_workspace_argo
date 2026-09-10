@@ -250,7 +250,7 @@ function query::getQueryEmployees {
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]} OR 
         (dipartimento IS NULL OR LOWER(dipartimento) = '' ))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_IN]} OR 
-        (LOWER(dipartimento) IN ( ${employeesParam[FILTER_DIPARTIMENTO_IN]} )))
+        (UPPER(dipartimento) IN ( ${employeesParam[FILTER_DIPARTIMENTO_IN]} )))
       AND (1=${employeesParam[FLAG_NOTE_EXISTS]} OR 
         (note IS NOT NULL AND LOWER(note) != '' ))
       AND (1=${employeesParam[FLAG_NOTE_NOT_EXISTS]} OR 
