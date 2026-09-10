@@ -26,6 +26,7 @@ show_menu() {
   echo "8. Importa nella tabella attuale il personale della tabella precedente NON CANCELLATO E non incluso in quella attuale"
   echo "9. Crea il nuovo personale su GSuite"
   echo "10. Aggiungo i nuovi docenti su Classroom"
+  echo "11. Invia mail di creazione account al personale neo-assunto ..."
   echo "12. Crea script personale_CF.sh"
   echo "13. Sospendi (disabilita) personale"
   echo "14. Elimina personale"
@@ -193,6 +194,47 @@ main() {
       query="$(query::getTeachersNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
       $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$GRUPPO_CLASSROOM" --query "$query"
     ;;
+    11)
+      echo "Invia mail di creazione account al personale neo-assunto ..."
+
+      local FIELDS="LOWER(email_gsuite) AS email_gsuite, LOWER(email_personale) AS email_personale, UPPER(cognome) AS cognome, UPPER(nome) AS nome"
+      local ORDERING="LOWER(email_gsuite)"
+      query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS" "$ORDERING")"
+
+      while IFS="," read -r email_gsuite email_personale cognome nome; do
+      
+        local TO="$email_personale"
+        local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+        local MESSAGE="
+            \n Salve,
+            \n di seguito le credenziali per la nuova mail istituzionale.
+            \n
+            \n username: $email_gsuite
+            \n passoword: $PASSWORD_CLASSROOM
+            \n
+            \n Per una guida all'impostazione dell'account su dispositivi mobili si rimanda alle pagine ufficiali di Google:
+            \n - https://support.google.com/android/answer/7664951?hl=it
+            \n - https://support.google.com/accounts/answer/6390156?hl=it
+            \n
+            \n L'accesso al sito istituzionale avviene con le credenziali SPID oppure ARGO.
+            \n Attenzione, è necessario cliccare sul pulsante in basso 'Accedi con ARGO/SPID'
+            \n
+            \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+            \n Cordiali saluti
+            \n"
+        
+        # Se in debug, invia la mail a CC, non all'utente
+        if [ -n "$DRY_RUN" ]; then
+          MESSAGE="$MESSAGE \n email inviata a: \n $TO \n"
+          TO="$CC"
+        fi
+
+        echo "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+
+        $GAM_CMD sendemail to "$TO" cc "$CC" subject "Scadenza account" message "$MESSAGE"
+
+      done < <($SQLITE_CMD -csv studenti.db "$query" | sed "s/\"//g")
+    ;;
     12)
       checkAllVarsNotEmpty "CURRENT_DATE"
 
@@ -267,7 +309,7 @@ main() {
 
       local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) AS cognome, UPPER(nome) AS nome, aggiunto_il, UPPER(contratto) AS contratto"
       local ORDERING="UPPER(codice_fiscale)"
-      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente' ")"
+      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente', 'trasferito' ")"
 
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
