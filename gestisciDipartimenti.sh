@@ -34,25 +34,15 @@ main() {
 
   # Le query del personale di ogni dipartimenti
   while IFS="," read -r dipartimento materie; do
-    FIELDS="LOWER(email_gsuite) AS email_gsuite"
-    ORDERING="LOWER(email_gsuite)"
+    local FIELDS="LOWER(email_gsuite) AS email_gsuite"
+    local ORDERING="LOWER(email_gsuite)"
     query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
     add_to_map "$dipartimento" "$query"
   done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
 
-  #####################################################################
-  # PERSONALE_ATA - gestito a parte perché il nome non deve essere
-  # 'dipartimento_personale_ata' ma solo 'personale_ata'
-  local DIPARTIMENTO_PERSONALE_ATA='personale_ata'
-  local QUERY_PERSONALE_ATA=$(get_from_map "$DIPARTIMENTO_PERSONALE_ATA")
-  remove_from_map "$DIPARTIMENTO_PERSONALE_ATA"
-  #####################################################################
-
-  echo "elenco dipartimenti:"
-  echo "    "
-  echo "    personale_ata ------------ gestione separata ------------"
+  echo "elenco dipartimenti e gruppi:"
   for nome_gruppo in "${!gruppi[@]}"; do
-    echo " dipartimento $nome_gruppo"
+    echo " dipartimento: $nome_gruppo"
   done
   echo "    "
   
@@ -62,60 +52,45 @@ main() {
       
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Creo gruppo $nome_gruppo su GSuite...!"
-        $RUN_CMD_WITH_QUERY --command createGroup --group "dipartimento_$nome_gruppo" --query " /* NO */ "
+        $RUN_CMD_WITH_QUERY --command createGroup --group "$nome_gruppo" --query " /* NO */ "
       done
-
-      echo "Creo gruppo $DIPARTIMENTO_PERSONALE_ATA su GSuite...!"
-      $RUN_CMD_WITH_QUERY --command createGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query " /* NO */ "
     ;;
     2)
       echo "Cancella tutti i gruppi dipartimento su GSuite ..."
       
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Cancello gruppo $nome_gruppo su GSuite...!"
-        $RUN_CMD_WITH_QUERY --command deleteGroup --group "dipartimento_$nome_gruppo" --query " /* NO */ "
+        $RUN_CMD_WITH_QUERY --command deleteGroup --group "$nome_gruppo" --query " /* NO */ "
       done
-
-      echo "Cancello gruppo $DIPARTIMENTO_PERSONALE_ATA su GSuite...!"
-      $RUN_CMD_WITH_QUERY --command deleteGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query " /* NO */ "
     ;;
     3)
       echo "Inserisci membri nei gruppi  ..."
-
-      $SQLITE_CMD -csv -table studenti.db "$QUERY_PERSONALE_ATA"
-      $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "$QUERY_PERSONALE_ATA;"
       
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Inserisco membri nel gruppo $nome_gruppo ..."
 
         $SQLITE_CMD -csv -table studenti.db "${gruppi[$nome_gruppo]}"
-        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
       done
     ;;
     4)
       echo "Rimuovi membri dai gruppi  ..."
-
-      $SQLITE_CMD -csv -table studenti.db "$QUERY_PERSONALE_ATA"
-      $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
       
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Rimuovo membri dal gruppo $nome_gruppo ..."
 
         $SQLITE_CMD -csv -table studenti.db "${gruppi[$nome_gruppo]}"
-        $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
       done
     ;;
     7)
       echo "Aggiorna i dipartimenti con i nuovi docenti  ..."
-
-      $SQLITE_CMD -csv -table studenti.db "$QUERY_PERSONALE_ATA"
-      $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$DIPARTIMENTO_PERSONALE_ATA" --query "${QUERY_PERSONALE_ATA}"
       
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Inserisco membri nel gruppo $nome_gruppo ..."
 
         $SQLITE_CMD -csv -table studenti.db "${gruppi[$nome_gruppo]}"
-        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "dipartimento_$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
       done
     ;;
     20)
