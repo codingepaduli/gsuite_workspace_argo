@@ -144,7 +144,7 @@ main() {
       ## i cui codici fiscali non si trovano nella nuova tabella
       local FIELDS="LOWER(tipo_personale) AS tipo, UPPER(cognome) AS cognome, 
           UPPER(nome) AS nome, UPPER(codice_fiscale) AS codice_fiscale, 
-          LOWER(email_gsuite) AS email_gsuite, cancellato_il "
+          LOWER(email_gsuite) AS email_gsuite, aggiunto_il "
       local ORDERING=" UPPER(codice_fiscale) "
 
       query="$(query::getQueryOldEmployeesCfNotIn "$FIELDS" "$ORDERING" "$cfArrayString")"
@@ -305,12 +305,14 @@ main() {
       echo "Controllo i dati"
 
       echo "Codici fiscali duplicati"
-      query="$(query::getDuplicatedCF )"
-      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, codice_fiscale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) AS cognome, UPPER(nome) AS nome, aggiunto_il, UPPER(contratto) AS contratto"
+      query="$(query::getDuplicatedCF "$FIELDS" )"
+      $SQLITE_CMD studenti.db -header -table "$query"
 
       echo "email duplicate"
-      query="$(query::getDuplicatedEmail )"
-      $RUN_CMD_WITH_QUERY --command executeQuery --group " NO " --query "$query"
+      query="$(query::getDuplicatedEmail "$FIELDS" )"
+      $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     20)
       echo "Arrivederci!"

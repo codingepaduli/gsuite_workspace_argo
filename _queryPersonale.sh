@@ -618,7 +618,7 @@ function query::getDuplicatedCF {
   local query
   query="$(query::getQueryEmployees "$queryParamString" )"
   echo "
-    SELECT *
+    SELECT ${1:-${employeesParam[FIELDS]}}
     FROM ( $query ) 
     WHERE UPPER(codice_fiscale) IN (
       SELECT UPPER(codice_fiscale)
@@ -645,7 +645,7 @@ function query::getDuplicatedEmail {
   local query
   query="$(query::getQueryEmployees "$queryParamString" )"
   echo "
-    SELECT *
+    SELECT ${1:-${employeesParam[FIELDS]}}
     FROM ( $query ) 
     WHERE UPPER(email_gsuite) IN (
       SELECT UPPER(email_gsuite)
