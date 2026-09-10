@@ -387,7 +387,7 @@ function query::getQueryStudenti {
       AND (1=${studentsParam[FLAG_YEARS_IN]} OR 
         sz.cl IN ( ${studentsParam[FILTER_YEARS_IN]} ) )
       AND (1=${studentsParam[FLAG_ADDRESS_ARGO_IN]} OR 
-        sz.addr_argo IN ( ${studentsParam[FILTER_ADDRESS_ARGO_IN]} ) )
+        LOWER(sz.addr_argo) IN ( ${studentsParam[FILTER_ADDRESS_ARGO_IN]} ) )
       AND (1=${studentsParam[FLAG_ADDRESS_GSUITE_IN]} OR 
         sz.addr_gsuite IN ( ${studentsParam[FILTER_ADDRESS_GSUITE_IN]} ) )
       AND (1=${studentsParam[FLAG_CLASSES_IN]} OR 
