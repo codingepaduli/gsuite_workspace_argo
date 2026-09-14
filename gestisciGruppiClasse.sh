@@ -19,14 +19,17 @@ show_menu() {
   echo "4. Aggiungi studenti alle classi"
   echo "5. Esporta numero studenti per classe in file CSV"
   echo "6. Esporta le classi da tabella studenti, un unico file CSV con tutte le classi"
-  echo "8. Effettua i cambi di classe"
-  echo "9. Aggiungi nuovi studenti (vedi periodo) alle classi"
+  echo "7. Visualizza numero studenti per classe"
+  echo "8. Effettua i cambi di classe per i NUOVI studenti"
+  echo "9. Aggiungi NUOVI studenti (vedi periodo) alle classi"
   echo "10. Toglie i ritirati (vedi periodo) dalle classi"
   echo "11. Esporta le classi ed i gruppi aggiuntivi da GSuite, un file CSV per ogni classe"
   echo "12. Esporta le classi ed i gruppi aggiuntivi da GSuite, un unico file CSV con tutte le classi"
-  
+  echo " "
   echo "14. Reset password di TUTTI gli studenti delle classi"
-
+  echo " "
+  echo "16. Esporta elenco ritardi delle classi da tabella studenti, un file CSV per ogni classe"
+  echo " "
   echo "20. Esci"
 }
 
@@ -112,6 +115,15 @@ main() {
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
 
       $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_per_classe_$CURRENT_DATE.csv"
+    ;;
+    7)
+      echo "Visualizza numero studenti per classe"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+
+      query="$(query::numeroStudentiPerClasse )"
+
+      $SQLITE_CMD -header -table studenti.db "$query"
     ;;
     8)
       checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
@@ -205,6 +217,26 @@ main() {
       query="$(query::queryStudentiNonCancellatiConEmail "$FIELDS" "$ORDERING" )"
 
       $RUN_CMD_WITH_QUERY --command resetPasswordUser --group " NO " --query "$query"
+    ;;
+    16)
+      echo "16. Esporta le classi da tabella studenti, un file CSV per ogni classe"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+      declare -A "gruppi_classe"
+
+      local FIELDS="sz.sezione_gsuite AS classe, UPPER(cognome) AS cognome, UPPER(nome) AS nome, datan AS data_nascita, matricola, ' ' AS Ritardo1, ' ' AS Ritardo2, ' ' AS Ritardo3 "
+      local ORDERING="sz.sezione_gsuite, LOWER(cognome)"
+
+      while IFS="," read -r sezione_gsuite; do
+        gruppi_classe[$sezione_gsuite]="$(query::queryStudentiDellaClasseNonCancellati "$FIELDS" "$ORDERING" " '$sezione_gsuite' " )"
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
+
+      for nome_gruppo in "${!gruppi_classe[@]}"; do
+        echo "$nome_gruppo" # "${gruppi_classe[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command executeQuery --group " NO; " --query "${gruppi_classe[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+
+        $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+      done
     ;;
     20)
       echo "Arrivederci!"

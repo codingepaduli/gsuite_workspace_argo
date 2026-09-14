@@ -478,6 +478,30 @@ function query::queryStudentiNonCancellatiConEmail {
   echo "$query"
 }
 
+function query::queryStudentiDellaClasseNonCancellati {
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
+  studentsParam[FLAG_CLASSES_IN]="$FLAG_ON"
+  studentsParam[FILTER_CLASSES_IN]="${3:-${studentsParam[FILTER_CLASSES_IN]}}"
+  studentsParam[TABLE]="${4:-${studentsParam[TABLE]}}"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
 function query::queryStudentiDellaClasseNonCancellatiConEmail {
   local queryParam
   queryParam="$(query::defaultStudentsParam)"
