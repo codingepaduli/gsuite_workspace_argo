@@ -39,6 +39,7 @@ show_menu() {
   echo "18. Cancello e ricreo la tabella studenti DIPLOMATI, poi salvo i diplomati"
   echo "19. VEDI FIXME - Copio i dati dalla tabella studenti DIPLOMATI nella tabella studenti ..."
   echo "21. Esporta elenco account studenti da canellare / cancellati nel periodo"
+  echo "22. Invia email con elenco account studenti da cancellare / cancellati nel periodo"
 
   echo "20. Esci"
 }
@@ -395,6 +396,23 @@ main() {
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_cancellati_2025_26.csv"
+    ;;
+    22)
+      echo "22. Invia email con elenco account studenti da cancellare / cancellati nel periodo"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_cancellati.csv"
+
+      local TO="d.daniele.finelli@$DOMAIN"
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local MESSAGE="
+          \n Gentile utente,
+          \n in allegato l'elenco degli studenti ritirati e cancellati nel periodo selezionato.
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+      
+      echo "$TO" cc "$CC" subject "Elenco studenti cancellati" message "$MESSAGE" attach "$EXPORT_DIR_DATE/studenti_cancellati.xlsx"
+
+      $GAM_CMD sendemail to "$TO" cc "$CC" subject "Elenco studenti cancellati" message "$MESSAGE" attach "$EXPORT_DIR_DATE/studenti_cancellati.xlsx"
     ;;
     20)
       echo "Arrivederci!"
