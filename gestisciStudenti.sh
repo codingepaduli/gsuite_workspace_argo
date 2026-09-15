@@ -38,6 +38,7 @@ show_menu() {
   echo "17. Controlla email gsuite duplicate"
   echo "18. Cancello e ricreo la tabella studenti DIPLOMATI, poi salvo i diplomati"
   echo "19. VEDI FIXME - Copio i dati dalla tabella studenti DIPLOMATI nella tabella studenti ..."
+  echo "21. Esporta elenco account studenti da canellare / cancellati nel periodo"
 
   echo "20. Esci"
 }
@@ -211,7 +212,7 @@ main() {
     9)
       echo "Cancella account studenti ritirati nel periodo ..."
 
-      local FIELDS="LOWER(email_gsuite)"
+      local FIELDS="DISTINCT LOWER(email_gsuite)"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
@@ -229,7 +230,7 @@ main() {
     11)
       echo "Visualizza account studenti ritirati nel periodo ..."
 
-      local FIELDS="LOWER(email_gsuite), cognome, nome, datar, sezione_gsuite"
+      local FIELDS="DISTINCT LOWER(email_gsuite), cognome, nome, datar, sezione_gsuite"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
@@ -385,6 +386,15 @@ main() {
       
       # Copio i dati dei diplomati nella tabella del diurno
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query; "
+    ;;
+    21)
+      echo "Esporta elenco account studenti da canellare / cancellati nel periodo"
+
+      local FIELDS="DISTINCT LOWER(email_gsuite), sezione_gsuite, cognome, nome, datar"
+      local ORDERING="sz.sezione_gsuite, cognome, nome"
+      query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
+
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_cancellati_2025_26.csv"
     ;;
     20)
       echo "Arrivederci!"
