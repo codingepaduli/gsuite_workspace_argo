@@ -38,7 +38,7 @@ show_menu() {
   echo "17. Controlla email gsuite duplicate"
   echo "18. Cancello e ricreo la tabella studenti DIPLOMATI, poi salvo i diplomati"
   echo "19. VEDI FIXME - Copio i dati dalla tabella studenti DIPLOMATI nella tabella studenti ..."
-  echo "21. Esporta elenco account studenti da canellare / cancellati nel periodo"
+  echo "21. Esporta elenco account studenti da cancellare / cancellati nel periodo"
   echo "22. Invia email con elenco account studenti da cancellare / cancellati nel periodo"
 
   echo "20. Esci"
@@ -389,20 +389,20 @@ main() {
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query; "
     ;;
     21)
-      echo "Esporta elenco account studenti da canellare / cancellati nel periodo"
+      echo "Esporta elenco account studenti da cancellare / cancellati nel periodo"
 
       local FIELDS="DISTINCT LOWER(email_gsuite), sezione_gsuite, cognome, nome, datar"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_cancellati_2025_26.csv"
-    ;;
-    22)
-      echo "22. Invia email con elenco account studenti da cancellare / cancellati nel periodo"
 
       $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_cancellati.csv"
+    ;;
+    22)
+      echo "Invia email con elenco account studenti da cancellare / cancellati nel periodo"
 
-      local TO="d.daniele.finelli@$DOMAIN"
+      local TO="gsuite_supporto@$DOMAIN"
       local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
       local MESSAGE="
           \n Gentile utente,
