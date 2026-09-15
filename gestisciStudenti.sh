@@ -391,6 +391,8 @@ main() {
     21)
       echo "Esporta elenco account studenti da cancellare / cancellati nel periodo"
 
+      mkdir -p "$EXPORT_DIR_DATE"
+
       local FIELDS="DISTINCT LOWER(email_gsuite), sezione_gsuite, cognome, nome, datar"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
