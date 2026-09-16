@@ -153,28 +153,28 @@ main() {
       ;;
       9)
         echo "Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
-        local CREATE_MAIL_TEACHER=4
-        local CREATE_MAIL_ATA=5
-        local CREATE_ACCOUNT_ON_GSUITE=9
+        local CREATE_MAIL_NEW_TEACHER=4
+        local CREATE_MAIL_NEW_ATA=5
+        local CREATE_NEW_ACCOUNT_ON_GSUITE=9
         local EXPORT_AS_CSV=6
         local CREATE_SCRIPT_CF=12
-        local ADD_EMPLOYEES_TO_GROUPS=4
-        local ADD_EMPLOYEES_TO_DEPART=7
+        local ADD_NEW_EMPLOYEES_TO_GROUPS=4
+        local ADD_NEW_EMPLOYEES_TO_DEPART=7
 
         echo "creo email"
-        ./gestisciPersonale.sh "$CREATE_MAIL_TEACHER"
+        ./gestisciPersonale.sh "$CREATE_MAIL_NEW_TEACHER"
         echo "creo email ata"
-        ./gestisciPersonale.sh "$CREATE_MAIL_ATA"
+        ./gestisciPersonale.sh "$CREATE_MAIL_NEW_ATA"
         echo "creo account"
-        ./gestisciPersonale.sh "$CREATE_ACCOUNT_ON_GSUITE"
+        ./gestisciPersonale.sh "$CREATE_NEW_ACCOUNT_ON_GSUITE"
         echo "export"
         ./gestisciPersonale.sh "$EXPORT_AS_CSV"
         echo "creo script.sh"
         ./gestisciPersonale.sh "$CREATE_SCRIPT_CF"
         echo "aggiungo a gruppi"
-        ./gestisciGruppiGSuiteDocenti.sh "$ADD_EMPLOYEES_TO_GROUPS"
+        ./gestisciGruppiGSuiteDocenti.sh "$ADD_NEW_EMPLOYEES_TO_GROUPS"
         echo "aggiungo ai dipartimenti"
-        ./gestisciDipartimenti.sh "$ADD_EMPLOYEES_TO_DEPART"
+        ./gestisciDipartimenti.sh "$ADD_NEW_EMPLOYEES_TO_DEPART"
       ;;
       11)
         echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
