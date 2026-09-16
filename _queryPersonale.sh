@@ -503,6 +503,35 @@ function query::getEmployeesWithEmailGSuiteDeletedInPeriod {
   echo "$query"
 }
 
+
+function query::getFixedTermEmployeesWithEmailGSuiteDeletedInPeriod {
+  local queryParam
+  queryParam="$(query::defaultEmployeesParam)"
+
+  # clona mappa
+  local -A employeesParam=()
+  eval "${queryParam}"
+
+  # modifica mappa
+  employeesParam[FIELDS]="${1:-${employeesParam[FIELDS]}}"
+  employeesParam[ORDERING]="${2:-${employeesParam[ORDERING]}}"
+  employeesParam[TABLE]="${4:-${employeesParam[TABLE]}}"
+  employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
+  employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_ON"
+  employeesParam[FLAG_CONTRATTO_IN]="$FLAG_ON"
+  employeesParam[FILTER_CONTRATTO_IN]="${3:-${employeesParam[FILTER_CONTRATTO_IN]}}"
+  employeesParam[FLAG_CANCELLATO_IL]="$FLAG_ON"
+
+  # clona mappa modificata
+  local queryParamString
+  queryParamString="$(declare -p "employeesParam")"
+
+  local query
+  query="$(query::getQueryEmployees "$queryParamString" )"
+  echo "$query"
+}
+
 function query::getEmployeesInDipartimentiAll {
   local queryParam
   queryParam="$(query::defaultEmployeesParam)"

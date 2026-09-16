@@ -272,6 +272,8 @@ main() {
       local ORDERING="UPPER(codice_fiscale)"
       query="$(query::getEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" )"
 
+      echo "$query"
+
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
     13)
@@ -289,21 +291,21 @@ main() {
     14)
       echo "Cancella personale ..."
 
-      local FIELDS="LOWER(tipo_personale), LOWER(email_gsuite), UPPER(codice_fiscale), UPPER(cognome), UPPER(nome), aggiunto_il, cancellato_il, UPPER(contratto), UPPER(dipartimento), note"
+      local FIELDS="LOWER(tipo_personale) as tipo_personale, LOWER(email_gsuite), UPPER(cognome) || ' ' || UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto)"
       local ORDERING="UPPER(codice_fiscale)"
 
       query="$(query::getEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING")"
 
-      $SQLITE_CMD -csv studenti.db "$query" 
+      $SQLITE_CMD -csv -table studenti.db "$query" 
 
       # $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
     16)
       echo "Visualizza personale supplente ..."
 
-      local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) AS cognome, UPPER(nome) AS nome, aggiunto_il, UPPER(contratto) AS contratto"
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) || ' ' || UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto) AS contratto"
       local ORDERING="UPPER(codice_fiscale)"
-      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente', 'trasferito' ")"
+      query="$(query::getFixedTermEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" " 'supplente' ")"
 
       $SQLITE_CMD studenti.db -header -table "$query"
     ;;
@@ -319,8 +321,8 @@ main() {
       echo "Invia mail di sospensione account al personale supplente ..."
 
       local FIELDS="group_concat(LOWER(email_gsuite), ';') AS email_gsuite"
-      local ORDERING="UPPER(codice_fiscale)"
-      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" " 'supplente' ")"
+      local ORDERING="LOWER(email_gsuite)"
+      query="$(query::getFixedTermEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" " 'supplente' ")"
 
       # FIX: non usare -csv, perchè altrimenti le email sono inseriti tra doppi apici
       local TO="$($SQLITE_CMD -csv studenti.db "$query")"
