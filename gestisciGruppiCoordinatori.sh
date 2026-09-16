@@ -39,17 +39,17 @@ main() {
     2)
       echo "Crea tutti i gruppi coordinatori su GSuite ..."
       
-      for i in {1..5}; do 
-        echo "Creo gruppo ${GRUPPI_COORDINATORI[$i]} su GSuite...!"
-        $RUN_CMD_WITH_QUERY --command createGroup --group "${GRUPPI_COORDINATORI[$i]}" --query " NO "
+      for i in {0..5}; do 
+        echo "Creo gruppo ${GRUPPO_COORDINATORI[$i]} su GSuite...!"
+        $RUN_CMD_WITH_QUERY --command createGroup --group "${GRUPPO_COORDINATORI[$i]}" --query " NO "
       done
     ;;
     3)
       echo "Cancella tutti i gruppi coordinatori su GSuite ..."
       
-      for i in {1..5}; do 
-        echo "Cancello gruppo ${GRUPPI_COORDINATORI[$i]} su GSuite...!"
-        $RUN_CMD_WITH_QUERY --command deleteGroup --group "${GRUPPI_COORDINATORI[$i]}" --query " NO "
+      for i in {0..5}; do 
+        echo "Cancello gruppo ${GRUPPO_COORDINATORI[$i]} su GSuite...!"
+        $RUN_CMD_WITH_QUERY --command deleteGroup --group "${GRUPPO_COORDINATORI[$i]}" --query " NO "
       done
     ;;
     5)
@@ -115,10 +115,10 @@ main() {
 
       # genero le query
       for i in {1..5}; do
-        echo "Inserisco membri nel gruppo ${GRUPPI_COORDINATORI[$i]} ..."
+        echo "Inserisco membri nel gruppo ${GRUPPO_COORDINATORI[$i]} ..."
 
         query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$i")"
-        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPI_COORDINATORI[$i]}" --query "$query"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPO_COORDINATORI[$i]}" --query "$query"
       done
     ;;
     9)
@@ -128,10 +128,10 @@ main() {
       local ORDERING="LOWER(email_coordinatore)"
       
       for i in {1..5}; do
-        echo "Rimuovo membri dal gruppo ${GRUPPI_COORDINATORI[$i]} ..."
+        echo "Rimuovo membri dal gruppo ${GRUPPO_COORDINATORI[$i]} ..."
 
         query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$i")"
-        $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "${GRUPPI_COORDINATORI[$i]}" --query "$query"
+        $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "${GRUPPO_COORDINATORI[$i]}" --query "$query"
       done
     ;;
     20)
