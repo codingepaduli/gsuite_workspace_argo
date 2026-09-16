@@ -180,7 +180,8 @@ function query::showUsername() {
           CASE
             WHEN cl = 1 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
             WHEN cl = 2 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
-            WHEN cl = 3 THEN 's.' || cognome_norm || '.' || primonome_norm || '@$DOMAIN'
+            WHEN cl = 3 THEN 's.' || cognome_norm || '.' || primonome_norm || '.' || matricola || '@$DOMAIN'
+            WHEN cl = 4 THEN 's.' || cognome_norm || '.' || primonome_norm || '@$DOMAIN'
             ELSE 's.' || primonome_norm || '.' || cognome_norm || '@$DOMAIN'
           END AS usernameDiurno, 
             's.' || cognome_norm || '.' || primonome_norm || '.' || matricola 
