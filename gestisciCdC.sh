@@ -36,8 +36,6 @@ show_menu() {
     echo "13. Inserisci TUTTI i membri nei gruppi dei bienni"
     echo " "
     echo "15. Inserisci i NUOVI membri nei gruppi dei bienni"
-    echo " "
-    echo "17. Prepara EMAIL degli account studenti, da inviare ai coordinatori"
     echo "20. Esci"
 }
 
