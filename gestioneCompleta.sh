@@ -88,15 +88,31 @@ main() {
       3)
         echo "Aggiungi i nuovi studenti alle classi, effettua gli spostamenti, toglie i ritirati e invia loro una mail"
 
-        local SMOVE_STUDENTS_IN_CLASSES=8
+        local SHOW_NEW_STUDENTS=3
+        local SHOW_CHANGES_OF_CLASSES=17
+        local SHOW_DELETED_STUDENTS=11
+
+        ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
+        ./gestisciGruppiClasse.sh "$SHOW_CHANGES_OF_CLASSES"
+        ./gestisciStudenti.sh "$SHOW_DELETED_STUDENTS"
+
+        echo "Premi un tasto per apportare le modifiche"
+        read -p "Premi per continuare " -r _
+
+        local MOVE_STUDENTS_IN_CLASSES=8
         local ADD_NEW_STUDENTS_IN_CLASSES=9
+        local REMOVE_DELETED_STUDENTS_FROM_CLASSES=10
+        
+        ./gestisciGruppiClasse.sh "$ADD_NEW_STUDENTS_IN_CLASSES"
+        ./gestisciGruppiClasse.sh "$MOVE_STUDENTS_IN_CLASSES"
+        ./gestisciGruppiClasse.sh "$REMOVE_DELETED_STUDENTS_FROM_CLASSES"
+
+        echo "Premi un tasto per inviare la email agli studenti ritirati"
+        read -p "Premi per continuare " -r _
+
         local SHOW_DELETED_STUDENTS=11
         local SEND_MAIL_TO_DELETED_STUDENTS=15
-        
-        ./gestisciGruppiClasse.sh "$SMOVE_STUDENTS_IN_CLASSES"
-        ./gestisciGruppiClasse.sh "$ADD_NEW_STUDENTS_IN_CLASSES"
 
-        echo "Invio email ai ritirati..."
         ./gestisciStudenti.sh "$SHOW_DELETED_STUDENTS"
         ./gestisciStudenti.sh "$SEND_MAIL_TO_DELETED_STUDENTS"
       ;;

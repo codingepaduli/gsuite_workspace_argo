@@ -29,7 +29,7 @@ show_menu() {
   echo "14. Reset password di TUTTI gli studenti delle classi"
   echo " "
   echo "16. Esporta elenco ritardi delle classi da tabella studenti, un file CSV per ogni classe"
-  echo " "
+  echo "17. Visualizza i cambi classe per i NUOVI studenti"
   echo "20. Esci"
 }
 
@@ -237,6 +237,19 @@ main() {
 
         $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
       done
+    ;;
+    17)
+      echo "17. Visualizza i cambi classe per i NUOVI studenti"
+
+      checkAllVarsNotEmpty "TABELLA_STUDENTI_PRECEDENTE"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+
+      local FIELDS="stD.cognome, stD.nome, stP.sezione_gsuite AS sez_prima, stD.sezione_gsuite AS sez_dopo"
+      local ORDERING="stD.sezione_gsuite, stD.email_gsuite"
+      query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
+
+      $SQLITE_CMD -header -table studenti.db "$query"
     ;;
     20)
       echo "Arrivederci!"
