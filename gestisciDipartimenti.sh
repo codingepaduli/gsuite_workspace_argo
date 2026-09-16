@@ -14,15 +14,17 @@ show_menu() {
   echo "2. Cancella tutti i gruppi dipartimento su GSuite ..."
   echo "3. Inserisci membri nei gruppi  ..."
   echo "4. Rimuovi membri dai gruppi  ..."
+  echo "5. Esporta i dipartimenti in CSV e XLSX  ..."
   echo " "
   echo "7. Aggiorna i dipartimenti con i nuovi docenti  ..."
-  echo " "
+  echo "8. Invia email ai coordinatori di dipartimento"
   echo "20. Esci"
 }
 
 # Funzione principale
 main() {
   local query
+  declare -A queryAnagrafica
 
   local choice="$1"
 
@@ -38,6 +40,12 @@ main() {
     local ORDERING="LOWER(email_gsuite)"
     query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
     add_to_map "$dipartimento" "$query"
+
+    local FIELDS="UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_gsuite) AS email_gsuite"
+    local ORDERING="LOWER(email_gsuite)"
+    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
+    queryAnagrafica[$dipartimento]="$query"
+
   done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
 
   echo "elenco dipartimenti e gruppi:"
@@ -83,6 +91,16 @@ main() {
         $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
       done
     ;;
+    5)
+      echo "Esporta i dipartimenti in CSV e XLSX  ..."
+      
+      for nome_gruppo in "${!gruppi[@]}"; do
+        echo "Esporto dipartimento $nome_gruppo ..."
+
+        $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "${queryAnagrafica[$nome_gruppo]}" > "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+        $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/$nome_gruppo.csv"
+      done
+    ;;
     7)
       echo "Aggiorna i dipartimenti con i nuovi docenti  ..."
       
@@ -92,6 +110,27 @@ main() {
         $SQLITE_CMD -csv -table studenti.db "${gruppi[$nome_gruppo]}"
         $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
       done
+    ;;
+    8)
+      echo "8. Invia i dipartimenti ai coordinatori di dipartimento"
+    
+      local FIELDS="dipartimento"
+      local ORDERING="dipartimento"
+      local NOMI_DIPARTIMENTI="$(query::getDipartimentiRaggruppatiAll "$FIELDS" "$ORDERING" )"
+      
+      declare -a dipartimenti
+      readarray -t dipartimenti < <( $SQLITE_CMD studenti.db "$NOMI_DIPARTIMENTI" )
+
+      local TO="gsuite_supporto@$DOMAIN"
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local SUBJECT="Elenco dipartimenti"
+      local MESSAGE="
+          \n Salve,
+          \n in allegato l'elenco dei dipartimenti
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+          
+      $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$EXPORT_DIR_DATE/${dipartimenti[0]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[1]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[2]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[3]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[4]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[5]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[6]}.xlsx"  attach "$EXPORT_DIR_DATE/${dipartimenti[7]}.xlsx"
     ;;
     20)
       echo "Arrivederci!"
