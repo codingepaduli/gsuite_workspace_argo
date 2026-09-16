@@ -35,8 +35,8 @@ function query::createTableIfNotExists() {
       note TEXT,
       CHECK (
         ( 
-          cancellato_il IS NULL
-          OR TRIM(cancellato_il) = ''
+          data_nascita IS NULL
+          OR TRIM(data_nascita) = ''
           OR (
             length(data_nascita)=10
             AND SUBSTR(data_nascita,1,2) GLOB '[0-9][0-9]'
@@ -180,8 +180,8 @@ function query::defaultEmployeesParam() {
 
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_OFF"
   employeesParam[FLAG_CANCELLATO_IL]="$FLAG_OFF"
-  employeesParam[FILTER_CANCELLATO_IL_MIN]=" '$PERIODO_PERSONALE_DA' "
-  employeesParam[FILTER_CANCELLATO_IL_MAX]=" '$PERIODO_PERSONALE_A' "
+  employeesParam[FILTER_CANCELLATO_IL_MIN]=" '$PERIODO_CANCELLA_PERSONALE_DA' "
+  employeesParam[FILTER_CANCELLATO_IL_MAX]=" '$PERIODO_CANCELLA_PERSONALE_A' "
 
   employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_OFF"
   employeesParam[FLAG_CONTRATTO_NOT_EXISTS]="$FLAG_OFF"
