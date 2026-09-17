@@ -295,11 +295,11 @@ main() {
       local FIELDS="cognome, nome, cod_fisc, e_mail, email_pa, email_ma, email_gen, matricola, codicesidi, datan, ritira, datar, email_gsuite, aggiunto_il"
       local ORDERING="sz.sezione_gsuite, cognome, nome"
 
-      query="$(query::queryStudentiTutti "$FIELDS, sz.cl, sz.sez_argo " "$ORDERING" "$TABELLA_STUDENTI_SERALE" )"
-        
+      query="$(query::queryStudentiTuttiEscludiConfigurazioneAmbiente "$FIELDS , st.cl AS cl, st.sez AS sez" "$ORDERING" "$TABELLA_STUDENTI_SERALE" )"
+
       # Copio i dati del serale nella tabella del diurno
       # unificando i dati ed il processo di gestione
-      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query"
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "INSERT INTO $TABELLA_STUDENTI ( $FIELDS, cl, sez ) $query;"
     ;;
     15)
       echo "15. Invia email agli studenti ritirati"
