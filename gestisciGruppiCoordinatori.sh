@@ -26,6 +26,8 @@ show_menu() {
   echo "7. Esporta script di backup dei coordinatori"
   echo "8. Inserisci membri nei gruppi  ..."
   echo "9. Rimuovi membri dai gruppi  ..."
+  echo " "
+  echo "11. Invia mail ai gruppi coordinatori per nuovi studenti (DA SPOSTARE IN gruppi classe) ..."
   echo "20. Esci"
 }
 
@@ -140,6 +142,28 @@ main() {
 
         query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$i")"
         $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "${GRUPPO_COORDINATORI[$i]}" --query "$query"
+      done
+    ;;
+    11)
+      echo "Invia mail ai gruppi coordinatori per nuovi studenti (DA SPOSTARE IN gruppi classe)"
+
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local SUBJECT="Credenziali nuovi iscritti"
+      local MESSAGE="
+          \n Salve,
+          \n in seguito all’aggiornamento dei nominativi dei coordinatori, inoltro nuovamente l'elenco dei nuovi studenti iscritti (in allegato).
+          \n Cordiali saluti"
+
+      for i in {1..5}; do
+        if [[ -e "$EXPORT_DIR_DATE/nuovi_studenti_classi_$i.xlsx" ]]; then
+          echo "L'allegato esiste, invio la mail al gruppo coordinatori: ${GRUPPO_COORDINATORI[$i]}@$DOMAIN"
+
+          local TO="${GRUPPO_COORDINATORI[$i]}@$DOMAIN"
+
+          $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$EXPORT_DIR_DATE/nuovi_studenti_classi_$i.xlsx"
+        else
+          echo "L'allegato non esiste, non invio la mail al gruppo coordinatori: ${GRUPPO_COORDINATORI[$i]}@$DOMAIN"
+        fi
       done
     ;;
     20)
