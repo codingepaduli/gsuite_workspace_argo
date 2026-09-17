@@ -30,6 +30,8 @@ show_menu() {
   echo " "
   echo "16. Esporta elenco ritardi delle classi da tabella studenti, un file CSV per ogni classe"
   echo "17. Visualizza i cambi classe per i NUOVI studenti"
+  echo "18. Invia classi ai coordinatori"
+  
   echo "20. Esci"
 }
 
@@ -250,6 +252,29 @@ main() {
       query="$(query::studentiCambioClasse "$FIELDS" "$ORDERING" )"
 
       $SQLITE_CMD -header -table studenti.db "$query"
+    ;;
+    18)
+      echo "18. Invia classi ai coordinatori"
+      local querySezioniECoordinatori="$(query::querySezioniTutte "sezione_gsuite, email_coordinatore" )"
+
+      local TO
+      local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+      local SUBJECT="Elenco studenti della classe"
+      local MESSAGE="
+          \n Salve,
+          \n in allegato l'elenco degli studenti della classe di cui è coordinatore.
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+          
+      while IFS="," read -r sezione_gsuite email_coordinatore; do
+        if [[ -e "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx" ]]; then
+          echo "L'allegato esiste, invio la mail al coordinatore della classe $sezione_gsuite: $email_coordinatore"
+          TO="$email_coordinatore"
+          $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$EXPORT_DIR_DATE/$sezione_gsuite.xlsx"
+        else
+          echo "L'allegato non esiste, non invio la mail al coordinatore della classe $sezione_gsuite: $email_coordinatore"
+        fi
+      done < <($SQLITE_CMD -csv studenti.db "$querySezioniECoordinatori" | sed 's/"//g' )
     ;;
     20)
       echo "Arrivederci!"
