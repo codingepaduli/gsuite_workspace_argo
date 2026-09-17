@@ -349,7 +349,7 @@ function query::getQueryStudenti {
   echo "
     SELECT ${studentsParam[FIELDS]}
     FROM ${studentsParam[TABLE]} st 
-      INNER JOIN $TABELLA_SEZIONI sz  
+      LEFT JOIN $TABELLA_SEZIONI sz  -- LEFT JOIN perchè quando copio gli studenti del serale nel diurno, le sezioni potrebbero non essere state ancora create
       ON st.sez = sz.sez_argo AND st.cl =sz.cl 
     WHERE 1=1 
       AND (1=${studentsParam[FLAG_COD_FISC_EXISTS]} OR 
@@ -407,6 +407,9 @@ function query::getQueryStudenti {
 }
 
 function query::queryStudentiTutti {
+  # Questa query filtra gli studenti per i campi "cl" e "addr_argo",
+  # dando priorità alla configurazione dell'ambiente in modo 
+  # da poter configurare di lavorare solo sulle classi scelte 
   local queryParam
   queryParam="$(query::defaultStudentsParam)"
   
@@ -418,6 +421,36 @@ function query::queryStudentiTutti {
   studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
   studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
   studentsParam[TABLE]="${3:-${studentsParam[TABLE]}}"
+
+  # clona mappa modificata
+  queryParam="$(declare -p "studentsParam")"
+
+  local query
+  query="$(query::getQueryStudenti "$queryParam")"
+  echo "$query"
+}
+
+
+function query::queryStudentiTuttiEscludiConfigurazioneAmbiente {
+  # Questa query NON filtra gli studenti per i campi "cl" e "addr_argo",
+  # la configurazione dell'ambiente NON ha priorità e 
+  # non è possibile lavorare solo sulle classi scelte 
+  local queryParam
+  queryParam="$(query::defaultStudentsParam)"
+  
+  # clona mappa
+  local -A studentsParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  studentsParam[FIELDS]="${1:-${studentsParam[FIELDS]}}"
+  studentsParam[ORDERING]="${2:-${studentsParam[ORDERING]}}"
+  studentsParam[TABLE]="${3:-${studentsParam[TABLE]}}"
+
+  # Toglie la priorità alla configurazione impostata
+  # disabilitando i filtri sulle classi indicate in configurazione
+  studentsParam[FLAG_YEARS_IN]="$FLAG_OFF"
+  studentsParam[FLAG_ADDRESS_ARGO_IN]="$FLAG_OFF"
 
   # clona mappa modificata
   queryParam="$(declare -p "studentsParam")"
