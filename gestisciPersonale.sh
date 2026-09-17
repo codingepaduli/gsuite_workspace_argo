@@ -216,8 +216,8 @@ main() {
             - https://support.google.com/android/answer/7664951?hl=it
             - https://support.google.com/accounts/answer/6390156?hl=it
             
-            \n L'accesso al sito istituzionale avviene con le credenziali SPID oppure ARGO.
-            \n Attenzione, è necessario cliccare sul pulsante in basso 'Accedi con ARGO/SPID'
+            \n L'accesso al sito istituzionale avviene con le credenziali ARGO o con SPID / CIE.
+            \n Attenzione, nella finestra di accesso è necessario cliccare sul pulsante in basso 'Accedi con ARGO/SPID'
             \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
             \n Cordiali saluti
             \n
