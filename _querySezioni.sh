@@ -120,14 +120,14 @@ function query::querySezioniSupervisorNotEmpty {
 function query::queryCreaSezioniDaStudenti {
   local query="
     SELECT cl, sez_argo, letter, addr_argo, 
-      UPPER(addr_gsuite), 
+      UPPER(addr_gsuite) AS addr_gsuite, 
       UPPER(letter || '_' || addr_gsuite) AS sez_gsuite,
       UPPER(cl || letter || '_' || addr_gsuite) AS sezione_gsuite
     FROM (
       SELECT DISTINCT 
         LOWER(TRIM(sa.cl)) AS cl,
         LOWER(TRIM(sa.sez)) AS sez_argo,
-        LOWER(TRIM(SUBSTR(sa.sez,1,1))) AS letter,
+        UPPER(TRIM(SUBSTR(sa.sez,1,1))) AS letter,
         LOWER(TRIM(SUBSTR(sa.sez,2))) AS addr_argo,
         CASE
           WHEN LOWER(TRIM(SUBSTR(sa.sez,2))) = 'in' THEN 'INF' 
