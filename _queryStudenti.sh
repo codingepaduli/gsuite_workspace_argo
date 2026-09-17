@@ -350,7 +350,7 @@ function query::getQueryStudenti {
     SELECT ${studentsParam[FIELDS]}
     FROM ${studentsParam[TABLE]} st 
       LEFT JOIN $TABELLA_SEZIONI sz  -- LEFT JOIN perchè quando copio gli studenti del serale nel diurno, le sezioni potrebbero non essere state ancora create
-      ON st.sez = sz.sez_argo AND st.cl =sz.cl 
+      ON LOWER(st.sez) = LOWER(sz.sez_argo) AND st.cl =sz.cl 
     WHERE 1=1 
       AND (1=${studentsParam[FLAG_COD_FISC_EXISTS]} OR 
         ( cod_fisc IS NOT NULL AND LOWER(cod_fisc) != '' ) )
@@ -384,9 +384,9 @@ function query::getQueryStudenti {
         (datar IS NOT NULL AND LOWER(datar) != '' AND
         datar BETWEEN ${studentsParam[FILTER_CANCELLATO_IL_MIN]} AND
           ${studentsParam[FILTER_CANCELLATO_IL_MAX]} ))
-      -- filtro sezioni
       AND (1=${studentsParam[FLAG_YEARS_IN]} OR 
-        sz.cl IN ( ${studentsParam[FILTER_YEARS_IN]} ) )
+        st.cl IN ( ${studentsParam[FILTER_YEARS_IN]} ) )
+      -- filtro sezioni
       AND (1=${studentsParam[FLAG_ADDRESS_ARGO_IN]} OR 
         LOWER(sz.addr_argo) IN ( ${studentsParam[FILTER_ADDRESS_ARGO_IN]} ) )
       AND (1=${studentsParam[FLAG_ADDRESS_GSUITE_IN]} OR 
