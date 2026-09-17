@@ -6,6 +6,10 @@ source "./_environment_working_tables.sh"
 source "./_maps.sh"
 source "./_queryPersonale.sh"
 
+declare -A queryAnagrafica
+declare -A queryNewTeachers
+declare QUERY_NOMI_DIPARTIMENTI
+
 # Funzione per mostrare il menu
 show_menu() {
   echo "Gestione Dipartimenti su GSuite"
@@ -24,36 +28,9 @@ show_menu() {
 # Funzione principale
 main() {
   local query
-  declare -A queryAnagrafica
-
+  
   local choice="$1"
 
-  # local FIELDS="DISTINCT LOWER(dipartimento) AS dipartimento"
-  # local ORDERING="LOWER(dipartimento)"
-  # local QUERY_NOMI_DIPARTIMENTI="$(query::getEmployeesInDipartimentiAll "$FIELDS" "$ORDERING" )"
-  local QUERY_NOMI_DIPARTIMENTI="$(query::getDipartimentiRaggruppatiAll )"
-  $SQLITE_CMD studenti.db -header -table "$QUERY_NOMI_DIPARTIMENTI"
-
-  # Le query del personale di ogni dipartimenti
-  while IFS="," read -r dipartimento materie; do
-    local FIELDS="LOWER(email_gsuite) AS email_gsuite"
-    local ORDERING="LOWER(email_gsuite)"
-    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
-    add_to_map "$dipartimento" "$query"
-
-    local FIELDS="UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_gsuite) AS email_gsuite"
-    local ORDERING="LOWER(email_gsuite)"
-    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
-    queryAnagrafica[$dipartimento]="$query"
-
-  done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
-
-  echo "elenco dipartimenti e gruppi:"
-  for nome_gruppo in "${!gruppi[@]}"; do
-    echo " dipartimento: $nome_gruppo"
-  done
-  echo "    "
-  
   case $choice in
     1)
       echo "Crea tutti i gruppi dipartimento su GSuite ..."
@@ -107,8 +84,8 @@ main() {
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Inserisco membri nel gruppo $nome_gruppo ..."
 
-        $SQLITE_CMD -csv -table studenti.db "${gruppi[$nome_gruppo]}"
-        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${gruppi[$nome_gruppo]}"
+        $SQLITE_CMD -csv -table studenti.db "${queryNewTeachers[$nome_gruppo]}"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "$nome_gruppo" --query "${queryNewTeachers[$nome_gruppo]}"
       done
     ;;
     8)
@@ -143,6 +120,30 @@ main() {
   esac
 }
 
+inizializzaDiparitmenti() {
+  local query
+
+  # local FIELDS="DISTINCT LOWER(dipartimento) AS dipartimento"
+  # local ORDERING="LOWER(dipartimento)"
+  # local QUERY_NOMI_DIPARTIMENTI="$(query::getEmployeesInDipartimentiAll "$FIELDS" "$ORDERING" )"
+  local QUERY_NOMI_DIPARTIMENTI="$(query::getDipartimentiRaggruppatiAll )"
+  $SQLITE_CMD studenti.db -header -table "$QUERY_NOMI_DIPARTIMENTI"
+
+  # Qquery del personale di ogni dipartimenti
+  while IFS="," read -r dipartimento materie; do
+    local FIELDS="LOWER(email_gsuite) AS email_gsuite"
+    local ORDERING="LOWER(email_gsuite)"
+    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
+    add_to_map "$dipartimento" "$query"
+    query="$(query::getNewEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
+    queryNewTeachers[$dipartimento]="$query"
+
+    local FIELDS="UPPER(cognome) as cognome, UPPER(nome) as nome, LOWER(email_gsuite) AS email_gsuite"
+    local ORDERING="LOWER(email_gsuite)"
+    query="$(query::getEmployeesInDipartimentoByNomeDipartimento "$FIELDS" "$ORDERING" "$materie" )"
+    queryAnagrafica[$dipartimento]="$query"
+  done < <($SQLITE_CMD -csv studenti.db "$QUERY_NOMI_DIPARTIMENTI" | sed 's/"//g' )
+}
 
 showConfig() {
   if log::level_is_active "CONFIG"; then
@@ -165,6 +166,7 @@ if [ "$#" -eq 1 ]; then
 else
   # Show config vars
   showConfig
+  inizializzaDiparitmenti
 
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
