@@ -113,6 +113,10 @@ main() {
       local FIELDS=" DISTINCT LOWER(email_coordinatore) as email_coordinatore "
       local ORDERING="LOWER(email_coordinatore)"
 
+      # inserisco tutti i coordinatori nel gruppo coordinatori [0]
+      query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$SQL_FILTRO_ANNI")"
+      $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPO_COORDINATORI[0]}" --query "$query"
+
       # genero le query
       for i in {1..5}; do
         echo "Inserisco membri nel gruppo ${GRUPPO_COORDINATORI[$i]} ..."
@@ -127,6 +131,10 @@ main() {
       local FIELDS=" DISTINCT LOWER(email_coordinatore) as email_coordinatore "
       local ORDERING="LOWER(email_coordinatore)"
       
+      # rimuovo tutti i coordinatori dal gruppo coordinatori [0]
+      query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$SQL_FILTRO_ANNI")"
+      $RUN_CMD_WITH_QUERY --command deleteMembersFromGroup --group "${GRUPPO_COORDINATORI[0]}" --query "$query"
+
       for i in {1..5}; do
         echo "Rimuovo membri dal gruppo ${GRUPPO_COORDINATORI[$i]} ..."
 
