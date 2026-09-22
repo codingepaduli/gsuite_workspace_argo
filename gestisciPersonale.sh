@@ -31,10 +31,11 @@ show_menu() {
   echo "13. Sospendi (disabilita) personale"
   echo "14. Elimina personale"
   echo "15. Visualizza personale da cancellare ..."
-  echo "16. Visualizza personale supplente ..."
+  echo "16. Visualizza personale supplente da rimuovere"
   echo "17. Sposta script personale_CF.sh relativo alla tabella precedente in root"
   echo "18. Invia mail di sospensione account al personale supplente ..."
   echo "19. Controllo i dati"
+  echo "21. Esporta personale supplente da rimuovere"
   echo "20. Esci"
 }
 
@@ -301,10 +302,10 @@ main() {
       # $RUN_CMD_WITH_QUERY --command deleteUsers --group " NO " --query "$query"
     ;;
     16)
-      echo "Visualizza personale supplente ..."
+      echo "Visualizza personale supplente da rimuovere"
 
-      local FIELDS="LOWER(tipo_personale) AS tipo_personale, LOWER(email_gsuite) AS email_gsuite, UPPER(cognome) || ' ' || UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto) AS contratto"
-      local ORDERING="UPPER(codice_fiscale)"
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, UPPER(cognome) || ' ' || UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto) AS contratto, dipartimento"
+      local ORDERING="UPPER(cognome) || ' ' || UPPER(nome)"
       query="$(query::getFixedTermEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" " 'supplente' ")"
 
       $SQLITE_CMD studenti.db -header -table "$query"
@@ -355,6 +356,19 @@ main() {
     20)
       echo "Arrivederci!"
       exit 0
+    ;;
+    21)
+      echo "Esporta personale supplente da rimuovere"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, UPPER(cognome) || ' ' || UPPER(nome) AS nome, aggiunto_il, cancellato_il, UPPER(contratto) AS contratto, dipartimento"
+      local ORDERING="UPPER(cognome) || ' ' || UPPER(nome)"
+      query="$(query::getFixedTermEmployeesWithEmailGSuiteDeletedInPeriod "$FIELDS" "$ORDERING" " 'supplente' ")"
+
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/personale_da_rimuovere.csv"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/personale_da_rimuovere.csv"
     ;;
     *)
       echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
