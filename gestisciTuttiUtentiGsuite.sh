@@ -5,6 +5,8 @@ source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
 
+source "./_queryUtentiGSuite.sh"
+
 # File CSV di lavoro con personale versionata alla data indicata
 FILE_UTENTI_CSV="$BASE_DIR/dati_gsuite/$TABELLA_UTENTI_GSUITE.csv"
 
@@ -146,95 +148,48 @@ show_menu() {
     echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
     echo "18. Visualizza personale con OU errata"
     echo "19. Sposta personale con OU errata"
-
+    echo "22. Visualizza utenti"
     echo "20. Esci"
 }
 
 # Funzione principale
 main() {
+  local query
+
     while true; do
         show_menu
         read -p "Scegli un'opzione (1-20): " -r choice
         
         case $choice in
             1)
-                echo "1. Cancello e ricreo la tabella del personale"
+                echo "1. Cancello e ricreo la tabella degli utenti GSuite"
                 
                 # Cancello la tabella
-                $SQLITE_CMD studenti.db "DROP TABLE IF EXISTS '$TABELLA_UTENTI_GSUITE';"
+                query="$(query::dropTableIfExists )"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
                 # Creo la tabella
-                $SQLITE_CMD studenti.db "CREATE TABLE IF NOT EXISTS '$TABELLA_UTENTI_GSUITE' ( 
-                    nome VARCHAR(200),
-                    cognome VARCHAR(200),
-                    email_gsuite VARCHAR(200),
-                    pwd VARCHAR(200),
-                    pwdHash VARCHAR(200),
-                    org_unit VARCHAR(200),
-                    priMail VARCHAR(200),
-                    stato_utente VARCHAR(200),
-                    ultimo_login TEXT,
-                    recoveryEmail VARCHAR(200),
-                    homeEmail VARCHAR(200),
-                    workEmail VARCHAR(200),
-                    recoveryPhone VARCHAR(200),
-                    workPhone VARCHAR(200),
-                    homePhone VARCHAR(200),
-                    mobilePhone VARCHAR(200),
-                    workAddr VARCHAR(200),
-                    homeAddr VARCHAR(200),
-                    id VARCHAR(200),
-                    type VARCHAR(200),
-                    title VARCHAR(200),
-                    manager VARCHAR(200),
-                    department VARCHAR(200),
-                    cost VARCHAR(200),
-                    enroll VARCHAR(200),
-                    enforce VARCHAR(200),
-                    buildingId VARCHAR(200),
-                    floorName VARCHAR(200),
-                    floorSection VARCHAR(200),
-                    spazio_email REAL,
-                    spazio_gdrive REAL,
-                    spazio_foto REAL,
-                    spazio_limite VARCHAR(200),
-                    spazio_storage REAL,
-                    changePwdNextLogin VARCHAR(200),
-                    newStatus VARCHAR(200),
-                    license VARCHAR(200),
-                    newLicense VARCHAR(200),
-                    protection VARCHAR(200),
-                    selezionato_il TEXT);"
-                ;;
+                query="$(query::createTableIfNotExists )"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             2)
                 echo "2. Importo e normalizzo i dati dal file CSV $FILE_UTENTI_CSV ..."
                 
                 # Importa CSV dati
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_UTENTI_CSV $TABELLA_UTENTI_GSUITE"
 
-                # Normalizza dati
-                $SQLITE_CMD studenti.db "UPDATE $TABELLA_UTENTI_GSUITE 
-                SET nome = TRIM(UPPER(nome)),
-                    cognome = TRIM(UPPER(cognome)),
-                    email_gsuite = TRIM(LOWER(email_gsuite)),
-                    org_unit = TRIM(UPPER(org_unit)),
-                    stato_utente = TRIM(UPPER(stato_utente)),
-                    ultimo_login = TRIM(UPPER(ultimo_login)),
-                    spazio_email = CAST(spazio_email AS REAL) * 1000,
-                    spazio_gdrive = CAST(spazio_gdrive AS REAL) * 1000,
-                    spazio_storage = CAST(spazio_storage AS REAL) * 1000,
-                    selezionato_il = '';"
-                
-                # Normalizza data ultimo_login
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_UTENTI_GSUITE 
-                SET ultimo_login = date(substr(ultimo_login, 1, 4) || '-' || substr(ultimo_login, 6, 2) || '-' || substr(ultimo_login, 9, 2))
-                WHERE ultimo_login is NOT NULL AND TRIM(UPPER(ultimo_login)) != UPPER('Never logged in');"
+                echo "Normalizzo i campi di tipo testo"
+                query="$(query::normalizeFields )"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
-                # Imposto data ultimo_login per "Never logged in"
-                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "UPDATE $TABELLA_UTENTI_GSUITE 
-                SET ultimo_login = date('2000-01-01')
-                WHERE ultimo_login is NOT NULL AND TRIM(UPPER(ultimo_login)) = UPPER('Never logged in');"
-                ;;
+                echo "Normalizzo data ultimo login"
+                query="$(query::normalizeLastLogin )";
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+                  
+                echo "Normalizzo data ultimo login per utenti mai loggati"
+                query="$(query::normalizeLastLoginNeverLoggedIn )"
+                $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
+            ;;
             3)
                 echo "3. Visualizza utenti segnati come disabilitati"
 
@@ -388,6 +343,13 @@ main() {
                 echo "Arrivederci!"
                 exit 0
                 ;;
+            22)
+                echo "Dati tabella !"
+
+                query="$(query::utentiGSuiteTutti "nome, cognome, email_gsuite" )"
+
+                $SQLITE_CMD -header -table studenti.db "$query"
+            ;;
             *)
                 echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
                 sleep 1
