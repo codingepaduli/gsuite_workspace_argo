@@ -73,12 +73,16 @@ main() {
         echo "Creo le email e i relativi account su GSuite, li esporto in CSV"
 
         local SHOW_NEW_STUDENTS=3
+        ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
+
+        echo "Premi un tasto per apportare le modifiche"
+        read -p "Premi per continuare " -r _
+        
         local CREATE_MAIL_STUDENTS=4
         local EXPORT_NEW_STUDENTS=5
         local CREATE_GSUITE_ACCOUNT_STUDENTS=6
         local CREATE_SCRIPT_CF_STUDENTS=7
         
-        ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
         ./gestisciStudenti.sh "$CREATE_MAIL_STUDENTS"
         ./gestisciStudenti.sh "$SHOW_NEW_STUDENTS"
         ./gestisciStudenti.sh "$EXPORT_NEW_STUDENTS" # Also by years
