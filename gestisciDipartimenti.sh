@@ -166,11 +166,11 @@ if [ "$#" -eq 1 ]; then
 else
   # Show config vars
   showConfig
-  inizializzaDiparitmenti
 
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
 fi
 
 # Avvia la funzione principale
+inizializzaDiparitmenti
 main "$scelta"

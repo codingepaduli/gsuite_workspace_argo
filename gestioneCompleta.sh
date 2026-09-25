@@ -157,6 +157,7 @@ main() {
       ;;
       9)
         echo "Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
+        local SHOW_NEW_TEACHER=3
         local CREATE_MAIL_NEW_TEACHER=4
         local CREATE_MAIL_NEW_ATA=5
         local CREATE_NEW_ACCOUNT_ON_GSUITE=9
@@ -164,21 +165,45 @@ main() {
         local CREATE_SCRIPT_CF=12
         local ADD_NEW_EMPLOYEES_TO_GROUPS=4
         local ADD_NEW_EMPLOYEES_TO_DEPART=7
+        local SEND_MAIL_TO_NEW_EMPLOYEES=11
+
+        echo "Nuovo personale (email da creare):"
+        ./gestisciPersonale.sh "$SHOW_NEW_TEACHER"
+
+        echo "Premi un tasto per proseguire con la creazione degli account "
+        read -p "Premi per continuare " -r _
 
         echo "creo email"
         ./gestisciPersonale.sh "$CREATE_MAIL_NEW_TEACHER"
         echo "creo email ata"
         ./gestisciPersonale.sh "$CREATE_MAIL_NEW_ATA"
+
+        echo "Nuovo personale (con email creata):"
+        ./gestisciPersonale.sh "$SHOW_NEW_TEACHER"
+
+        echo "Premi un tasto per creare gli account su GSuite "
+        read -p "Premi per continuare " -r _
+
         echo "creo account"
         ./gestisciPersonale.sh "$CREATE_NEW_ACCOUNT_ON_GSUITE"
         echo "export"
         ./gestisciPersonale.sh "$EXPORT_AS_CSV"
         echo "creo script.sh"
         ./gestisciPersonale.sh "$CREATE_SCRIPT_CF"
+
+        echo "Premi un tasto per aggiungere gli account a gruppi e dipartimenti"
+        read -p "Premi per continuare " -r _
+
         echo "aggiungo a gruppi"
         ./gestisciGruppiGSuiteDocenti.sh "$ADD_NEW_EMPLOYEES_TO_GROUPS"
         echo "aggiungo ai dipartimenti"
         ./gestisciDipartimenti.sh "$ADD_NEW_EMPLOYEES_TO_DEPART"
+
+        echo "Premi un tasto per inviare la mail di creazione account al nuovo personale"
+        read -p "Premi per continuare " -r _
+
+        echo "invio email"
+        ./gestisciPersonale.sh "$SEND_MAIL_TO_NEW_EMPLOYEES"
       ;;
       11)
         echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
