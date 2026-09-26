@@ -24,6 +24,7 @@ SQLITE_UTILS_CMD="sqlite-utils"
 GAM_CMD="$HOME/bin/gam/gam"
 
 # Libreoffice conversion
+## LibreOffice -> menu Strumenti -> Opzioni -> Lingue -> Generale -> Italiano e D/M/Y
 LIBREOFFICE_CMD='flatpak run org.libreoffice.LibreOffice --headless ' # 'echo --convert-to xlsx '
 
 # Python
