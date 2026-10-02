@@ -79,7 +79,7 @@ function query::getQueryEmployees {
       LEFT JOIN $TABELLA_SEZIONI sz
         ON LOWER(sz.email_coordinatore) = LOWER(email_gsuite) 
           AND sz.email_coordinatore IS NOT NULL 
-          AND LOWER(sz.email_coordinatore) != '' 
+          AND TRIM(sz.email_coordinatore) != '' 
     WHERE 1=1 
       AND (1=${employeesParam[FLAG_TIPO_PERSONALE]} OR 
         LOWER(tipo_personale) IN ( ${employeesParam[FILTER_TIPO_PERSONALE_IN]} ))
