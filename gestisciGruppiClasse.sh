@@ -353,10 +353,10 @@ main() {
         
         # Se l'allegato esiste ed è leggibile e il destinatario non è vuoto
         if [[ -f "$ATTACH" && -r "$ATTACH" &&  -n "$TO" ]]; then
-          echo "L'allegato esiste, è leggibile e il destinatario non è vuoto, invio mail al coordinatore: $email_coordinatore"
+          echo "L'allegato esiste, è leggibile e il destinatario non è vuoto, invio mail al coordinatore: $TO"
           $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$ATTACH"
         else
-          echo "L'allegato NON esiste o NON è leggibile oppure il destinatario E' VUOTO, NON invio mail al destinatario -$email_coordinatore-"
+          echo "L'allegato NON esiste o NON è leggibile oppure il destinatario E' VUOTO, NON invio mail al destinatario: -$TO-"
         fi
       done
     ;;
