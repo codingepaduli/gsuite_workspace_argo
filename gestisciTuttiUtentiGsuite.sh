@@ -346,7 +346,9 @@ main() {
             22)
                 echo "Dati tabella !"
 
-                query="$(query::utentiGSuiteTutti "nome, cognome, email_gsuite" )"
+                local FIELDS="org_unit, cognome, nome, email_gsuite"
+                local ORDERING="org_unit, cognome, nome"
+                query="$(query::utentiGSuiteTutti "$FIELDS" "$ORDERING" )"
 
                 $SQLITE_CMD -header -table studenti.db "$query"
             ;;
