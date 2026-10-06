@@ -71,6 +71,8 @@ main() {
     5)
       echo "Esporta i dipartimenti in CSV e XLSX  ..."
       
+      mkdir -p "$EXPORT_DIR_DATE"
+      
       for nome_gruppo in "${!gruppi[@]}"; do
         echo "Esporto dipartimento $nome_gruppo ..."
 
@@ -98,16 +100,33 @@ main() {
       declare -a dipartimenti
       readarray -t dipartimenti < <( $SQLITE_CMD studenti.db "$NOMI_DIPARTIMENTI" )
 
-      local TO="gsuite_supporto@$DOMAIN"
+      # Controllo tutti gli allegati
+      local sendMail=true
+      for i in "${!dipartimenti[@]}"; do
+        # Se l'allegato esiste ed è leggibile
+        if [[ -f "$EXPORT_DIR_DATE/${dipartimenti[i]}.xlsx" && -r "$EXPORT_DIR_DATE/${dipartimenti[i]}.xlsx" ]]; then
+          echo "L'allegato $EXPORT_DIR_DATE/${dipartimenti[i]}.xlsx esiste ed è leggibile"
+        else
+          echo "L'allegato $EXPORT_DIR_DATE/${dipartimenti[i]}.xlsx NON esiste oppure NON è leggibile"
+          sendMail=false
+        fi
+      done
+
+      local TO="coordinatori_dipartimenti@$DOMAIN"
       local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
       local SUBJECT="Elenco dipartimenti"
       local MESSAGE="
           \n Salve,
-          \n in allegato l'elenco dei dipartimenti
+          \n in allegato l'elenco dei dipartimenti.
           \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
           \n Cordiali saluti"
-          
-      $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$EXPORT_DIR_DATE/${dipartimenti[0]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[1]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[2]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[3]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[4]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[5]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[6]}.xlsx"  attach "$EXPORT_DIR_DATE/${dipartimenti[7]}.xlsx"
+      
+      if [[ $sendMail == true ]]; then
+        echo "Invio mail ai coordinatori di dipartimento: $TO"
+        $GAM_CMD sendemail to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$EXPORT_DIR_DATE/${dipartimenti[0]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[1]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[2]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[3]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[4]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[5]}.xlsx" attach "$EXPORT_DIR_DATE/${dipartimenti[6]}.xlsx"  attach "$EXPORT_DIR_DATE/${dipartimenti[7]}.xlsx"
+      else
+        echo "NON Invio la mail ai coordinatori di dipartimento: -$TO-"
+      fi
     ;;
     20)
       echo "Arrivederci!"
@@ -153,24 +172,24 @@ showConfig() {
     log::_write_log "CONFIG" "Tabella personale: $TABELLA_PERSONALE"
     log::_write_log "CONFIG" "Inizio periodo (compreso): $PERIODO_PERSONALE_DA" 
     log::_write_log "CONFIG" "Fine periodo (compreso): $PERIODO_PERSONALE_A"
-    log::_write_log "CONFIG" "Dominio: $DOMAIN"
-    log::_write_log "CONFIG" "Password Classroom: $PASSWORD_CLASSROOM"
     log::_write_log "CONFIG" "Cartella di esportazione: $EXPORT_DIR_DATE"
     log::_write_log "CONFIG" "-----------------------------------------"
     read -p "Premi Invio per continuare..." -r _
   fi
 }
 
+
 if [ "$#" -eq 1 ]; then
+  inizializzaDiparitmenti
   scelta="$1"
 else
   # Show config vars
   showConfig
 
+  inizializzaDiparitmenti
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
 fi
 
 # Avvia la funzione principale
-inizializzaDiparitmenti
 main "$scelta"
