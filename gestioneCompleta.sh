@@ -16,7 +16,8 @@ show_menu() {
     echo "2. Creo le email studenti e i relativi account su GSuite, li esporto in CSV"
     echo "3. Aggiungi i nuovi studenti alle classi, effettua gli spostamenti, toglie i ritirati e invia loro una mail"
 
-    echo "5. Invio singola email ad ogni coordinatore con elenco studenti per classe"
+    echo "5. Invio email ad ogni coordinatore con NUOVI studenti"
+    echo "5231. Invio singola email ad ogni coordinatore con elenco studenti per classe"
 
     echo "6. Creo le tabelle, importo il personale"
     echo "7. Eseguo script aggiornamento email personale"
@@ -120,7 +121,7 @@ main() {
         ./gestisciStudenti.sh "$SHOW_DELETED_STUDENTS"
         ./gestisciStudenti.sh "$SEND_MAIL_TO_DELETED_STUDENTS"
       ;;
-      5)
+      5123)
         echo "5. Invio singola email ad ogni coordinatore con elenco studenti per classe"
 
         local EXPORT_CLASSES=3
@@ -128,6 +129,15 @@ main() {
         
         ./gestisciGruppiClasse.sh "$EXPORT_CLASSES"
         ./gestisciSezioni.sh "$SEND_MAIL_TO_SUPERVISORS"
+      ;;
+      5)
+        echo "5. Invio email ad ogni coordinatore con NUOVI studenti"
+
+        local EXPORT_NEW_STUDENTS_BY_CLASSES=19
+        local SEND_MAIL_NEW_STUDENTS_TO_SUPERVISORS=21
+        
+        ./gestisciGruppiClasse.sh "$EXPORT_NEW_STUDENTS_BY_CLASSES"
+        ./gestisciGruppiClasse.sh "$SEND_MAIL_NEW_STUDENTS_TO_SUPERVISORS"
       ;;
       6)
         echo "Creo la tabella, importo il personale"
