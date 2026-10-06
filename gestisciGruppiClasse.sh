@@ -276,6 +276,90 @@ main() {
         fi
       done < <($SQLITE_CMD -csv studenti.db "$querySezioniECoordinatori" | sed 's/"//g' )
     ;;
+    19)
+      checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+      
+      echo "Salvo i NUOVI studenti in CSV, sia unico CSV con tutte le classi, sia un CSV per ogni classe (periodo $PERIODO_STUDENTI_DA - $PERIODO_STUDENTI_A) "
+
+      # Query tutti i nuovi studenti
+      local FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, email_gsuite, '$PASSWORD_STUDENTI' as password"
+      local ORDERING="sz.sezione_gsuite"
+      query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+
+      # Esporto i dati in unico CSV con tutte le classi
+      $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_tutti.csv"
+
+      # Query dei nomi delle classi con nuovi studenti
+      FIELDS="DISTINCT sz.sezione_gsuite"
+      query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+
+      # Salvo i nomi delle classi in un array
+      declare -a classi
+      readarray -t classi < <( $SQLITE_CMD studenti.db "$query" )
+      
+      # Esporto i dati, un file CSV per ogni classe
+      for classe in "${classi[@]}"; do
+        echo "esporto nuovi studenti della $classe"
+
+        # Query nuovi studenti della classe
+        FIELDS="sz.sezione_gsuite AS classe, cognome || ' ' || nome AS nome, email_gsuite, '$PASSWORD_STUDENTI' as password"
+        ORDERING="sz.sezione_gsuite, cognome, nome"
+        query="$(query::queryStudentiDellaClasseNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" "$classe" )"
+
+        # Esporto i dati dei nuovi studenti della classe
+        $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/nuovi_studenti_$classe.csv"
+        $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovi_studenti_$classe.csv"
+      done
+    ;;
+    21)
+      checkAllVarsNotEmpty "PERIODO_STUDENTI_DA" "PERIODO_STUDENTI_A"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+      
+      echo "Invio email dei NUOVI studenti ai coordinatori (periodo $PERIODO_STUDENTI_DA - $PERIODO_STUDENTI_A) "
+
+      # Query dei nomi delle classi con nuovi studenti
+      local FIELDS="DISTINCT sz.sezione_gsuite"
+      local ORDERING="sz.sezione_gsuite"
+      query="$(query::queryStudentiNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" )"
+      
+      # Salvo i nomi delle classi in un array
+      declare -a classi
+      readarray -t classi < <( $SQLITE_CMD studenti.db "$query" )
+      
+      local -a coordinatore
+      local -a TO
+      
+      for classe in "${classi[@]}"; do
+        echo "Invio la mail al coordinatore della classe $classe"
+
+        # Query del coordinatore di classe
+        FIELDS="DISTINCT LOWER(sz.email_coordinatore)"
+        query="$(query::queryStudentiDellaClasseNonCancellatiIscrittiInPeriodo "$FIELDS" "$ORDERING" "$classe" )"
+        readarray -t coordinatore < <( $SQLITE_CMD studenti.db "$query" )
+        TO="${coordinatore[*]//[[:space:]]/}" # unica stringa, rimuove gli spazi
+
+        local CC="gsuite_supporto@$DOMAIN" # supporto_digitale@$DOMAIN
+        local SUBJECT="Elenco studenti della classe $classe"
+        local ATTACH="$EXPORT_DIR_DATE/nuovi_studenti_$classe.xlsx"
+        local MESSAGE="
+          \n Salve,
+          \n in allegato l'elenco dei nuovi iscritti alla classe $classe di cui è coordinatore.
+          \n Eventuali segnalazioni di imprecisioni o problematiche possono essere inoltrate a supporto_digitale@$DOMAIN .
+          \n Cordiali saluti"
+        
+        # Se l'allegato esiste ed è leggibile e il destinatario non è vuoto
+        if [[ -f "$ATTACH" && -r "$ATTACH" &&  -n "$TO" ]]; then
+          echo "L'allegato esiste, è leggibile e il destinatario non è vuoto, invio mail al coordinatore: $TO"
+          $GAM_CMD sendemail  to "$TO" cc "$CC" subject "$SUBJECT" message "$MESSAGE" attach "$ATTACH"
+        else
+          echo "L'allegato NON esiste o NON è leggibile oppure il destinatario E' VUOTO, NON invio mail al destinatario: -$TO-"
+        fi
+      done
+    ;;
     20)
       echo "Arrivederci!"
       exit 0
