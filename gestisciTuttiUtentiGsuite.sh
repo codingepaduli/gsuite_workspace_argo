@@ -148,7 +148,10 @@ show_menu() {
     echo "17. Sposta studenti serale con OU errata su OU 'Serale'"
     echo "18. Visualizza personale con OU errata"
     echo "19. Sposta personale con OU errata"
-    echo "22. Visualizza utenti"
+    echo "22 Visualizza tutti gli utenti"
+    echo "23 Visualizza studenti con org unit errata"
+    echo "24 Visualizza docenti con org unit errata"
+    echo "25 Visualizza personale ATA con org unit errata"
     echo "20. Esci"
 }
 
@@ -165,11 +168,11 @@ main() {
                 echo "1. Cancello e ricreo la tabella degli utenti GSuite"
                 
                 # Cancello la tabella
-                query="$(query::dropTableIfExists )"
+                query="$(queryGSuite::dropTableIfExists )"
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
                 # Creo la tabella
-                query="$(query::createTableIfNotExists )"
+                query="$(queryGSuite::createTableIfNotExists )"
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
             2)
@@ -179,15 +182,15 @@ main() {
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_UTENTI_CSV $TABELLA_UTENTI_GSUITE"
 
                 echo "Normalizzo i campi di tipo testo"
-                query="$(query::normalizeFields )"
+                query="$(queryGSuite::normalizeFields )"
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
                 echo "Normalizzo data ultimo login"
-                query="$(query::normalizeLastLogin )";
+                query="$(queryGSuite::normalizeLastLogin )";
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
                   
                 echo "Normalizzo data ultimo login per utenti mai loggati"
-                query="$(query::normalizeLastLoginNeverLoggedIn )"
+                query="$(queryGSuite::normalizeLastLoginNeverLoggedIn )"
                 $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
             ;;
             3)
@@ -344,10 +347,27 @@ main() {
                 exit 0
                 ;;
             22)
-                echo "Dati tabella !"
+                echo "22 Visualizza tutti gli utenti"
 
-                query="$(query::utentiGSuiteTutti "nome, cognome, email_gsuite" )"
+                query="$(queryGSuite::utentiGSuiteTutti "nome, cognome, email_gsuite" )"
+                $SQLITE_CMD -header -table studenti.db "$query"
+            ;;
+            23)
+                echo "23 Visualizza studenti con org unit errata"
 
+                query="$(queryGSuite::studentiOrgUnitErrata "nome, cognome, email_gsuite, org_unit" )"
+                $SQLITE_CMD -header -table studenti.db "$query"
+            ;;
+            24)
+                echo "24 Visualizza docenti con org unit errata"
+
+                query="$(queryGSuite::docentiOrgUnitErrata "nome, cognome, email_gsuite, org_unit" )"
+                $SQLITE_CMD -header -table studenti.db "$query"
+            ;;
+            25)
+                echo "25 Visualizza personale ATA con org unit errata"
+
+                query="$(queryGSuite::ataOrgUnitErrata "nome, cognome, email_gsuite, org_unit" )"
                 $SQLITE_CMD -header -table studenti.db "$query"
             ;;
             *)

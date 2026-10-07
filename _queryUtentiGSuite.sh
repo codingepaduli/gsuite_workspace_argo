@@ -7,14 +7,14 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
-function query::dropTableIfExists() {
+function queryGSuite::dropTableIfExists() {
   local TABLE="${1:-${TABELLA_UTENTI_GSUITE}}"
   echo "
     DROP TABLE IF EXISTS '$TABLE';
   "
 }
 
-function query::createTableIfNotExists() {
+function queryGSuite::createTableIfNotExists() {
   local TABLE="${1:-${TABELLA_UTENTI_GSUITE}}"
   echo "
     CREATE TABLE IF NOT EXISTS '$TABLE' ( 
@@ -62,7 +62,7 @@ function query::createTableIfNotExists() {
   "
 }
 
-function query::defaultUsersParam() {
+function queryGSuite::defaultUsersParam() {
   local -A usersParam=()
   usersParam[FIELDS]=" nome, cognome, email_gsuite, pwd, pwdHash, org_unit, priMail, stato_utente, ultimo_login, recoveryEmail, homeEmail, workEmail, recoveryPhone, workPhone, homePhone, mobilePhone, workAddr, homeAddr, id, type, title, manager, department, cost, enroll, enforce, buildingId, floorName, floorSection, spazio_email, spazio_gdrive, spazio_foto, spazio_limite, spazio_storage, changePwdNextLogin, newStatus, license, newLicense, protection, selezionato_il"
   usersParam[ORDERING]=" LOWER(email_gsuite) "
@@ -72,14 +72,21 @@ function query::defaultUsersParam() {
   usersParam[FLAG_COGNOME_EXISTS]="$FLAG_OFF"
 
   usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_OFF"
+  usersParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_EMAIL_GSUITE_IN]="$FLAG_OFF"
   usersParam[FILTER_EMAIL_GSUITE_IN]=" '' "
+
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_OFF"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" '' "
   
   usersParam[FLAG_PWD_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_PWDHASH_EXISTS]="$FLAG_OFF"
 
   usersParam[FLAG_ORG_UNIT_EXISTS]="$FLAG_OFF"
+  usersParam[FLAG_ORG_UNIT_IN]="$FLAG_OFF"
   usersParam[FILTER_ORG_UNIT_IN]=" '' "
+  usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_OFF"
+  usersParam[FILTER_ORG_UNIT_NOT_IN]=" '' "
 
   usersParam[FLAG_PRIMAIL_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_STATO_UTENTE_EXISTS]="$FLAG_OFF"
@@ -122,9 +129,47 @@ function query::defaultUsersParam() {
   declare -p "usersParam"
 }
 
-function query::utentiGSuiteTutti {
+function queryGSuite::getQueryUtentiGSuite {
   local queryParam
-  queryParam="$(query::defaultUsersParam)"
+  queryParam="${1}"
+
+  # clona mappa
+  local -A usersParam=()
+  eval "${queryParam}"
+  
+  echo "
+    SELECT ${usersParam[FIELDS]}
+    FROM ${usersParam[TABLE]} sg
+    WHERE 1=1
+      AND (1=${usersParam[FLAG_NOME_EXISTS]} OR 
+        ( nome IS NOT NULL AND LOWER(nome) != '' ) )
+      AND (1=${usersParam[FLAG_COGNOME_EXISTS]} OR 
+        ( cognome IS NOT NULL AND LOWER(cognome) != '' ) )
+
+      AND (1=${usersParam[FLAG_EMAIL_GSUITE_EXISTS]} OR 
+        ( email_gsuite IS NOT NULL AND LOWER(email_gsuite) != '' ) )
+      AND (1=${usersParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]} OR 
+        ( email_gsuite IS NULL OR LOWER(email_gsuite) = '' ) )
+      AND (1=${usersParam[FLAG_EMAIL_GSUITE_IN]} OR 
+        LOWER(email_gsuite) IN ( ${usersParam[FILTER_EMAIL_GSUITE_IN]} ) )
+      AND (1=${usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]} OR 
+        LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) 
+          IN ( ${usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]} ))
+      
+      AND (1=${usersParam[FLAG_ORG_UNIT_EXISTS]} OR 
+        ( org_unit IS NOT NULL AND LOWER(org_unit) != '' ) )
+      AND (1=${usersParam[FLAG_ORG_UNIT_IN]} OR 
+        LOWER(org_unit) IN ( ${usersParam[FILTER_ORG_UNIT_IN]} ) )
+      AND (1=${usersParam[FLAG_ORG_UNIT_NOT_IN]} OR 
+        LOWER(org_unit) NOT IN ( ${usersParam[FILTER_ORG_UNIT_NOT_IN]} ) )
+      
+    ORDER BY ${usersParam[ORDERING]} ASC
+  "
+}
+
+function queryGSuite::utentiGSuiteTutti {
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
 
   # clona mappa
   local -A usersParam=()
@@ -135,14 +180,12 @@ function query::utentiGSuiteTutti {
   # clona mappa modificata
   queryParam="$(declare -p "usersParam")"
   
-  echo "
-    SELECT ${usersParam[FIELDS]}
-    FROM ${usersParam[TABLE]} sg
-    ORDER BY ${usersParam[ORDERING]} ASC
-  "
+  local query
+  query="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+  echo "$query"
 }
 
-function query::normalizeFields() {
+function queryGSuite::normalizeFields() {
   local TABLE="${1:-${TABELLA_UTENTI_GSUITE}}"
   
   echo "
@@ -160,7 +203,7 @@ function query::normalizeFields() {
   "
 }
 
-function query::normalizeLastLogin() {
+function queryGSuite::normalizeLastLogin() {
   local TABLE="${1:-${TABELLA_UTENTI_GSUITE}}"
   
   echo "
@@ -169,12 +212,13 @@ function query::normalizeLastLogin() {
       || substr(ultimo_login, 6, 2) || '-' 
       || substr(ultimo_login, 9, 2)
     WHERE ultimo_login is NOT NULL 
-      AND TRIM(UPPER(ultimo_login)) != UPPER('Never logged in');
+      AND TRIM(UPPER(ultimo_login)) != UPPER('Never logged in')
+      AND ultimo_login GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]';
   "
 }
 
 
-function query::normalizeLastLoginNeverLoggedIn() {
+function queryGSuite::normalizeLastLoginNeverLoggedIn() {
   local TABLE="${1:-${TABELLA_UTENTI_GSUITE}}"
   
   echo "
@@ -184,3 +228,85 @@ function query::normalizeLastLoginNeverLoggedIn() {
       AND TRIM(UPPER(ultimo_login)) = UPPER('Never logged in');
   "
 }
+
+function queryGSuite::studentiOrgUnitErrata {
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
+  
+  # clona mappa
+  local -A usersParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  usersParam[FIELDS]="${1:-${usersParam[FIELDS]}}"
+  usersParam[ORDERING]="${2:-${usersParam[ORDERING]}}"
+
+  usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+
+  usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_ON"
+  usersParam[FILTER_ORG_UNIT_NOT_IN]=" '/studenti/diurno', '/studenti/serale' "
+  
+  # clona mappa modificata
+  queryParam="$(declare -p "usersParam")"
+
+  local query
+  query="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+  echo "$query"
+}
+
+function queryGSuite::docentiOrgUnitErrata {
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
+  
+  # clona mappa
+  local -A usersParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  usersParam[FIELDS]="${1:-${usersParam[FIELDS]}}"
+  usersParam[ORDERING]="${2:-${usersParam[ORDERING]}}"
+
+  usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'd.' "
+
+  usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_ON"
+  usersParam[FILTER_ORG_UNIT_NOT_IN]=" '/docenti' "
+  
+  # clona mappa modificata
+  queryParam="$(declare -p "usersParam")"
+
+  local query
+  query="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+  echo "$query"
+}
+
+function queryGSuite::ataOrgUnitErrata {
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
+  
+  # clona mappa
+  local -A usersParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  usersParam[FIELDS]="${1:-${usersParam[FIELDS]}}"
+  usersParam[ORDERING]="${2:-${usersParam[ORDERING]}}"
+
+  usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 'a.' "
+
+  usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_ON"
+  usersParam[FILTER_ORG_UNIT_NOT_IN]=" '/ata' "
+  
+  # clona mappa modificata
+  queryParam="$(declare -p "usersParam")"
+
+  local query
+  query="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+  echo "$query"
+}
+
