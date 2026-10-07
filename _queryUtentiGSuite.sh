@@ -110,6 +110,7 @@ function queryGSuite::defaultUsersParam() {
   usersParam[FLAG_DEPARTMENT_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_COST_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_ENROLL_EXISTS]="$FLAG_OFF"
+
   usersParam[FLAG_ENFORCE_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_BUILDINGID_EXISTS]="$FLAG_OFF"
   usersParam[FLAG_FLOORNAME_EXISTS]="$FLAG_OFF"
