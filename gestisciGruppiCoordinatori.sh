@@ -7,12 +7,20 @@ source "./_maps.sh"
 source "./_queryCoordinatori.sh"
 
 declare -A GRUPPO_COORDINATORI
-GRUPPO_COORDINATORI[0]="coordinatori"
-GRUPPO_COORDINATORI[1]="coordinatori_prime"
-GRUPPO_COORDINATORI[2]="coordinatori_seconde"
-GRUPPO_COORDINATORI[3]="coordinatori_terze"
-GRUPPO_COORDINATORI[4]="coordinatori_quarte"
-GRUPPO_COORDINATORI[5]="coordinatori_quinte"
+
+inizializzaGruppiCoordinatori() {
+  GRUPPO_COORDINATORI[0]="coordinatori"
+  GRUPPO_COORDINATORI[1]="coordinatori_prime"
+  GRUPPO_COORDINATORI[2]="coordinatori_seconde"
+  GRUPPO_COORDINATORI[3]="coordinatori_terze"
+  GRUPPO_COORDINATORI[4]="coordinatori_quarte"
+  GRUPPO_COORDINATORI[5]="coordinatori_quinte"
+
+  local i
+  for i in {0..5}; do 
+    echo "  Gruppo $i : ${GRUPPO_COORDINATORI[$i]}"
+  done
+}
 
 # Funzione per mostrare il menu
 show_menu() {
@@ -107,7 +115,7 @@ main() {
           echo "WHERE sezione_gsuite='$sezione_gsuite'; -- $cognome $nome"
           echo '"'
         } >> "${EXPORT_DIR_DATE}/coordinatori_${CURRENT_DATE}.sh"
-      done < <($SQLITE_CMD studenti.db -csv "$query" | sed "s/\"//g")
+      done < <($SQLITE_CMD studenti.db -csv "$query" -csv "$query" | sed "s/\"//g")
     ;;
     8)
       echo "Inserisci membri nei gruppi  ..."
@@ -115,17 +123,18 @@ main() {
       local FIELDS=" DISTINCT LOWER(email_coordinatore) as email_coordinatore "
       local ORDERING="LOWER(email_coordinatore)"
 
+      # Inserisco membri nel gruppo
+      for i in {1..5}; do
+        echo "Inserisco coordinatori nel gruppo ${GRUPPO_COORDINATORI[$i]} ..."
+        query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$i")"
+
+        $SQLITE_CMD studenti.db -header -table "$query"
+        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPO_COORDINATORI[$i]}" --query "$query"
+      done
+
       # inserisco tutti i coordinatori nel gruppo coordinatori [0]
       query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$SQL_FILTRO_ANNI")"
       $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPO_COORDINATORI[0]}" --query "$query"
-
-      # genero le query
-      for i in {1..5}; do
-        echo "Inserisco membri nel gruppo ${GRUPPO_COORDINATORI[$i]} ..."
-
-        query="$(query::getSezioniConCoordinatoriByAnno "$FIELDS" "$ORDERING" "$i")"
-        $RUN_CMD_WITH_QUERY --command addMembersToGroup --group "${GRUPPO_COORDINATORI[$i]}" --query "$query"
-      done
     ;;
     9)
       echo "Rimuovi membri dai gruppi  ..."
@@ -194,11 +203,13 @@ showConfig() {
 }
 
 if [ "$#" -eq 1 ]; then
+  inizializzaGruppiCoordinatori
   scelta="$1"
 else
   # Show config vars
   showConfig
 
+  inizializzaGruppiCoordinatori
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
 fi
