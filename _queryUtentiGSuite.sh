@@ -3,6 +3,7 @@
 source "./_environment.sh"
 source "./_environment_working_tables.sh"
 source "./_maps.sh"
+source "./_queryStudenti.sh"
 
 FLAG_ON=0
 FLAG_OFF=1
@@ -311,3 +312,74 @@ function queryGSuite::ataOrgUnitErrata {
   echo "$query"
 }
 
+function queryGSuite::studentiArgoNonGSuite {
+  local stFields="cognome,nome,cod_fisc,st.cl,st.sez,e_mail,email_pa,email_ma,email_gen,matricola,codicesidi,datan,ritira,datar,email_gsuite,aggiunto_il, sz.cl,letter,addr_argo,sez_argo,addr_gsuite,sez_gsuite,sezione_gsuite,email_coordinatore"
+  local queryStudentiArgo="$(query::queryStudentiTutti "$stFields" )"
+
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
+  
+  # clona mappa
+  local -A usersParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+#
+  #usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_ON"
+  #usersParam[FILTER_ORG_UNIT_NOT_IN]=" '/studenti/diurno', '/studenti/serale' "
+  
+  # clona mappa modificata
+  local queryParam="$(declare -p "usersParam")"
+
+  local queryStudentiGSuite
+  queryStudentiGSuite="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+
+  local DEFAULT_FIELDS="sg.*, sa.*"
+  local FIELDS="${1:-${DEFAULT_FIELDS}}"
+  echo "
+    SELECT $FIELDS
+    FROM ($queryStudentiArgo) AS sa
+      LEFT JOIN ($queryStudentiGSuite) AS sg
+      ON LOWER(sa.email_gsuite) = LOWER(sg.email_gsuite)
+    WHERE sg.email_gsuite IS NULL OR TRIM(LOWER(sg.email_gsuite)) = '' 
+  "
+}
+
+function queryGSuite::studentiGSuiteNonArgo {
+  local stFields="cognome,nome,cod_fisc,st.cl,st.sez,e_mail,email_pa,email_ma,email_gen,matricola,codicesidi,datan,ritira,datar,email_gsuite,aggiunto_il, sz.cl,letter,addr_argo,sez_argo,addr_gsuite,sez_gsuite,sezione_gsuite,email_coordinatore"
+  local queryStudentiArgo="$(query::queryStudentiTutti "$stFields" )"
+
+  local queryParam
+  queryParam="$(queryGSuite::defaultUsersParam)"
+  
+  # clona mappa
+  local -A usersParam=()
+  eval "$queryParam"
+
+  # modifica mappa
+  usersParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
+  usersParam[FLAG_EMAIL_GSUITE_PREFIX_IN]="$FLAG_ON"
+  usersParam[FILTER_EMAIL_GSUITE_PREFIX_IN]=" 's.' "
+
+  usersParam[FLAG_ORG_UNIT_NOT_IN]="$FLAG_ON"
+  usersParam[FILTER_ORG_UNIT_NOT_IN]=" '/studenti/diurno', '/studenti/serale' "
+  
+  # clona mappa modificata
+  local queryParam="$(declare -p "usersParam")"
+
+  local queryStudentiGSuite
+  queryStudentiGSuite="$(queryGSuite::getQueryUtentiGSuite "$queryParam")"
+
+  local DEFAULT_FIELDS="sg.*, sa.*"
+  local FIELDS="${1:-${DEFAULT_FIELDS}}"
+  echo "
+    SELECT $FIELDS
+    FROM ( $queryStudentiGSuite ) AS sg
+      LEFT JOIN ($queryStudentiArgo) AS sa
+      ON LOWER(sa.email_gsuite) = LOWER(sg.email_gsuite)
+    WHERE sa.email_gsuite IS NULL OR TRIM(LOWER(sa.email_gsuite)) = '' 
+  "
+}

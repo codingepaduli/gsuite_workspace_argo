@@ -152,6 +152,9 @@ show_menu() {
     echo "23 Visualizza studenti con org unit errata"
     echo "24 Visualizza docenti con org unit errata"
     echo "25 Visualizza personale ATA con org unit errata"
+    
+    echo "27 Visualizza studenti in Argo e non in GSuite "
+    echo "28 Visualizza studenti in GSuite e non in Argo"
     echo "20. Esci"
 }
 
@@ -369,6 +372,22 @@ main() {
 
                 query="$(queryGSuite::ataOrgUnitErrata "nome, cognome, email_gsuite, org_unit" )"
                 $SQLITE_CMD -header -table studenti.db "$query"
+            ;;
+            27)
+                echo "27 Visualizza studenti in Argo e non in GSuite"
+
+                query="$(queryGSuite::studentiArgoNonGSuite "sa.nome, sa.cognome, sa.sezione_gsuite" )"
+
+                echo "$query"
+                $SQLITE_CMD -header -table studenti.db "$query;"
+            ;;
+            28)
+                echo "28 Visualizza studenti in GSuite e non in Argo"
+
+                query="$(queryGSuite::studentiGSuiteNonArgo "sg.nome, sg.cognome, sg.email_gsuite, sg.org_unit" )"
+
+                echo "$query"
+                $SQLITE_CMD -header -table studenti.db "$query;"
             ;;
             *)
                 echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
