@@ -321,9 +321,6 @@ function query::getEmployeesNotDeletedWithEmailGsuite {
   employeesParam[TABLE]="${4:-${employeesParam[TABLE]}}"
   employeesParam[FLAG_EMAIL_GSUITE_EXISTS]="$FLAG_ON"
   employeesParam[FLAG_NON_CANCELLATO]="$FLAG_ON"
-  employeesParam[FLAG_CONTRATTO_EXISTS]="$FLAG_ON"
-  employeesParam[FLAG_CONTRATTO_IN]="$FLAG_ON"
-  employeesParam[FILTER_CONTRATTO_IN]="${3:-${employeesParam[FILTER_CONTRATTO_IN]}}"
 
   # clona mappa modificata
   local queryParamString
