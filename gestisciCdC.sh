@@ -180,7 +180,7 @@ main() {
     13)
       echo "Inserisci TUTTI i membri nei gruppi dei bienni"
 
-      local FIELDS=" biennio, LOWER(email_gsuite) AS email_gsuite "
+      local FIELDS=" DISTINCT LOWER(biennio) AS biennio, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
       query="$(queryCdC::queryAllCdc "$FIELDS" "$ORDERING" )"
       
@@ -189,7 +189,7 @@ main() {
     15)
       echo "Inserisci i NUOVI membri nei gruppi dei bienni"
 
-      local FIELDS=" biennio, LOWER(email_gsuite) AS email_gsuite "
+      local FIELDS=" DISTINCT LOWER(biennio) AS biennio, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
       query="$(queryCdC::queryNewTeachers "$FIELDS" "$ORDERING" )"
                 
