@@ -562,7 +562,7 @@ function query::getDipartimentiRaggruppatiAll {
         UNION ALL 
       SELECT 'DIPARTIMENTO_MATEMATICA', ' ''MATEMATICA'' '
         UNION ALL 
-      SELECT 'DIPARTIMENTO_UMANISTICO', ' ''LETTERE'', ''DIRITTO'' ' 
+      SELECT 'DIPARTIMENTO_UMANISTICO', ' ''LETTERE'', ''DIRITTO'', ''GEOGRAFIA'' ' 
         UNION ALL 
       SELECT 'DIPARTIMENTO_INGLESE', ' ''INGLESE'' '
         UNION ALL 
