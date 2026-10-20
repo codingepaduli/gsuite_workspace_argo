@@ -25,6 +25,7 @@ show_menu() {
     echo "9. Creo la mail al nuovo personale e lo aggiungo ai gruppi e ai dipartimenti"
 
     echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
+    echo "16. Cancello e ricrea i gruppi dei CdC, poi inserisce TUTTI i membri"
 
     echo "20. Esci"
 }
@@ -231,6 +232,22 @@ main() {
         ./gestisciCdC.sh "$IMPORT_CDC_AND_NORMALIZE_DATA"
         echo "esporto cdc in csv"
         ./gestisciCdC.sh "$EXPORT_CDC_AS_CSV"
+      ;;
+      16)
+        echo "16. Cancello e ricrea i gruppi dei CdC, poi inserisce TUTTI i membri"
+
+        local DELETE_GROUP_CDC=5
+        local CREATE_GROUP_CDC=4
+        local ADD_ALL_EMPLOYEES_TO_CDC=7
+
+        echo "Premi un tasto per cancellare e ricreare i gruppi dei CdC"
+        read -p "Premi per continuare " -r _
+        ./gestisciCdC.sh "$DELETE_GROUP_CDC"
+        ./gestisciCdC.sh "$CREATE_GROUP_CDC"
+
+        echo "Premi un tasto per inserire TUTTI i membri nei gruppi dei CdC"
+        read -p "Premi per continuare " -r _
+        ./gestisciCdC.sh "$ADD_ALL_EMPLOYEES_TO_CDC"
       ;;
       20)
         echo "Arrivederci!"
