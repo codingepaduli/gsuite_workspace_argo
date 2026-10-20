@@ -238,7 +238,7 @@ FILE_CDC_ARGO_PDF="$BASE_DIR/dati_argo/cdc/$TABELLA_CDC_ARGO.pdf"
 
 ### Operations on CdC
 
-After exporting student's data from Argo, you can run the script:
+After exporting CdC data from Argo, you can run the script:
 
 - ``./gestisciCdC.sh`` to manage all CdC;
 - ``./gestisciGruppiGSuiteDocenti.sh`` to manage employees groups.
