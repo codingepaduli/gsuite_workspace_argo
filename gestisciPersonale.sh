@@ -36,6 +36,7 @@ show_menu() {
   echo "18. Invia mail di sospensione account al personale supplente ..."
   echo "19. Controllo i dati"
   echo "21. Esporta personale supplente da rimuovere"
+  echo "22. Esporta tutto il personale"
   echo "20. Esci"
 }
 
@@ -131,6 +132,8 @@ main() {
       local ORDERING="UPPER(cognome)"
       query="$(query::getEmployeesNotDeletedAddedInPeriod "$FIELDS" "$ORDERING" )"
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/nuovo_personale.csv"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/nuovo_personale.csv"
     ;;
     7)
       echo "7. Visualizza personale della tabella precedente non incluso in quella attuale"
@@ -369,6 +372,21 @@ main() {
       $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/personale_da_rimuovere.csv"
 
       $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/personale_da_rimuovere.csv"
+    ;;
+    22)
+      echo "Esporta tutto il personale"
+
+      mkdir -p "$EXPORT_DIR_DATE"
+
+      local FIELDS="LOWER(tipo_personale) AS tipo_personale, UPPER(cognome) || ' ' || UPPER(nome) AS nome, LOWER(email_gsuite) as email_gsuite, telefono, altro_telefono, cellulare, dipartimento"
+      local ORDERING="UPPER(cognome) || ' ' || UPPER(nome)"
+      query="$(query::getEmployeesNotDeletedWithEmailGsuite "$FIELDS" "$ORDERING" )"
+
+      echo "$query"
+
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/personale.csv"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/personale.csv"
     ;;
     *)
       echo "Opzione non valida. Per favore, scegli un numero tra 1 e 20."
