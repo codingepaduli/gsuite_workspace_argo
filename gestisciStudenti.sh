@@ -397,7 +397,7 @@ main() {
       local ORDERING="sz.sezione_gsuite, cognome, nome"
       query="$(query::queryStudentiCancellatiInPeriodo "$FIELDS" "$ORDERING" )"
 
-      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_cancellati_2025_26.csv"
+      $SQLITE_CMD studenti.db -header -csv "$query" > "$EXPORT_DIR_DATE/studenti_cancellati.csv"
 
       $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/studenti_cancellati.csv"
     ;;
