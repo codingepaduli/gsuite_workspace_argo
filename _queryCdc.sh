@@ -7,14 +7,14 @@ source "./_maps.sh"
 FLAG_ON=0
 FLAG_OFF=1
 
-function query::dropTableIfExists() {
+function queryCdC::dropTableIfExists() {
   local TABLE="${1:-${TABELLA_CDC_ARGO}}"
   echo "
     DROP TABLE IF EXISTS '$TABLE';
   "
 }
 
-function query::createTableIfNotExists() {
+function queryCdC::createTableIfNotExists() {
   local TABLE="${1:-${TABELLA_CDC_ARGO}}"
   echo "
     CREATE TABLE IF NOT EXISTS '$TABLE' (
@@ -26,7 +26,7 @@ function query::createTableIfNotExists() {
   "
 }
 
-function query::normalizeFields() {
+function queryCdC::normalizeFields() {
   local TABLE="${1:-${TABELLA_CDC_ARGO}}"
   
   echo "
@@ -37,8 +37,7 @@ function query::normalizeFields() {
   "
 }
 
-
-function query::defaultCdCParam() {
+function queryCdC::defaultCdCParam() {
   local -A cdcParam=()
   cdcParam[FIELDS]=" UPPER(docente) AS docente, materie AS materia "
   cdcParam[ORDERING]=" sezione_gsuite, cognome, nome "
@@ -97,7 +96,7 @@ function query::defaultCdCParam() {
   declare -p "cdcParam"
 }
 
-function query::getQueryCdc {
+function queryCdC::getQueryCdc {
   local queryParam
   queryParam="${1}"
   
@@ -109,14 +108,14 @@ function query::getQueryCdc {
       SELECT cdc.* , sz.* , d.*,
         CASE 
           WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('en', 'et')         THEN 'docenti_1_biennio_elettronica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt', 'Qi')    THEN 'docenti_1_biennio_informatica'
-          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mDD')         THEN 'docenti_1_biennio_meccanica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('in', 'idd', 'tlt', 'qi')    THEN 'docenti_1_biennio_informatica'
+          WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('m', 'mdd')         THEN 'docenti_1_biennio_meccanica'
           WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('od')               THEN 'docenti_1_biennio_odontotecnica'
           WHEN sz.cl IN (1, 2) AND sz.addr_argo IN ('tr')               THEN 'docenti_1_biennio_aeronautica'
           
           WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('en', 'et')         THEN 'docenti_2_biennio_elettronica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt') THEN 'docenti_2_biennio_informatica'
-          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mDD')         THEN 'docenti_2_biennio_meccanica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('in', 'idd', 'tlt', 'qi') THEN 'docenti_2_biennio_informatica'
+          WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('m', 'mdd')         THEN 'docenti_2_biennio_meccanica'
           WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('od')               THEN 'docenti_2_biennio_odontotecnica'
           WHEN sz.cl IN (3, 4) AND sz.addr_argo IN ('tr')               THEN 'docenti_2_biennio_aeronautica'
           
@@ -124,7 +123,7 @@ function query::getQueryCdc {
         END AS biennio
       FROM $TABELLA_CDC_ARGO cdc
         INNER JOIN $TABELLA_SEZIONI sz
-          ON cdc.classi = (sz.cl || sz.sez_argo)
+          ON LOWER(cdc.classi) = LOWER(sz.cl || sz.sez_argo)
         INNER JOIN $TABELLA_PERSONALE d
         ON UPPER(d.cognome || ' ' || d.nome) = UPPER(cdc.docente) 
     )
@@ -192,9 +191,9 @@ function query::getQueryCdc {
   "
 }
 
-function query::queryAllCdc {
+function queryCdC::queryAllCdc {
   local queryParam
-  queryParam="$(query::defaultCdCParam)"
+  queryParam="$(queryCdC::defaultCdCParam)"
   
   # clona mappa
   local -A cdcParam=()
@@ -208,13 +207,13 @@ function query::queryAllCdc {
   queryParam="$(declare -p "cdcParam")"
 
   local query
-  query="$(query::getQueryCdc "$queryParam")"
+  query="$(queryCdC::getQueryCdc "$queryParam")"
   echo "$query"
 }
 
-function query::queryCdcByClass {
+function queryCdC::queryCdcByClass {
   local queryParam
-  queryParam="$(query::defaultCdCParam)"
+  queryParam="$(queryCdC::defaultCdCParam)"
 
   # clona mappa
   local -A cdcParam=()
@@ -235,9 +234,9 @@ function query::queryCdcByClass {
   echo "$query"
 }
 
-function query::queryNewTeachers {
+function queryCdC::queryNewTeachers {
   local queryParam
-  queryParam="$(query::defaultCdCParam)"
+  queryParam="$(queryCdC::defaultCdCParam)"
 
   # clona mappa
   local -A cdcParam=()
@@ -257,10 +256,9 @@ function query::queryNewTeachers {
   echo "$query"
 }
 
-
-function query::queryCdcByBienni {
+function queryCdC::queryCdcByBienni {
   local queryParam
-  queryParam="$(query::defaultCdCParam)"
+  queryParam="$(queryCdC::defaultCdCParam)"
 
   # clona mappa
   local -A cdcParam=()
@@ -281,12 +279,11 @@ function query::queryCdcByBienni {
   echo "$query"
 }
 
-
 # Esempio di come chiamare la funzione
 function execDebug {
   if log::level_is_active "DEBUG"; then
     local param
-    param="$(query::defaultCdCParam)"
+    param="$(queryCdC::defaultCdCParam)"
     echo "$param"
     
     local query

@@ -46,12 +46,12 @@ main() {
   querySezioni="$(query::querySezioniTutte "sezione_gsuite" )"
 
   local queryBienni
-  queryBienni="$(query::queryAllCdc " DISTINCT LOWER(biennio) " " LOWER(biennio) " )"
+  queryBienni="$(queryCdC::queryAllCdc " DISTINCT LOWER(biennio) " " LOWER(biennio) " )"
 
   declare -a bienni
   readarray -t bienni < <( $SQLITE_CMD -csv studenti.db "$queryBienni" )
 
-  # echo "${bienni[@]}"
+  echo "bienni: ${bienni[@]}"
 
   local query
 
@@ -62,11 +62,11 @@ main() {
       echo "Cancello e ricreo la tabella $TABELLA_CDC_ARGO ..."
       
       # Cancello la tabella
-      query="$(query::dropTableIfExists )"
+      query="$(queryCdC::dropTableIfExists )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
 
       # Creo la tabella
-      query="$(query::createTableIfNotExists )"
+      query="$(queryCdC::createTableIfNotExists )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     1)
@@ -87,7 +87,7 @@ main() {
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query ".import --skip 1 $FILE_CDC_ARGO_IMPORT_CSV $TABELLA_CDC_ARGO"
     
       # Normalizzo i campi in tabella
-      query="$(query::normalizeFields )"
+      query="$(queryCdC::normalizeFields )"
       $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query"
     ;;
     3)
@@ -101,8 +101,7 @@ main() {
         local ORDERING="sezione_gsuite"
         local CDC="CDC_$sezione_gsuite"
 
-        query="$(query::queryCdcByClass "$FIELDS" "$ORDERING" "$sezione_gsuite")"
-        echo "$query"
+        query="$(queryCdC::queryCdcByClass "$FIELDS" "$ORDERING" "$sezione_gsuite")"
 
         $RUN_CMD_WITH_QUERY --command "executeQuery" --group " NO; " --query "$query" > "$EXPORT_DIR_DATE/$CDC.csv"
       done < <($SQLITE_CMD -csv studenti.db "$querySezioni" | sed 's/"//g' )
@@ -134,17 +133,24 @@ main() {
 
       local FIELDS=" DISTINCT UPPER(docente) AS docente, materie AS materia "
       local ORDERING="sezione_gsuite"
-      query="$(query::queryAllCdc "$FIELDS" "$ORDERING" )"
+      query="$(queryCdC::queryAllCdc "$FIELDS" "$ORDERING" )"
 
       $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
+
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/docenti_con_classi_associate.csv"
     ;;
     7)
       echo "Inserisco TUTTI i membri nei gruppi dei CdC"
 
-      local FIELDS=" 'CDC_' || sezione_gsuite AS sezione_gsuite, LOWER(email_gsuite) AS email_gsuite "
+      local FIELDS=" DISTINCT 'CDC_' || sezione_gsuite AS sezione_gsuite, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
-      query="$(query::queryAllCdc "$FIELDS" "$ORDERING" )"
+      query="$(queryCdC::queryAllCdc "$FIELDS" "$ORDERING" )"
 
+      # Esporto i CDC su CSV
+      $SQLITE_CMD -header -csv studenti.db "$query" > "$EXPORT_DIR_DATE/CdC_tutti.csv"
+      $LIBREOFFICE_CMD --convert-to xlsx --outdir "$EXPORT_DIR_DATE" "$EXPORT_DIR_DATE/CdC_tutti.csv"
+
+      # Inserisco TUTTI i membri nei gruppi
       $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query  "$query"
     ;;
     9)
@@ -152,7 +158,7 @@ main() {
 
       local FIELDS=" 'CDC_' || sezione_gsuite AS sezione_gsuite, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
-      query="$(query::queryNewTeachers "$FIELDS" "$ORDERING" )"
+      query="$(queryCdC::queryNewTeachers "$FIELDS" "$ORDERING" )"
 
       $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
     ;;
@@ -176,7 +182,7 @@ main() {
 
       local FIELDS=" biennio, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
-      query="$(query::queryAllCdc "$FIELDS" "$ORDERING" )"
+      query="$(queryCdC::queryAllCdc "$FIELDS" "$ORDERING" )"
       
       $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
     ;;
@@ -185,7 +191,7 @@ main() {
 
       local FIELDS=" biennio, LOWER(email_gsuite) AS email_gsuite "
       local ORDERING="sezione_gsuite, cognome, nome"
-      query="$(query::queryNewTeachers "$FIELDS" "$ORDERING" )"
+      query="$(queryCdC::queryNewTeachers "$FIELDS" "$ORDERING" )"
                 
       $RUN_CMD_WITH_QUERY --command addMembersToGroupByMap --group " NO " --query "$query"
     ;;
@@ -213,12 +219,11 @@ showConfig() {
   fi
 }
 
-# Show config vars
-showConfig
-
 if [ "$#" -eq 1 ]; then
-  scelta=$1
+  scelta="$1"
 else
+  showConfig
+
   show_menu
   read -p "Scegli un'opzione (1-20): " -r scelta
 fi
