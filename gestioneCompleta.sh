@@ -26,6 +26,7 @@ show_menu() {
 
     echo "11. Creo le tabelle Cdc e importo i dati da file PDF"
     echo "16. Cancello e ricrea i gruppi dei CdC, poi inserisce TUTTI i membri"
+    echo "17. Cancello e ricrea i gruppi dei bienni, poi inserisce TUTTI i membri"
 
     echo "20. Esci"
 }
@@ -248,6 +249,22 @@ main() {
         echo "Premi un tasto per inserire TUTTI i membri nei gruppi dei CdC"
         read -p "Premi per continuare " -r _
         ./gestisciCdC.sh "$ADD_ALL_EMPLOYEES_TO_CDC"
+      ;;
+      17)
+        echo "17. Cancello e ricrea i gruppi dei bienni, poi inserisce TUTTI i membri"
+
+        local DELETE_TWO_YEAR_CYCLE_GROUP=11
+        local CREATE_TWO_YEAR_CYCLE_GROUP=12
+        local ADD_ALL_EMPLOYEES_TO_TWO_YEAR_CYCLE_GROUP=13
+
+        echo "Premi un tasto per cancellare e ricreare i gruppi dei bienni"
+        read -p "Premi per continuare " -r _
+        ./gestisciCdC.sh "$DELETE_TWO_YEAR_CYCLE_GROUP"
+        ./gestisciCdC.sh "$CREATE_TWO_YEAR_CYCLE_GROUP"
+
+        echo "Premi un tasto per inserire TUTTI i membri nei gruppi dei bienni"
+        read -p "Premi per continuare " -r _
+        ./gestisciCdC.sh "$ADD_ALL_EMPLOYEES_TO_TWO_YEAR_CYCLE_GROUP"
       ;;
       20)
         echo "Arrivederci!"
