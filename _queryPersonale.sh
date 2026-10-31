@@ -214,19 +214,19 @@ function query::getQueryEmployees {
       AND (1=${employeesParam[FLAG_TIPO_PERSONALE]} OR 
         LOWER(tipo_personale) IN ( ${employeesParam[FILTER_TIPO_PERSONALE_IN]} ))
       AND (1=${employeesParam[FLAG_CODICE_FISCALE_EXISTS]} OR 
-        (codice_fiscale IS NOT NULL AND LOWER(codice_fiscale) != '' ))
+        (codice_fiscale IS NOT NULL AND TRIM(codice_fiscale) != '' ))
       AND (1=${employeesParam[FLAG_CODICE_FISCALE_NOT_EXISTS]} OR 
-        (codice_fiscale IS NULL OR LOWER(codice_fiscale) = '' ))
+        (codice_fiscale IS NULL OR TRIM(codice_fiscale) = '' ))
       AND (1=${employeesParam[FLAG_CODICE_FISCALE_NOT_IN]} OR 
         (LOWER(codice_fiscale) NOT IN ( ${employeesParam[FILTER_CODICE_FISCALE_NOT_IN]} )))
       AND (1=${employeesParam[FLAG_EMAIL_PERSONALE_EXISTS]} OR 
-        (email_personale IS NOT NULL AND LOWER(email_personale) != '' ))
+        (email_personale IS NOT NULL AND TRIM(email_personale) != '' ))
       AND (1=${employeesParam[FLAG_EMAIL_PERSONALE_NOT_EXISTS]} OR 
-        (email_personale IS NULL OR LOWER(email_personale) = '' ))
+        (email_personale IS NULL OR TRIM(email_personale) = '' ))
       AND (1=${employeesParam[FLAG_EMAIL_GSUITE_EXISTS]} OR 
-        (email_gsuite IS NOT NULL AND LOWER(email_gsuite) != '' ))
+        (email_gsuite IS NOT NULL AND TRIM(email_gsuite) != '' ))
       AND (1=${employeesParam[FLAG_EMAIL_GSUITE_NOT_EXISTS]} OR 
-        (email_gsuite IS NULL OR LOWER(email_gsuite) = '' ))
+        (email_gsuite IS NULL OR TRIM(email_gsuite) = '' ))
       AND (1=${employeesParam[FLAG_EMAIL_GSUITE_PREFIX]} OR 
         LOWER(SUBSTR(email_gsuite, 1, MIN(2, LENGTH(email_gsuite)))) 
           IN ( ${employeesParam[FILTER_EMAIL_GSUITE_PREFIX_IN]} ))
@@ -234,27 +234,27 @@ function query::getQueryEmployees {
         (aggiunto_il BETWEEN ${employeesParam[FILTER_AGGIUNTO_IL_MIN]} AND 
           ${employeesParam[FILTER_AGGIUNTO_IL_MAX]} ))
       AND (1=${employeesParam[FLAG_NON_CANCELLATO]} OR 
-        (cancellato_il IS NULL OR LOWER(cancellato_il) = '' ))
+        (cancellato_il IS NULL OR TRIM(cancellato_il) = '' ))
       AND (1=${employeesParam[FLAG_CANCELLATO_IL]} OR 
-        (cancellato_il IS NOT NULL AND LOWER(cancellato_il) != '' AND
+        (cancellato_il IS NOT NULL AND TRIM(cancellato_il) != '' AND
         cancellato_il BETWEEN ${employeesParam[FILTER_CANCELLATO_IL_MIN]} AND
           ${employeesParam[FILTER_CANCELLATO_IL_MAX]} ))
       AND (1=${employeesParam[FLAG_CONTRATTO_EXISTS]} OR 
-        (contratto IS NOT NULL AND LOWER(contratto) != '' ))
+        (contratto IS NOT NULL AND TRIM(contratto) != '' ))
       AND (1=${employeesParam[FLAG_CONTRATTO_NOT_EXISTS]} OR 
-        (contratto IS NULL OR LOWER(contratto) = '' ))
+        (contratto IS NULL OR TRIM(contratto) = '' ))
       AND (1=${employeesParam[FLAG_CONTRATTO_IN]} OR 
         (LOWER(contratto) IN ( ${employeesParam[FILTER_CONTRATTO_IN]} )))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_EXISTS]} OR 
-        (dipartimento IS NOT NULL AND LOWER(dipartimento) != '' ))
+        (dipartimento IS NOT NULL AND TRIM(dipartimento) != '' ))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_NOT_EXISTS]} OR 
-        (dipartimento IS NULL OR LOWER(dipartimento) = '' ))
+        (dipartimento IS NULL OR TRIM(dipartimento) = '' ))
       AND (1=${employeesParam[FLAG_DIPARTIMENTO_IN]} OR 
         (UPPER(dipartimento) IN ( ${employeesParam[FILTER_DIPARTIMENTO_IN]} )))
       AND (1=${employeesParam[FLAG_NOTE_EXISTS]} OR 
-        (note IS NOT NULL AND LOWER(note) != '' ))
+        (note IS NOT NULL AND TRIM(note) != '' ))
       AND (1=${employeesParam[FLAG_NOTE_NOT_EXISTS]} OR 
-        (note IS NULL OR LOWER(note) = '' ))
+        (note IS NULL OR TRIM(note) = '' ))
     ORDER BY ${employeesParam[ORDERING]} ASC
   "
 }
